@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -49,4 +49,24 @@ export function CreatorActions({ userId }: { userId: string }) {
 export function AppealAnswer({ id }: { id: string }) {
   const [t, setT] = useState(""); const [p, start] = useTransition();
   return <div className="optrow"><input className="input" style={{ flex: 1 }} value={t} onChange={(e) => setT(e.target.value)} placeholder="Reply to the creator" /><button className="btn btn-secondary btn-sm" disabled={p || t.length < 5} onClick={() => start(async () => say(await answer(id, t), "Sent"))}>Reply</button></div>;
+}
+
+export function BlockAccount({ id, blocked }: { id: string; blocked: boolean }) {
+  const [reason, setReason] = useState(""); const [p, start] = useTransition();
+  if (blocked) return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await block(id, false, ""), "Account unblocked"))}>Unblock account</button>;
+  return <div className="bo-inline"><input className="input" placeholder="Reason (logged, no sensitive data)" value={reason} onChange={(e) => setReason(e.target.value)} />
+    <button className="btn btn-secondary btn-sm" disabled={p || reason.trim().length < 5} onClick={() => start(async () => say(await block(id, true, reason), "Account blocked and signed out"))}>Block account</button></div>;
+}
+export function TeamAdd() {
+  const [who, setWho] = useState(""); const [role, setRole] = useState<"support" | "admin">("support"); const [p, start] = useTransition();
+  return <div className="bo-inline"><input className="input" placeholder="Username or email of an existing account" value={who} onChange={(e) => setWho(e.target.value)} />
+    <select className="input" value={role} onChange={(e) => setRole(e.target.value as "support" | "admin")} aria-label="Role"><option value="support">Support</option><option value="admin">Admin</option></select>
+    <button className="btn btn-primary btn-sm" disabled={p || !who.trim()} onClick={() => start(async () => { const r = await staffRole(who, role); say(r, "Added to the team"); if (r.ok) setWho(""); })}>Add</button></div>;
+}
+export function TeamRole({ handle, role, self }: { handle: string; role: string; self: boolean }) {
+  const [p, start] = useTransition();
+  if (self) return <span className="t-sm muted">This is you</span>;
+  return <div className="optrow">
+    {role !== "admin" ? <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "admin"), "Now admin"))}>Make admin</button> : <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "support"), "Now support"))}>Make support</button>}
+    <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "none"), "Removed from the team"))}>Remove</button></div>;
 }

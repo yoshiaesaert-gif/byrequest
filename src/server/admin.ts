@@ -12,7 +12,9 @@ const S = schema;
 export async function requireStaff(min: "support" | "admin" = "support") {
   const u = await requireUser();
   const s = await db.query.staff.findFirst({ where: eq(S.staff.userId, u.id) });
-  if (!s || s.role === "none" || (min === "admin" && s.role !== "admin")) redirect("/");
+  // Say why instead of silently sending someone home.
+  if (!s || s.role === "none") redirect("/staff-only");
+  if (min === "admin" && s.role !== "admin") redirect("/admin?need=admin");
   return { user: u, role: s.role };
 }
 

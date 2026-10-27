@@ -11,7 +11,7 @@ export default async function CreatorAdmin({ params }: { params: Promise<{ id: s
   if (!x.u) notFound();
   const t = (d: Date | null | undefined) => (d ? d.toISOString().replace("T", " ").slice(0, 16) : "–");
   return (<div className="wrap adm">
-    <Link href="/admin" className="back"><I n="left" c="sm" />Trust and safety</Link>
+    <Link href={`/admin/users/${id}`} className="back"><I n="left" c="sm" />Account</Link>
     <div className="page-h"><div><span className="eyebrow">Creator</span><h1 className="t-h1" style={{ marginTop: 6 }}>{x.u.handle}</h1><p className="muted t-sm">Status <b>{x.a.status}</b> · joined {t(x.u.createdAt)}{x.u.bannedAt ? ` · closed: ${x.u.banReason}` : ""}</p></div></div>
     <div className="grid">
       <div className="card"><h3 className="t-h3">Areas</h3><table><tbody>{Object.entries(x.a.areas).map(([k, v]) => <tr key={k}><td>{k}</td><td><b>{v}</b></td></tr>)}</tbody></table>
