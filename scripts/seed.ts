@@ -15,6 +15,10 @@ const S = schema;
 const H = (h: number) => addHours(new Date(), h);
 
 async function main() {
+  if (process.argv.includes("--if-empty")) {
+    const r = await db.execute(sql`select count(*)::int as n from users`);
+    if (Number((r.rows[0] as { n: number }).n) > 0) { console.log("Database already has data, seed skipped."); process.exit(0); }
+  }
   await db.execute(sql`truncate appeals, removal_requests, participant_consents, participants, deliveries, audit_log, provider_events, consents, legal_documents, payout_accounts, confidential_identity, identity_checks, creator_onboarding, staff, ledger, saves, notifications, preview_albums, messages, disputes, vault_items, media, deals, offers, requests, creator_profiles, sessions, login_codes, users cascade`);
   const storage = path.resolve(process.env.STORAGE_DIR || "./storage");
   await rm(storage, { recursive: true, force: true });

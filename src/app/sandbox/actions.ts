@@ -5,13 +5,14 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { PROVIDER_ENV } from "@/config/compliance";
 import { signTest } from "@/server/providers";
+import { internalUrl } from "@/server/url";
 
 /* Test provider only. Builds a signed event exactly like a provider would and posts it to our own
    webhook endpoint, so the real verification and idempotency path is exercised. */
 async function post(kind: "identity" | "payout", event: Record<string, unknown>, twice: boolean) {
   if (PROVIDER_ENV !== "test") throw new Error("The test provider is disabled in this environment.");
   const raw = JSON.stringify(event);
-  const url = `${process.env.APP_URL || "http://localhost:3000"}/api/webhooks/${kind}/sandbox`;
+  const url = `${internalUrl()}/api/webhooks/${kind}/sandbox`;
   for (let i = 0; i < (twice ? 2 : 1); i++) await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-sandbox-signature": signTest(raw) }, body: raw });
 }
 

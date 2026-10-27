@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { activeProvider, PROVIDERS } from "@/config/compliance";
+import { appUrl } from "./url";
 
 /* Provider independent adapters. Each real provider gets its own implementation of these
    interfaces once contracted; the onboarding flow and access rules do not change. */
@@ -55,7 +56,6 @@ function verifyTest(raw: string, header: string | null) {
 }
 const testSecret = () => process.env.SANDBOX_WEBHOOK_SECRET || "sandbox-dev-secret";
 
-const appUrl = () => process.env.APP_URL || "http://localhost:3000";
 
 const sandboxIdentity: IdentityAdapter = {
   id: "sandbox",

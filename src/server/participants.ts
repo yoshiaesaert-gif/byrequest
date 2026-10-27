@@ -8,10 +8,10 @@ import { identityAdapter } from "./providers";
 import { releaseToVault } from "./deals";
 import { currentDoc, log } from "./onboarding";
 import { seal } from "./seal";
+import { appUrl } from "./url";
 
 const { participants, participantConsents, deliveries, identityChecks, vaultItems, removalRequests } = schema;
 const hash = (t: string) => createHash("sha256").update(t).digest("hex");
-const appUrl = () => process.env.APP_URL || "http://localhost:3000";
 
 /* A creator adds each other person who appears. That person verifies and consents through a
    private link, without needing a ByRequest account. */

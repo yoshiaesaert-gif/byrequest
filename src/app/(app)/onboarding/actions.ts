@@ -8,9 +8,9 @@ import { requireUser, issueCode, verifyCode, markStepUp, stepUpFresh } from "@/s
 import * as ob from "@/server/onboarding";
 import { RuleError } from "@/domain/rules";
 import { PAYOUT_COUNTRIES, STEP_UP_MINUTES } from "@/config/compliance";
+import { appUrl } from "@/server/url";
 
 type R = { ok: true; msg?: string; fields?: string[]; devCode?: string | null } | { ok: false; error: string };
-const appUrl = () => process.env.APP_URL || "http://localhost:3000";
 async function run(fn: () => Promise<R | void>): Promise<R> {
   try { return (await fn()) ?? { ok: true }; }
   catch (e) { unstable_rethrow(e); if (e instanceof RuleError) return { ok: false, error: e.message }; console.error("onboarding action failed", e instanceof Error ? e.name : "error"); return { ok: false, error: "Something went wrong. Your progress is saved; try again." }; }
