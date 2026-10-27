@@ -220,3 +220,55 @@
 .rd-how{margin:0;max-width:62ch;font-size:.92rem;line-height:1.6;color:var(--ink-2)}
 @media (max-width:900px){.rd-spec{grid-template-columns:repeat(2,minmax(0,1fr))}.rd-spec>div:nth-child(3){border-left:0;padding-left:0}.rd-spec>div:nth-child(n+3){border-top:1px solid var(--line)}}
 @media (max-width:600px){.rd-media{aspect-ratio:4/5;max-height:none;border-radius:20px}.rd-bottom{left:18px;right:18px;bottom:18px}.rd-bottom .bn{font-size:3rem}}
+
+/* deal page */
+.next{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;margin:4px 0 20px;padding:2px 0 2px 16px;border-left:3px solid var(--brand);background:none;box-shadow:none;border-radius:0}
+.next.is-delivered,.next.is-released{border-left-color:var(--ok)}
+.next.is-disputed,.next.is-refunded{border-left-color:var(--warn,#C77700)}
+.next .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chatbox{height:auto}
+.chatbox .msgs{min-height:180px;max-height:480px}
+.chat-empty{margin:auto 0 0;align-self:center;font-size:.86rem;color:var(--muted);padding:8px 0}
+.composer .input:disabled{background:var(--sunk);color:var(--muted);cursor:not-allowed}
+.dsum{overflow:hidden;padding:0}
+.dsum-media{position:relative;aspect-ratio:16/10;background:#1a1a22;overflow:hidden}
+.dsum-media .cimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dsum-tag{position:absolute;left:14px;bottom:14px;height:26px;padding:0 10px;border-radius:999px;display:inline-flex;align-items:center;font-family:var(--meta);font-size:.74rem;font-weight:600;color:#fff;background:rgba(0,0,0,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.dsum-dl{margin:0;padding:6px 20px}
+.dsum-dl>div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.dsum-dl>div:last-child{border-bottom:0}
+.dsum-dl dt{color:var(--muted)}
+.dsum-dl dd{margin:0;font-weight:600;text-align:right}
+.dsum-money{background:var(--sunk);padding:6px 20px 8px}
+.dsum-money .tot dt{color:var(--ink);font-weight:700}
+.dsum-money .tot dd{font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+@media (max-width:600px){.next{grid-template-columns:minmax(0,1fr)}.next .acts{justify-content:flex-start}}
+
+/* creator profile: open layout, thin lines, no tiles */
+.cp{gap:48px}
+.cp-id{padding:8px 0 0;align-items:flex-start;text-align:left;gap:10px}
+.cp-id .optrow{justify-content:flex-start!important}
+.cp-av{width:200px;height:200px;border-radius:36px}
+.cp-vis{background:none;padding:12px 0 0;border-top:1px solid var(--line);border-radius:0;color:var(--muted);width:100%}
+.cp-main{gap:0}
+.cp-sec{padding:24px 0;border-top:1px solid var(--line-2)}
+.cp-sec:first-child{border-top:0;padding-top:4px}
+.cp-bio{font-size:1.3rem;line-height:1.45;max-width:60ch}
+.cp-spec{margin:18px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:40px}
+.cp-spec>div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:11px 0;border-bottom:1px solid var(--line)}
+.cp-spec dt{font-size:.88rem;color:var(--muted)}
+.cp-spec dd{margin:0;font-size:.95rem;font-weight:600;text-align:right}
+.cp-never{margin-top:12px;font-size:.88rem;color:var(--muted)}
+.cp-never b{color:var(--ink);margin-right:6px}
+.cp-sec .list .lrow{padding-left:0;padding-right:0}
+.cp-main>.cp-al{margin:8px 0 16px}
+.cp-al-i{background:none;width:auto}
+@media (max-width:860px){.cp{gap:16px}.cp-av{width:140px;height:140px;border-radius:28px}.cp-spec{grid-template-columns:minmax(0,1fr);column-gap:0}}
+/* admin: tables scroll inside their card instead of running out of it */
+.adm .card{min-width:0;overflow-x:auto}
+.adm td,.adm th{white-space:nowrap}
+.adm td.t-xs{white-space:normal;word-break:break-all}
+.demorow .mini-l{display:inline-grid;place-items:center;background:var(--sunk);color:var(--ink);font-size:.72rem;font-weight:800}
+.cp-av{box-shadow:none;background:none}
+.cp-av img{border-radius:inherit!important;width:100%!important;height:100%!important}
+.chatbox .safety-note{display:block;line-height:1.5}.chatbox .safety-note .ico{vertical-align:-2px;margin-right:6px}

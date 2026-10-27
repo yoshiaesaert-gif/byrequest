@@ -32,6 +32,10 @@ export function Cover({ cover, frost }: { cover: string | null; frost?: boolean 
   </>);
 }
 
+/** One time format for server and client, so a deadline reads the same everywhere. */
+export const TZ = "Europe/Brussels";
+export function when(d: Date | string) { return new Date(d).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ }); }
+
 export function hoursLeft(d: Date) { return Math.max(0, (d.getTime() - Date.now()) / 3600_000); }
 export function leftLabel(d: Date) {
   const h = hoursLeft(d);

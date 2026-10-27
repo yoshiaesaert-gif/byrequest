@@ -6,7 +6,7 @@ import { requireUser } from "@/server/auth";
 import { deal } from "@/server/queries";
 import { access } from "@/server/onboarding";
 import { listFor } from "@/server/participants";
-import { Av, Cover, I } from "@/components/ui";
+import { Av, Cover, I, when } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, amountLabel, euros } from "@/domain/rules";
 import Room from "./room";
 
@@ -27,7 +27,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   return (<div className="wrap">
     <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? "Deals" : "Offers"}</Link>
     {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>Payment secured.</b><div className="t-sm">{euros(x.d.dealCents + x.d.feeCents)} is held by the payment partner until delivery. It shows as BRQ DIGITAL.</div></div></div> : null}
-    <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">Deal with {other.handle}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{x.r.title}</h1></div></div><span className="badge ok e2e"><I n="lock" c="sm" />End to end encrypted</span></div>
+    <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">Deal with {other.handle}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{x.r.title}</h1></div></div></div>
     <div className="two">
       <Room
         me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
@@ -39,14 +39,24 @@ export default async function DealPage({ params, searchParams }: { params: Promi
         dispute={x.dispute ? { outcome: x.dispute.outcome } : null}
         msgs={x.msgs.map((m) => ({ id: m.id, kind: m.kind, senderId: m.senderId, nonce: m.nonce, body: m.body, at: m.createdAt.toISOString() }))}
       />
-      <aside className="sticky"><div className="card reqsum"><div className="media"><Cover cover={x.r.cover} frost={u.prefs.frost} /><span className="p num">{euros(x.d.dealCents)}</span></div>
-        <div className="body"><dl className="dl">
-          <dt>Type</dt><dd>{CAT_LABEL[x.r.category]} · {amountLabel(x.r.category, x.r.amount)}</dd>
-          <dt>Face</dt><dd>{x.o.showsFace ? "Face shown" : "No face"}</dd>
-          <dt>Vault access</dt><dd>{VAULT_LABEL[x.o.vault]}</dd>
-          <dt>Deliver by</dt><dd>{x.d.dueAt.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" })}</dd>
-          <dt>{buyer ? "Secured" : "You earn"}</dt><dd className="num">{euros(buyer ? x.d.dealCents + x.d.feeCents : x.d.creatorCents)}</dd>
-        </dl></div></div></aside>
+      <aside className="sticky"><div className="card dsum">
+        <div className="dsum-media"><Cover cover={x.r.cover} /><span className="dsum-tag">{CAT_LABEL[x.r.category]} · {amountLabel(x.r.category, x.r.amount)}</span></div>
+        <dl className="dsum-dl">
+          <div><dt>Face</dt><dd>{x.o.showsFace ? "Face shown" : "No face"}</dd></div>
+          <div><dt>Vault access</dt><dd>{VAULT_LABEL[x.o.vault]}</dd></div>
+          <div><dt>Deliver by</dt><dd>{when(x.d.dueAt)}</dd></div>
+        </dl>
+        <dl className="dsum-dl dsum-money">
+          {buyer ? (<>
+            <div><dt>Offer</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
+            <div><dt>Service fee</dt><dd className="num">{euros(x.d.feeCents)}</dd></div>
+            <div className="tot"><dt>Secured</dt><dd className="num">{euros(x.d.dealCents + x.d.feeCents)}</dd></div>
+          </>) : (<>
+            <div><dt>Deal value</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
+            <div className="tot"><dt>You earn</dt><dd className="num">{euros(x.d.creatorCents)}</dd></div>
+          </>)}
+        </dl>
+      </div></aside>
     </div>
   </div>);
 }

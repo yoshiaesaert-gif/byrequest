@@ -3,7 +3,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
-import { and, eq, gt, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
 
 const ctx: Record<string, unknown> = { window: {}, Math, JSON, Object, Array, String, Number };
@@ -52,6 +52,13 @@ async function main() {
   // so the home row can show eight 3D avatars.
   for (const [h, look] of [["kai.v", "kai"], ["nour", "nour"]] as const)
     await db.update(S.users).set({ avatar: { kind: "3d", look } }).where(eq(S.users.handle, h));
+  // Older demo messages said ByRequest holds the money. The payment partner does.
+  await db.execute(sql`update messages set body = replace(body, 'held by ByRequest', 'held by the payment partner') where kind = 'system' and body like '%held by ByRequest%'`);
+  // The demo buyer and the support account used kai's and nour's 3D faces; those belong to creators now.
+  for (const [h, q] of [["nightowl", { age: "25 to 34", pres: "Man", len: "Short", style: "Street" }], ["ops", { age: "25 to 34", pres: "Woman", len: "Medium", style: "Smart" }]] as const) {
+    const x = await db.query.users.findFirst({ where: eq(S.users.handle, h) });
+    if (x?.avatar?.kind === "3d") { const spec = A.generate({ ...q, facial: "None", glasses: "Any", skin: -1 }); await db.update(S.users).set({ avatar: { kind: "built", spec, svg: A.svg(spec) } }).where(eq(S.users.id, x.id)); }
+  }
   const milo = await db.query.users.findFirst({ where: eq(S.users.handle, "milo") });
   if (milo) await db.update(S.creatorProfiles).set({ visibility: "public" }).where(eq(S.creatorProfiles.userId, milo.id));
   console.log(`Extra creators: ${added} added, ${have.size} already there.`);

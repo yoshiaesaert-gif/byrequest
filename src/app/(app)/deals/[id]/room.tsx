@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { sendMessage, releaseNow, object, rate } from "../../actions";
 import { toast } from "@/components/chrome";
 import { myKeys, seal, open } from "@/components/e2e";
+import { when } from "@/components/ui";
 
 type Msg = { id: string; kind: "e2e" | "system"; senderId: string | null; nonce: string | null; body: string; at: string };
 type Props = {
@@ -19,7 +20,6 @@ type Props = {
 };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eur = (c: number) => "€" + Math.round(c / 100);
-const when = (iso: string) => new Date(iso).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 const noop = () => () => {};
 const REASONS = ["Not what was agreed", "Face does not match the offer", "Unusable, for example black or silent", "Someone other than the creator"];
 
@@ -43,8 +43,10 @@ export default function Room(p: Props) {
   useEffect(() => { const h = setInterval(() => router.refresh(), 6000); return () => clearInterval(h); }, [router]);
   useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight }); }, [p.msgs.length]);
 
-  const steps = ["Accepted", "Delivered", "Reviewed", "In vault", "Paid"];
-  const cur = s === "held" ? 1 : s === "reviewing" ? (p.delivery?.review === "blocked_participants" ? 3 : 2) : s === "delivered" || s === "disputed" ? 4 : 5;
+  const steps = ["Accepted", "Making it", "Review", buyer ? "In your vault" : "In the vault", "Paid out"];
+  // The highlighted step is the one in progress now, never one that has not happened yet.
+  const cur = s === "held" ? 1 : s === "reviewing" ? 2 : s === "disputed" ? 3 : s === "delivered" ? 4 : 5;
+  const chat = p.msgs.some((m) => m.kind === "e2e");
 
   const send = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,28 +58,28 @@ export default function Room(p: Props) {
     start(async () => { const r = await sendMessage(p.deal.id, sealed.nonce, sealed.body); if (!r.ok) toast(r.error, "err"); router.refresh(); });
   };
 
-  let next: { ic: string; t: string; d: string; acts?: React.ReactNode };
+  let next: { t: string; d: string; acts?: React.ReactNode };
   if (buyer) {
-    if (s === "held") next = { ic: "clock", t: `${p.other.handle} is making it`, d: `Expected by ${when(p.deal.dueAt)}. No delivery in time means a full refund.` };
-    else if (s === "reviewing") next = { ic: "shield", t: "Delivered, being reviewed", d: p.delivery?.review === "blocked_participants" ? "Waiting for verification and consent of everyone who appears. Then it reaches your vault." : "It passed the file check. A reviewer checks it before it reaches your vault." };
-    else if (s === "delivered") next = { ic: "check", t: "In your vault, your turn", d: `Not what you agreed? Object before ${when(p.deal.objectUntil!)}. Otherwise the payment is released automatically.`, acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>Report a problem</button><Link className="btn btn-secondary" href="/vault">Open vault</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>Release payment</button></> };
-    else if (s === "disputed") next = { ic: "alert", t: "Under review", d: "A person compares the file with the terms of the accepted offer. The money stays held until then." };
-    else if (s === "released") next = { ic: "shield", t: "Deal completed", d: "It stays in your vault for the agreed period.", acts: <><Link className="btn btn-secondary" href="/vault">Open vault</Link>{!p.deal.rated ? <RateButtons dealId={p.deal.id} other={p.other.handle} /> : null}</> };
-    else next = { ic: "wallet", t: "Refunded", d: "The full amount goes back to you through the payment partner." };
+    if (s === "held") next = { t: `${p.other.handle} is making it`, d: `Expected by ${when(p.deal.dueAt)}. No delivery in time means a full refund.` };
+    else if (s === "reviewing") next = { t: "Delivered, being reviewed", d: p.delivery?.review === "blocked_participants" ? "Waiting for verification and consent of everyone who appears. Then it reaches your vault." : "It passed the file check. A reviewer checks it before it reaches your vault." };
+    else if (s === "delivered") next = { t: "In your vault, your turn", d: `Not what you agreed? Object before ${when(p.deal.objectUntil!)}. Otherwise the payment is released automatically.`, acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>Report a problem</button><Link className="btn btn-secondary" href="/vault">Open vault</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>Release payment</button></> };
+    else if (s === "disputed") next = { t: "Under review", d: "A person compares the file with the terms of the accepted offer. The money stays held until then." };
+    else if (s === "released") next = { t: "Deal completed", d: "It stays in your vault for the agreed period.", acts: <><Link className="btn btn-secondary" href="/vault">Open vault</Link>{!p.deal.rated ? <RateButtons dealId={p.deal.id} other={p.other.handle} /> : null}</> };
+    else next = { t: "Refunded", d: "The full amount goes back to you through the payment partner." };
   } else {
     if (s === "held") next = p.canUpload
-      ? { ic: "video", t: `Deliver by ${when(p.deal.dueAt)}`, d: "Upload here. We check length and format, remove location and device data, and review it before it reaches the buyer.", acts: <button className="btn btn-brand" onClick={() => setSheet("upload")}>Upload delivery</button> }
-      : { ic: "alert", t: "Finish your setup to upload", d: p.missing.join(" · "), acts: <Link className="btn btn-primary" href="/onboarding">Continue setup</Link> };
-    else if (s === "reviewing") next = { ic: "shield", t: p.delivery?.review === "blocked_participants" ? "Waiting for participants" : "Being reviewed", d: p.delivery?.review === "blocked_participants" ? "Everyone else who appears must verify and consent through their link first." : "A reviewer checks every delivery before it is made available." };
-    else if (s === "delivered") next = { ic: "check", t: "In the buyer's vault", d: `The buyer can object until ${when(p.deal.objectUntil!)}. Then ${eur(p.deal.creatorCents)} is released to you.` };
-    else if (s === "disputed") next = { ic: "alert", t: "The buyer reported a problem", d: "A person reviews the file against the accepted offer. You are paid if it matches." };
-    else if (s === "released") next = p.payoutHeld ? { ic: "alert", t: "Action needed to enable payouts", d: `${eur(p.deal.creatorCents)} is waiting until your payout setup is approved.`, acts: <Link className="btn btn-primary" href="/onboarding">Open payout setup</Link> } : { ic: "wallet", t: "Paid", d: `${eur(p.deal.creatorCents)} was released to your payout account.` };
-    else next = { ic: "x", t: "Refunded to the buyer", d: "This deal ended without payment." };
+      ? { t: `Deliver by ${when(p.deal.dueAt)}`, d: "Upload here. We check length and format, remove location and device data, and review it before it reaches the buyer.", acts: <button className="btn btn-brand" onClick={() => setSheet("upload")}>Upload delivery</button> }
+      : { t: "Finish your setup to upload", d: p.missing.join(" · "), acts: <Link className="btn btn-primary" href="/onboarding">Continue setup</Link> };
+    else if (s === "reviewing") next = { t: p.delivery?.review === "blocked_participants" ? "Waiting for participants" : "Being reviewed", d: p.delivery?.review === "blocked_participants" ? "Everyone else who appears must verify and consent through their link first." : "A reviewer checks every delivery before it is made available." };
+    else if (s === "delivered") next = { t: "In the buyer's vault", d: `The buyer can object until ${when(p.deal.objectUntil!)}. Then ${eur(p.deal.creatorCents)} is released to you.` };
+    else if (s === "disputed") next = { t: "The buyer reported a problem", d: "A person reviews the file against the accepted offer. You are paid if it matches." };
+    else if (s === "released") next = p.payoutHeld ? { t: "Action needed to enable payouts", d: `${eur(p.deal.creatorCents)} is waiting until your payout setup is approved.`, acts: <Link className="btn btn-primary" href="/onboarding">Open payout setup</Link> } : { t: "Paid", d: `${eur(p.deal.creatorCents)} was released to your payout account.` };
+    else next = { t: "Refunded to the buyer", d: "This deal ended without payment." };
   }
 
   return (<div>
     <div className="stepper">{steps.map((l, i) => <div key={l} className={"stp " + (i < cur ? "done" : i === cur ? "cur" : "")}><i />{l}</div>)}</div>
-    <div className="card next"><span className="ic"><Ico n={next.ic} c="lg" /></span><div style={{ minWidth: 0 }}><b className="t-h3">{next.t}</b><p className="t-sm muted" style={{ marginTop: 4 }}>{next.d}</p></div>{next.acts ? <div className="acts">{next.acts}</div> : null}</div>
+    <div className={"next is-" + s}><div style={{ minWidth: 0 }}><b className="t-h3">{next.t}</b><p className="t-sm muted" style={{ marginTop: 4 }}>{next.d}</p></div>{next.acts ? <div className="acts">{next.acts}</div> : null}</div>
     <div className="card chatbox">
       <div className="msgs" ref={box}>
         {p.msgs.map((m) => {
@@ -86,11 +88,10 @@ export default function Room(p: Props) {
           const t = plain[m.id];
           return <div key={m.id} className={"bub " + (mine ? "me" : "them") + (t ? "" : " locked")}>{t ?? (kp ? "Encrypted on another device" : "Decrypting…")}</div>;
         })}
+        {!chat && s === "held" ? <p className="chat-empty">No messages yet. Agree on the details with {p.other.handle} here.</p> : null}
       </div>
       <p className="safety-note"><Ico n="lock" c="sm" /><b>End to end encrypted.</b>&nbsp;Only you and {p.other.handle} can read this chat. Never share your real name, address or socials.</p>
-      {p.other.publicKey
-        ? <form className="composer" onSubmit={send}><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={`Message ${p.other.handle}`} autoComplete="off" aria-label="Message" maxLength={2000} /><button className="btn btn-primary" aria-label="Send" disabled={pending}><Ico n="send" /></button></form>
-        : <p className="safety-note" style={{ borderTop: "1px solid var(--line)" }}><Ico n="clock" c="sm" />The chat opens as soon as {p.other.handle} signs in once, so their device can create its encryption key.</p>}
+      <form className="composer" onSubmit={send}><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={p.other.publicKey ? `Message ${p.other.handle}` : `The chat opens once ${p.other.handle} signs in on a device`} disabled={!p.other.publicKey} autoComplete="off" aria-label="Message" maxLength={2000} /><button className="btn btn-primary" aria-label="Send" disabled={pending || !p.other.publicKey}><Ico n="send" /></button></form>
     </div>
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
     {sheet === "upload" ? <UploadSheet p={p} onClose={() => setSheet(null)} /> : null}

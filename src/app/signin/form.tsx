@@ -45,9 +45,9 @@ export default function SignInForm({ demo }: { demo: boolean }) {
       {demo ? (<div className="demo">
         <div className="divider">or try a demo account</div>
         <div className="demorow">
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("nightowl")}><img src="/av/kai.webp" alt="" className="mini" />Buyer, nightowl</button>
+          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("nightowl")}><span className="mini mini-l" aria-hidden="true">N</span>Buyer, nightowl</button>
           <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("milo")}><img src="/av/milo.webp" alt="" className="mini" />Creator, milo</button>
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("ops")}><img src="/av/nour.webp" alt="" className="mini" />Support, ops</button>
+          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("ops")}><span className="mini mini-l" aria-hidden="true">S</span>Support, ops</button>
           <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("noah")}><img src="/av/noah.webp" alt="" className="mini" />Creator, setup open</button>
         </div>
       </div>) : null}

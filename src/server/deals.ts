@@ -56,7 +56,7 @@ export async function acceptOffer(buyerId: string, offerId: string) {
       { dealId: d.id, userId: buyerId, entry: "buyer_charge", cents: m.buyerPays },
       { dealId: d.id, entry: "escrow_hold", cents: m.buyerPays },
     ]);
-    await system(tx, d.id, `Offer accepted. €${(m.buyerPays / 100).toFixed(2)} is held by ByRequest until delivery.`);
+    await system(tx, d.id, `Offer accepted. €${(m.buyerPays / 100).toFixed(2)} is held by the payment partner until delivery.`);
     await notify(tx, o.creatorId, "You were chosen", "You have a new deal.", `/deals/${d.id}`);
     return d;
   });
