@@ -8,12 +8,18 @@ export function I({ n, c }: { n: string; c?: "sm" | "lg" }) {
 const LOOKS = new Set(["ava", "nour", "dre", "milo", "kai", "lina", "jens", "noah", "ruby", "sem"]);
 type Avatar = { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean } | null | undefined;
 
+/** Data URL for a stored avatar SVG; adds the namespace an <img> needs to render it. */
+export function svgSrc(svg: string) {
+  const s = svg.includes("xmlns=") ? svg : svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"');
+  return `data:image/svg+xml;utf8,${encodeURIComponent(s)}`;
+}
+
 export function Av({ a, name, size = 40, square }: { a: Avatar; name: string; size?: number; square?: boolean }) {
   const r = square ? Math.round(size * 0.26) : size / 2;
   if (a?.kind === "3d" && LOOKS.has(a.look))
     return <img className="av3d" src={`/av/${a.look}.webp`} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
   if (a?.kind === "built" && a.svg)   // pre-rendered SVG; an <img> keeps its internal ids isolated
-    return <img className="av3d" src={`data:image/svg+xml;utf8,${encodeURIComponent(a.svg)}`} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
+    return <img className="av3d" src={svgSrc(a.svg)} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
   return <span className="avx" style={{ width: size, height: size, borderRadius: r, fontSize: size * 0.42 }} aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>;
 }
 

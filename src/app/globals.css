@@ -174,7 +174,7 @@ p{margin:0}
 /* photo covers and the new text layer */
 .avfill::after{display:none}
 .cr .media .badge.glass{background:rgba(14,16,19,.62);color:#fff}
-.avfill svg,.avfill img.av3d{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover}
+.avfill svg,.avfill img.av3d{position:absolute;inset:0;width:100%!important;height:100%!important;border-radius:0!important;display:block;object-fit:cover}
 .av.avfill{position:relative}
 .vi .media img.cimg,.delivery .media img.cimg{filter:blur(14px) saturate(1.1);transform:scale(1.25)}
 .cat .media img.cimg{transform:scale(1.02)}

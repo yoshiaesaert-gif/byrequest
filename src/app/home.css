@@ -243,3 +243,6 @@
 @media (hover:hover){.h-feat:hover .frost,.h-fc:hover .frost{opacity:0}}
 .h-ask .ask input{color:#0E1013}
 .h-ask .ask input::placeholder{color:#8A8F98}
+/* fan: no card covers another card's text */
+.h-chip{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media (min-width:861px){.h-fc.f0{left:3%;top:14%}.h-fc.f1{left:33%;top:4%}.h-fc.f2{left:65%;top:18%}}

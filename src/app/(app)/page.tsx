@@ -67,7 +67,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
       </div>
       <div className="h-fan" aria-hidden="true">{fan.map((r, i) => (
         <Link key={r.id} href={`/requests/${r.id}`} className={`h-fc f${i}`} tabIndex={-1}><div className="media"><Cover cover={r.cover} frost /></div>
-          <div className="h-fc-in"><span className="h-chip">{r.ageMin} to {r.ageMax} · {leftLabel(r.closesAt)}</span><b className="num">{r.amount}<small>{r.category === "photos" ? "photos" : "min"}</small></b>
+          <div className="h-fc-in"><span className="h-chip">{r.ageMin} to {r.ageMax} · {leftLabel(r.closesAt).replace(" days left", "d").replace("h left", "h").replace("m left", "m")}</span><b className="num">{r.amount}<small>{r.category === "photos" ? "photos" : "min"}</small></b>
             <div className="h-fc-b"><span>{r.title}</span><em className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</em></div></div></Link>))}</div>
     </section>
 
