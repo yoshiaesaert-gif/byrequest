@@ -48,6 +48,12 @@ async function main() {
       await db.insert(S.offers).values({ requestId: req.id, creatorId: u.id, showsFace: face, vault: req.minVault, etaHours: Math.min(req.dueHours, 24), note: "Happy to make this." }).onConflictDoNothing();
     added++;
   }
+  // The two 3D looks no seed creator uses go to the matching new creators; milo opens his profile
+  // so the home row can show eight 3D avatars.
+  for (const [h, look] of [["kai.v", "kai"], ["nour", "nour"]] as const)
+    await db.update(S.users).set({ avatar: { kind: "3d", look } }).where(eq(S.users.handle, h));
+  const milo = await db.query.users.findFirst({ where: eq(S.users.handle, "milo") });
+  if (milo) await db.update(S.creatorProfiles).set({ visibility: "public" }).where(eq(S.creatorProfiles.userId, milo.id));
   console.log(`Extra creators: ${added} added, ${have.size} already there.`);
   process.exit(0);
 }

@@ -112,7 +112,8 @@ export type PublicProfile = ReturnType<typeof publicProfile>;
 
 export async function publicCreators(limit = 12) {
   const rows = await db.select({ u: users, p: creatorProfiles }).from(users).innerJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
-    .where(and(eq(creatorProfiles.visibility, "public"), sql`${users.bannedAt} is null`)).orderBy(desc(users.ratingCount)).limit(limit);
+    .where(and(eq(creatorProfiles.visibility, "public"), sql`${users.bannedAt} is null`))
+    .orderBy(sql`case when ${users.avatar}->>'kind' = '3d' then 0 else 1 end`, desc(users.ratingCount)).limit(limit);
   return rows.map((r) => publicProfile(r.u, r.p));
 }
 
