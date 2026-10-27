@@ -246,3 +246,44 @@
 /* fan: no card covers another card's text */
 .h-chip{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 @media (min-width:861px){.h-fc.f0{left:3%;top:14%}.h-fc.f1{left:33%;top:4%}.h-fc.f2{left:65%;top:18%}}
+
+/* hero: one live request, offers arriving */
+.h-hero-bg .cimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hl{position:relative;height:100%;min-height:340px;display:flex;align-items:center;justify-content:center;padding:28px 40px 28px 0}
+.hl-card{position:relative;display:block;width:236px;aspect-ratio:3/4;border-radius:22px;overflow:hidden;background:#1a1a22;color:#fff;margin-left:110px;transform:rotate(2deg);box-shadow:0 50px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.08);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.h-hero:hover .hl-card{transform:rotate(0deg) translateY(-4px)}
+.hl-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hl-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,0) 28%,rgba(0,0,0,0) 45%,rgba(0,0,0,.85))}
+.hl-top{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:6px}
+.hl-top span{height:24px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;font-family:var(--meta);font-size:.7rem;font-weight:600;white-space:nowrap;background:rgba(0,0,0,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hl-bot{position:absolute;left:16px;right:16px;bottom:16px}
+.hl-bot b{display:block;font-size:3.6rem;font-weight:900;letter-spacing:-.07em;line-height:.8}
+.hl-bot b small{display:block;font-family:var(--meta);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;margin-top:7px}
+.hl-t{margin-top:10px;font-weight:700;font-size:.9rem;line-height:1.2}
+.hl-earn{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);display:flex;justify-content:space-between;align-items:baseline;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#C9C8D3}
+.hl-earn em{font-style:normal;font-size:1.4rem;font-weight:900;letter-spacing:-.04em;color:#B8F5D9;text-transform:none}
+.hl-count{position:absolute;top:50px;left:14px;height:24px;padding:0 9px;border-radius:999px;display:inline-flex;align-items:center;font-size:.72rem;font-weight:700;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hl-count.on{background:#B8F5D9;color:#0B2A1E;animation:hl-pop .45s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes hl-pop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+.hl-feed{position:absolute;left:0;bottom:54px;width:272px;display:flex;flex-direction:column;gap:8px;z-index:2}
+.hl-of{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 9px;border-radius:16px;background:rgba(22,21,32,.78);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 20px 40px -16px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.1);opacity:calc(1 - var(--i) * .28);transform:scale(calc(1 - var(--i) * .04));transform-origin:left center}
+.hl-of:first-child{animation:hl-in .55s cubic-bezier(.2,.8,.2,1)}
+@keyframes hl-in{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.hl-of img,.hl-av{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:#2a2a36}
+.hl-av{display:grid;place-items:center;font-weight:800}
+.hl-of div{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.hl-of b{font-size:.86rem}
+.hl-of span{font-size:.72rem;color:#B5B4C2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hl-of i{margin-left:auto;font-style:normal;font-size:.74rem;font-weight:700;color:#FFD27A;white-space:nowrap}
+@media (max-width:860px){.hl{min-height:300px;padding:8px 16px 28px}.hl-card{width:180px;margin-left:120px}.hl-feed{left:16px;width:240px;bottom:40px}}
+@media (prefers-reduced-motion:reduce){.hl-of,.hl-count.on,.hl-card{animation:none;transition:none}}
+@media (max-width:600px){.hl{display:none}}
+/* hero live, layout pass: card left, offers beside it, nothing covers the card text */
+.hl{padding:20px 32px 20px 0;min-height:0}
+.hl-in{position:relative;width:470px;max-width:100%;height:300px}
+.hl-card{position:absolute;left:0;top:0;width:220px;height:300px;aspect-ratio:auto;margin:0;transform:rotate(-2deg)}
+.hl-feed{left:190px;right:0;top:50%;bottom:auto;width:auto;transform:translateY(-50%);gap:8px}
+.hl-of{padding:8px 12px 8px 8px}
+.hl-of img,.hl-av{width:34px;height:34px}
+@media (max-width:1100px){.hl-in{width:400px}.hl-card{width:190px;height:260px}.hl-in{height:260px}.hl-feed{left:160px}.hl-bot b{font-size:3rem}}
+@media (max-width:860px){.hl{padding:4px 20px 24px;justify-content:flex-start}.hl-in{margin:0 auto}}

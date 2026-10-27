@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
 import * as q from "@/server/queries";
 import { access } from "@/server/onboarding";
-import { Av, Cover, I, RequestCard, Stars, leftLabel } from "@/components/ui";
+import { Av, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
+import HeroLive from "@/components/hero-live";
 import Ask from "@/components/ask";
 import { parseAsk as parseAskHref } from "@/components/ask-parse";
 import { PromiseIcon } from "@/components/promise-icons";
@@ -49,6 +50,20 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
   items.forEach((r) => shown.add(r.id));
   const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
   const [feat, ...rest] = items;
+  // Hero: the open request with the most offers from creators with an open profile. Offer only
+  // creators stay hidden, because they only show to the buyer they made an offer to.
+  const cands = await Promise.all(fan.map(async (r) => ({ r, o: (await q.offersFor(r.id)).filter((x) => x.p.visibility === "public") })));
+  for (const c of cands) { const d3 = c.o.filter((x) => x.u.avatar?.kind === "3d"); if (d3.length >= 2) c.o = d3; }
+  const best = cands.sort((a, b) => b.o.length - a.o.length)[0];
+  const hero = best ? {
+    req: { id: best.r.id, title: best.r.title, cover: best.r.cover, amount: best.r.amount, unit: best.r.category === "photos" ? "photos" : best.r.category === "worn" ? "item" : "min", earn: euros(Math.round(best.r.dealCents * CREATOR_SHARE)), ages: `${best.r.ageMin} to ${best.r.ageMax}`, left: leftLabel(best.r.closesAt) },
+    offers: best.o.slice(0, 5).map(({ o, u: c }) => ({
+      handle: c.handle,
+      look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? svgSrc(c.avatar.svg) : null,
+      rating: c.ratingCount ? (c.ratingSum / c.ratingCount).toFixed(1) : null,
+      note: `made an offer · ${o.showsFace ? "face shown" : "no face"}`,
+    })),
+  } : null;
   const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
   const tabs: [string | undefined, string][] = [[undefined, "Everything"], ["video", "Video"], ["photos", "Photos"], ["voice", "Voice"], ["custom", "Custom"]];
 
@@ -65,10 +80,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{e}</Link>)}</div>
         <div className="h-live"><span className="livedot" />{pulse.open} requests open now · {euros(pulse.paidCents)} paid to creators this week</div>
       </div>
-      <div className="h-fan" aria-hidden="true">{fan.map((r, i) => (
-        <Link key={r.id} href={`/requests/${r.id}`} className={`h-fc f${i}`} tabIndex={-1}><div className="media"><Cover cover={r.cover} frost /></div>
-          <div className="h-fc-in"><span className="h-chip">{r.ageMin} to {r.ageMax} · {leftLabel(r.closesAt).replace(" days left", "d").replace("h left", "h").replace("m left", "m")}</span><b className="num">{r.amount}<small>{r.category === "photos" ? "photos" : "min"}</small></b>
-            <div className="h-fc-b"><span>{r.title}</span><em className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</em></div></div></Link>))}</div>
+      {hero ? <HeroLive req={hero.req} offers={hero.offers} /> : null}
     </section>
 
     {openMine || live ? (
