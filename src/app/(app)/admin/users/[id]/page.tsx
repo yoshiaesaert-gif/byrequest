@@ -4,7 +4,7 @@ import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
-import { BlockAccount } from "../../parts";
+import { BlockAccount, SupportOrgForm } from "../../parts";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +46,9 @@ export default async function Account({ params }: { params: Promise<{ id: string
           <Link href={`/admin/creators/${u.id}`} className="btn btn-secondary btn-sm">Open creator file</Link></> : null}
         <h2 className="bo-sh">Account</h2>
         {role === "admin" ? <BlockAccount id={u.id} blocked={!!u.bannedAt} /> : <p className="t-sm muted">Blocking an account needs an admin.</p>}
+        <h2 className="bo-sh">Support organisation</h2>
+        <p className="t-sm muted" style={{ marginBottom: 8 }}>For recognised centres, sex worker organisations and trusted flaggers. Their reports get priority and they can contact creators. Check who they are first.</p>
+        {role === "admin" ? <SupportOrgForm id={u.id} org={u.supportOrg} /> : <p className="t-sm">{u.supportOrg ?? "Not a support organisation"}</p>}
         <h2 className="bo-sh">History <Link href={`/admin/audit?q=${encodeURIComponent(u.handle)}`}>In the log</Link></h2>
         <div className="bo-list">{x.history.map((r) => (
           <div key={r.id} className="bo-ev"><span><b>{r.action}</b><small>{r.by}</small></span><time>{when(r.at)}</time></div>))}

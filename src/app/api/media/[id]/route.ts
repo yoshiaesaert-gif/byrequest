@@ -1,3 +1,5 @@
+import { BUYER_AGE_CHECK } from "@/config/compliance";
+import { isAgeVerified } from "@/server/onboarding";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
@@ -17,6 +19,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/media/[id]">) {
   if (!u) return new Response("Unauthorized", { status: 401 });
   const v = await db.query.vaultItems.findFirst({ where: eq(schema.vaultItems.id, id) });
   if (!v || v.buyerId !== u.id) return new Response("Not found", { status: 404 });
+  if (BUYER_AGE_CHECK && !(await isAgeVerified(u.id))) return new Response("Confirm your age first", { status: 403 });
   if (v.availableUntil && v.availableUntil < new Date()) return new Response("Access ended", { status: 410 });
   const m = await db.query.media.findFirst({ where: eq(schema.media.id, v.mediaId) });
   if (!m) return new Response("Not found", { status: 404 });

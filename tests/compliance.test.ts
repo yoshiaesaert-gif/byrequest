@@ -16,11 +16,12 @@ const S = schema;
 let n = 0;
 const uid = () => `t${Date.now().toString(36)}${n++}`;
 
-async function user(creator = false) {
+async function user(creator = false, ageVerified = true) {
   const h = uid();
-  const [u] = await db.insert(S.users).values({ email: `${h}@test.local`, handle: h, birthYear: 1995, isCreator: creator }).returning();
+  const [u] = await db.insert(S.users).values({ email: `${h}@test.local`, handle: h, birthYear: 1995, isCreator: creator, ageVerifiedAt: ageVerified ? new Date() : null }).returning();
   return u;
 }
+const WAIVE = { withdrawalWaiver: true };
 
 /* Simulates the provider: a signed raw body, verified by the adapter exactly like the webhook route does. */
 function identityWebhook(ref: string, body: Record<string, unknown>, eventId = "evt_" + randomUUID(), at = new Date()) {
@@ -148,7 +149,7 @@ describe("5. missing participant verification blocks availability", () => {
     const b = await user();
     const r = await openRequest(b.id, "photos", 2);
     const o = await deals.makeOffer(c.id, { requestId: r.id, showsFace: false, vault: "7d", etaHours: 24, note: "" });
-    const d = await deals.acceptOffer(b.id, o.id);
+    const d = await deals.acceptOffer(b.id, o.id, WAIVE);
     const { participant } = await P.addParticipant(c.id, "Partner");
     const res = await deals.deliver(c.id, d.id, [await jpeg(), await jpeg()], { onlyCreator: false, participantIds: [participant.id] });
     expect(res.ok).toBe(true);
@@ -175,7 +176,7 @@ describe("5. missing participant verification blocks availability", () => {
     const b = await user();
     const r = await openRequest(b.id, "photos", 1);
     const o = await deals.makeOffer(c.id, { requestId: r.id, showsFace: false, vault: "7d", etaHours: 24, note: "" });
-    const d = await deals.acceptOffer(b.id, o.id);
+    const d = await deals.acceptOffer(b.id, o.id, WAIVE);
     await deals.deliver(c.id, d.id, [await jpeg()], { onlyCreator: true, participantIds: [] });
     expect(await db.select().from(S.vaultItems).where(eq(S.vaultItems.dealId, d.id))).toHaveLength(0);
   });
@@ -188,7 +189,7 @@ describe("6. provider restrictions block the matching financial capabilities", (
     const b = await user();
     const r = await openRequest(b.id, "photos", 1);
     const o = await deals.makeOffer(c.id, { requestId: r.id, showsFace: false, vault: "7d", etaHours: 24, note: "" });
-    const d = await deals.acceptOffer(b.id, o.id);
+    const d = await deals.acceptOffer(b.id, o.id, WAIVE);
     await deals.deliver(c.id, d.id, [await jpeg()], { onlyCreator: true, participantIds: [] });
     const dl = (await db.query.deliveries.findFirst({ where: eq(S.deliveries.dealId, d.id) }))!;
     await deals.reviewDelivery(dl.id, "approved", "staff:test");
@@ -232,5 +233,74 @@ describe("7. agreement acceptance is traceable to the exact version", () => {
       await db.update(S.documents).set({ current: false }).where(eq(S.documents.id, v2.id));
       await db.update(S.documents).set({ current: true }).where(eq(S.documents.id, doc.id));
     }
+  });
+});
+
+describe("buyer age check and withdrawal waiver", () => {
+  it("a buyer without a confirmed age cannot pay, and a confirmed minor is closed", async () => {
+    const b = await user(false, false);
+    expect(await ob.isAgeVerified(b.id)).toBe(false);
+    await ob.startBuyerAge(b.id, "http://x");
+    const chk = await db.query.identityChecks.findFirst({ where: and(eq(S.identityChecks.userId, b.id), eq(S.identityChecks.purpose, "buyer_age")) });
+    expect(await identityWebhook(chk!.externalRef, { ...adult, over18: false, person: { dateOfBirth: "2011-01-01" } })).toBe("applied");
+    const after = await db.query.users.findFirst({ where: eq(S.users.id, b.id) });
+    expect(after!.bannedAt).not.toBeNull();
+    expect(after!.ageVerifiedAt).toBeNull();
+    // Data minimisation: an age check stores no confidential identity.
+    expect(await db.query.confidentialIdentity.findFirst({ where: eq(S.confidentialIdentity.userId, b.id) })).toBeUndefined();
+  });
+  it("an adult result unlocks paying", async () => {
+    const b = await user(false, false);
+    await ob.startBuyerAge(b.id, "http://x");
+    const chk = await db.query.identityChecks.findFirst({ where: and(eq(S.identityChecks.userId, b.id), eq(S.identityChecks.purpose, "buyer_age")) });
+    await identityWebhook(chk!.externalRef, adult);
+    expect(await ob.isAgeVerified(b.id)).toBe(true);
+  });
+});
+
+describe("reports, statements of reasons, re-upload block, deletion, DAC7", () => {
+  it("files reports anonymously and puts exploitation and minors first", async () => {
+    const R = await import("@/server/reports");
+    await R.fileReport({ kind: "off_platform", details: "Asked me to pay by bank transfer" }, null);
+    const urgent = await R.fileReport({ kind: "trafficking", details: "Someone else seems to answer for her", contact: "me@example.org" }, null);
+    const open = await R.openReports();
+    expect(open[0].r.id).toBe(urgent);
+    expect(open[0].r.contactSealed).not.toContain("example.org");   // stored sealed
+    await expect(R.fileReport({ kind: "nope", details: "something long enough" }, null)).rejects.toThrow(RuleError);
+  });
+  it("every restriction comes with a statement of reasons in the inbox", async () => {
+    const A = await import("@/server/admin");
+    const staff = await user(); const c = await user(true); await ob.ensure(c.id);
+    await A.setRestriction(staff.id, c.id, "restricted", "Repeated deliveries that did not match the offer");
+    const d = await db.query.decisions.findFirst({ where: eq(S.decisions.userId, c.id) });
+    expect(d?.action).toBe("creator_restricted");
+    expect(d?.facts).toContain("did not match");
+    const n = await db.query.notifications.findFirst({ where: eq(S.notifications.userId, c.id) });
+    expect(n?.href).toBe(`/decisions/${d!.id}`);
+  });
+  it("a removed image cannot be uploaded again, even recompressed", async () => {
+    const M = await import("@/server/media");
+    const png = await sharp({ create: { width: 64, height: 64, channels: 3, background: { r: 200, g: 40, b: 90 } } }).composite([{ input: Buffer.from('<svg width="64" height="64"><rect x="0" y="0" width="32" height="64" fill="#123"/></svg>') }]).png().toBuffer();
+    const stored = await M.ingest(new File([new Uint8Array(png)], "a.png", { type: "image/png" }));
+    await M.blockFile(stored.key, stored.mime, "test");
+    const again = await sharp(png).jpeg({ quality: 60 }).toBuffer();
+    await expect(M.ingest(new File([new Uint8Array(again)], "b.jpg", { type: "image/jpeg" }))).rejects.toThrow(/cannot be uploaded again/);
+  });
+  it("payouts wait for DAC7 tax details", async () => {
+    const c = await user(true); await ob.ensure(c.id);
+    const a = await ob.access(c.id);
+    expect(a.missing.some((m) => m.includes("DAC7"))).toBe(true);
+    expect(a.caps.receivePayouts).toBe(false);
+    await ob.saveTaxDetails(c.id, "individual", "BE", { legalName: "Robin Example", address: "Street 1, 1000 Brussels", tin: "96030412345", tinCountry: "BE", dateOfBirth: "1996-03-04" });
+    expect((await ob.access(c.id)).missing.some((m) => m.includes("DAC7"))).toBe(false);
+  });
+  it("deleting an account erases the profile but keeps the bookkeeping", async () => {
+    const P = await import("@/server/privacy");
+    const b = await user();
+    await P.deleteAccount(b.id);
+    const after = await db.query.users.findFirst({ where: eq(S.users.id, b.id) });
+    expect(after!.handle.startsWith("deleted_")).toBe(true);
+    expect(after!.email).not.toContain("@test.local");
+    expect(after!.deletedAt).not.toBeNull();
   });
 });

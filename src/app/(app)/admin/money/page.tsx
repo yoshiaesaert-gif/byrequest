@@ -4,8 +4,8 @@ import { euros } from "@/domain/rules";
 import { when } from "@/components/ui";
 import { PROVIDERS } from "@/config/compliance";
 
-const ENTRY: Record<string, string> = { buyer_charge: "Charged to buyers", escrow_hold: "Held by the partner", creator_payout: "Paid to creators", payout_on_hold: "Payouts on hold", platform_revenue: "Platform revenue", buyer_refund: "Refunded to buyers" };
-const ORDER = ["buyer_charge", "escrow_hold", "creator_payout", "payout_on_hold", "platform_revenue", "buyer_refund"];
+const ENTRY: Record<string, string> = { buyer_charge: "Charged to buyers", escrow_hold: "Held by the partner", creator_payout: "Paid to creators", payout_on_hold: "Payouts on hold", platform_revenue: "Platform revenue", buyer_refund: "Refunded to buyers", vat_payable: "VAT due (deemed supplier)" };
+const ORDER = ["buyer_charge", "escrow_hold", "creator_payout", "payout_on_hold", "platform_revenue", "vat_payable", "buyer_refund"];
 const STATUS = ["held", "reviewing", "delivered", "disputed", "released", "refunded"];
 
 export default async function Money() {
@@ -28,6 +28,10 @@ export default async function Money() {
       <div className="bo-table"><table><thead><tr><th>When</th><th>Entry</th><th>Deal</th><th>Account</th><th className="r">Amount</th></tr></thead>
         <tbody>{m.rows.map(({ l, handle, title }) => <tr key={l.id}><td className="t-sm">{when(l.createdAt)}</td><td>{ENTRY[l.entry] ?? l.entry}</td><td className="t-sm">{title ?? "–"}</td><td>{handle && l.userId ? <Link href={`/admin/users/${l.userId}`}>{handle}</Link> : "–"}</td><td className="r num">{euros(l.cents)}</td></tr>)}</tbody></table>
         {!m.rows.length ? <p className="muted t-sm bo-empty">No entries yet.</p> : null}</div></section>
+
+    <section><h2 className="bo-sh">Tax reporting</h2>
+      <p className="t-sm muted" style={{ marginBottom: 10 }}>DAC7: once a year, by 31 January, report seller details, consideration and fees per quarter to the FOD Financiën (MyMinfin) or the Belastingdienst. VAT is due on what buyers pay, as ByRequest is treated as the supplier for VAT; confirm the OSS filing with the accountant. Downloads are admin only and logged.</p>
+      <div className="optrow">{[new Date().getFullYear() - 1, new Date().getFullYear()].map((y) => <a key={y} href={`/api/admin/dac7?year=${y}`} className="btn btn-secondary btn-sm">DAC7 working file {y}</a>)}</div></section>
 
     <p className="t-sm muted" style={{ marginTop: 20 }}>Payment partner{pay.length > 1 ? "s" : ""}: {pay.map((p) => `${p.label} (${p.status})`).join(", ") || "none configured"}.</p>
   </div>);

@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { BUYER_AGE_CHECK } from "@/config/compliance";
+import { isAgeVerified } from "@/server/onboarding";
 import Link from "next/link";
 import { requireUser } from "@/server/auth";
 import { vault } from "@/server/queries";
@@ -5,6 +8,7 @@ import { Empty, I } from "@/components/ui";
 
 export default async function Vault({ searchParams }: { searchParams: Promise<{ f?: string }> }) {
   const u = await requireUser();
+  if (BUYER_AGE_CHECK && !(await isAgeVerified(u.id))) redirect(`/verify-age?next=${encodeURIComponent("/vault")}`);
   const f = (await searchParams).f ?? "All";
   const rows = await vault(u.id);
   const match = { All: null, Videos: "video/", Photos: "image/", Audio: "audio/" }[f as "All"] ?? null;

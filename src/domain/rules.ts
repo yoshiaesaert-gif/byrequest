@@ -16,6 +16,16 @@ export function split(dealCents: number) {
   return { dealCents, feeCents, buyerPays: dealCents + feeCents, creatorCents, platformCents: dealCents + feeCents - creatorCents };
 }
 
+/* What the buyer pays, VAT included. ByRequest is treated as the supplier of the whole service for
+   VAT (art. 9a Implementing Regulation 282/2011, CJEU C-695/20 Fenix), so VAT is due on the deal value
+   plus the fee, at the rate of the buyer's country. The creator share is not reduced by it. */
+export function quote(dealCents: number, vatRateBp: number) {
+  if (!Number.isInteger(vatRateBp) || vatRateBp < 0 || vatRateBp > 3000) throw new Error("VAT rate must be in basis points");
+  const m = split(dealCents);
+  const vatCents = Math.round((m.dealCents + m.feeCents) * vatRateBp / 10000);
+  return { ...m, vatRate: vatRateBp, vatCents, total: m.buyerPays + vatCents };
+}
+
 export const VAULT_ORDER: VaultPeriod[] = ["7d", "30d", "1y", "forever"];
 export const VAULT_LABEL: Record<VaultPeriod, string> = { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" };
 export function vaultAtLeast(offer: VaultPeriod, min: VaultPeriod) {
@@ -44,7 +54,7 @@ export type DealEvent =
 export type DealState = { status: DealStatus; dueAt: Date; deliveredAt?: Date | null; objectUntil?: Date | null };
 export type Effect =
   | { kind: "pay_creator" } | { kind: "refund_buyer" }
-  | { kind: "ban_creator"; reason: string } | { kind: "ban_buyer"; reason: string };
+  | { kind: "flag_creator"; reason: string } | { kind: "flag_buyer"; reason: string };   // a person reviews the account, nothing is blocked automatically
 
 export class RuleError extends Error {}
 
@@ -79,8 +89,8 @@ export function transition(s: DealState, e: DealEvent): { state: DealState; effe
     case "resolve":
       if (s.status !== "disputed") bad("There is no open dispute.");
       return e.outcome === "upheld"
-        ? { state: { ...s, status: "refunded" }, effects: [{ kind: "refund_buyer" }, { kind: "ban_creator", reason: "Delivery did not match the agreed terms." }] }
-        : { state: { ...s, status: "released" }, effects: [{ kind: "pay_creator" }, { kind: "ban_buyer", reason: "Objection found unfounded." }] };
+        ? { state: { ...s, status: "refunded" }, effects: [{ kind: "refund_buyer" }, { kind: "flag_creator", reason: "Delivery did not match the agreed terms." }] }
+        : { state: { ...s, status: "released" }, effects: [{ kind: "pay_creator" }, { kind: "flag_buyer", reason: "Objection found unfounded." }] };
   }
 }
 

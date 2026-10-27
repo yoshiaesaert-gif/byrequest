@@ -1,4 +1,5 @@
 import "server-only";
+import { issueDecision } from "./decisions";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
 import type { DocKind } from "@/db/compliance";
@@ -55,7 +56,11 @@ export async function access(userId: string) {
     restriction: u.bannedAt ? "suspended" : o.restriction,
   };
   const caps = p ? { status: p.status, canReceivePayouts: p.canReceivePayouts, canProcessSales: p.canProcessSales } : null;
-  return { areas, status: creatorStatus(areas), caps: capabilities(areas, caps), missing: missing(areas, caps), payout: p, onboarding: o };
+  const c = capabilities(areas, caps), m = missing(areas, caps);
+  // DAC7: a platform must collect a seller's tax details. Without them we hold payouts, nothing else.
+  const tax = await db.query.taxProfiles.findFirst({ where: eq(schema.taxProfiles.userId, userId), columns: { userId: true } });
+  if (!tax) { c.receivePayouts = false; m.push("Tax details for the yearly platform report (DAC7) not given yet"); }
+  return { areas, status: creatorStatus(areas), caps: c, missing: m, payout: p, onboarding: o, taxDone: !!tax };
 }
 
 export async function requireCap(userId: string, cap: "offer" | "upload" | "receivePayouts") {
@@ -98,6 +103,26 @@ export async function startIdentity(userId: string, returnUrl: string) {
   return s.redirectUrl;
 }
 
+/* ---------- buyer age check ----------
+   Buyers confirm once, through the identity provider, that they are 18 or older. ByRequest keeps
+   only the outcome and the date: no name, no document data, no date of birth. */
+export async function isAgeVerified(userId: string) {
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { ageVerifiedAt: true } });
+  if (u?.ageVerifiedAt) return true;
+  const o = await db.query.onboarding.findFirst({ where: eq(onboarding.userId, userId), columns: { identity: true } });
+  return o?.identity === "approved";   // a verified creator has already shown ID and age
+}
+
+export async function startBuyerAge(userId: string, returnUrl: string) {
+  const ad = identityAdapter();
+  if (!ad) throw new RuleError("Age verification is not available yet in this environment.");
+  if (await isAgeVerified(userId)) throw new RuleError("Your age is already confirmed.");
+  const s = await ad.start({ subject: userId, returnUrl });
+  await db.insert(identityChecks).values({ userId, purpose: "buyer_age", provider: ad.id, env: PROVIDER_ENV, externalRef: s.externalRef, status: "pending" });
+  await log(db, `user:${userId}`, "age_check.started", userId, { provider: ad.id, env: PROVIDER_ENV });
+  return s.redirectUrl;
+}
+
 /* Webhook handler. Signature is verified by the adapter before this runs. Duplicates are ignored by
    the unique event key; delayed events older than the last applied one are recorded as stale. */
 export async function applyIdentityEvent(provider: string, e: IdentityEvent) {
@@ -116,6 +141,17 @@ export async function applyIdentityEvent(provider: string, e: IdentityEvent) {
       return "applied" as const;
     }
     const userId = chk.userId!;
+    if (chk.purpose === "buyer_age") {
+      // Data minimisation: keep the outcome only. A confirmed minor is closed at once.
+      if (out.status === "approved" && e.over18 === true) await tx.update(users).set({ ageVerifiedAt: new Date() }).where(eq(users.id, userId));
+      if (out.suspend) {
+        await tx.update(users).set({ bannedAt: new Date(), banReason: "Age requirement not met" }).where(eq(users.id, userId));
+        await tx.delete(sessions).where(eq(sessions.userId, userId));
+        await issueDecision(tx, { userId, action: "age_closed", ground: "terms", facts: "The verification partner reported that you are under 18. ByRequest is for adults only.", scope: "Whole account.", automated: true, decidedBy: `provider:${provider}` });
+      }
+      await log(tx, `provider:${provider}`, "age_check.result", userId, { status: out.status, over18: e.over18 ?? null, env: chk.env, closed: out.suspend });
+      return "applied" as const;
+    }
     await tx.update(onboarding).set({ identity: out.status, updatedAt: new Date() }).where(eq(onboarding.userId, userId));
     if (out.status === "approved" && e.person) {
       const retain = new Date(); retain.setFullYear(retain.getFullYear() + RETENTION.confidentialIdentityYears);
@@ -186,4 +222,17 @@ export async function acceptAgreement(userId: string, documentId: string, sha256
     await tx.update(onboarding).set({ agreement: "approved", lastStep: "done", updatedAt: new Date() }).where(eq(onboarding.userId, userId));
     await log(tx, `user:${userId}`, "consent.creator_agreement", userId, { version: d.version, sha256: d.sha256 });
   });
+}
+
+/* ---------- DAC7 seller details ----------
+   Sealed at rest; read only by the yearly report. Required before payouts, not before selling. */
+export type TaxDetails = { legalName: string; address: string; tin: string; tinCountry: string; dateOfBirth?: string; businessNumber?: string; vatNumber?: string };
+export async function saveTaxDetails(userId: string, entity: "individual" | "business", country: string, d: TaxDetails) {
+  if (d.legalName.trim().length < 3 || d.address.trim().length < 8) throw new RuleError("Fill in your legal name and full address.");
+  if (d.tin.trim().length < 5) throw new RuleError("Fill in your tax identification number, for example your national number in Belgium or BSN in the Netherlands.");
+  if (entity === "individual" && !/^\d{4}-\d{2}-\d{2}$/.test(d.dateOfBirth ?? "")) throw new RuleError("Fill in your date of birth.");
+  if (entity === "business" && !(d.businessNumber ?? "").trim()) throw new RuleError("Fill in your company registration number.");
+  const sealed = seal({ ...d, legalName: d.legalName.trim(), address: d.address.trim(), tin: d.tin.trim() });
+  await db.insert(schema.taxProfiles).values({ userId, entity, country, sealed }).onConflictDoUpdate({ target: schema.taxProfiles.userId, set: { entity, country, sealed, updatedAt: new Date() } });
+  await log(db, `user:${userId}`, "tax.details_saved", userId, { entity, country });
 }

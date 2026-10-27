@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { BUYER_AGE_CHECK } from "@/config/compliance";
+import { isAgeVerified } from "@/server/onboarding";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
@@ -8,6 +11,7 @@ import Viewer from "./viewer";
 export default async function View({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const u = await requireUser();
+  if (BUYER_AGE_CHECK && !(await isAgeVerified(u.id))) redirect(`/verify-age?next=${encodeURIComponent("/vault")}`);
   const v = await db.query.vaultItems.findFirst({ where: eq(schema.vaultItems.id, id) });
   if (!v || v.buyerId !== u.id) notFound();
   const siblings = await db.select({ id: schema.vaultItems.id, mime: schema.media.mime }).from(schema.vaultItems).innerJoin(schema.media, eq(schema.media.id, schema.vaultItems.mediaId))

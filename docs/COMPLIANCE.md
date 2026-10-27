@@ -109,7 +109,37 @@ Staff can request more information, set or lift restrictions (an age based suspe
 6. Provider restrictions block payouts or sales, and hold payouts.
 7. Agreement acceptance is traceable to the exact version and text hash, and a new version needs new acceptance.
 
-## 11. Open decisions (not to be assumed)
+## 11. Legal safeguards built in (Belgium and the Netherlands)
+
+| Topic | What the code does | Where |
+|---|---|---|
+| Minors (DSA art. 28, Commission guidelines of 14 July 2025) | Buyers confirm their age once with the identity provider before paying or opening the vault; a typed birth year is not enough. Only the outcome is kept. A confirmed minor is closed with a statement of reasons. | `server/onboarding.ts` startBuyerAge, isAgeVerified; gates in `server/deals.ts`, vault pages, `api/media` |
+| Belgian advertising ban with platform exemption (Criminal Code art. 433quater/2, royal decree of 18 May 2024) | Report form for exploitation and trafficking reachable from every profile, request, chat and the footer, without an account. Urgent kinds first; a logged "passed to police" outcome. Recognised support organisations get a marked account that can contact creators. | `server/reports.ts`, `app/report`, back office Review queue, account page |
+| Meetings and payments off platform | Forbidden in the terms and creator agreement; a warning on the sender's device before encryption; report link in every chat. | `deals/[id]/room.tsx` |
+| Right of withdrawal (consumer law for digital content) | Accepting needs a separate checkbox: start now and lose the 14 day withdrawal right once delivered. Stored with the deal and in the audit log with the exact text. | `WAIVER_TEXT`, `acceptOffer` |
+| Fair terms | A lost dispute flags an account for review; nothing is closed automatically. | `domain/rules.ts` flag effects |
+| VAT (art. 9a Implementing Regulation 282/2011, CJEU C-695/20 Fenix) | ByRequest is treated as the supplier: VAT on deal value plus fee at the buyer's country rate, shown in the price, booked as `vat_payable`, refunded in full. | `quote()`, `VAT_RATES` |
+| DAC7 | Creators give tax details (sealed) before payouts. Yearly admin export per seller with consideration and fees per quarter. | `/tax`, `api/admin/dac7` |
+| DSA notices, reasons and appeals (art. 16, 17, 20, 22) | Notice form; a statement of reasons for every restriction, block, content rejection and age closure; appeal in the app and from a closed account after the email code; trusted flaggers first. | `server/decisions.ts`, `/decisions/[id]`, sign in |
+| DSA point of contact and transparency (art. 11, 12, 15) | Contact page; yearly figures in the back office audit log. | `/legal/contact`, `transparency()` |
+| GDPR art. 9 | Explicit consent at sign up, asked once from existing accounts. | sign up, `ConsentGate` |
+| GDPR rights and storage limitation | Download your data, delete your account (bookkeeping kept), scheduled purge of old chats, notifications, report contacts and login codes. | `server/privacy.ts`, cron |
+| Non consensual intimate images | Removed files are fingerprinted (exact and perceptual hash) and cannot be uploaded again. StopNCII is pointed to from the report form. | `server/media.ts` blockFile |
+| Worn items | Category off: shipping exposes addresses. | `ENABLED_CATEGORIES` |
+
+## 12. Open decisions (not to be assumed)
+
+| # | Decision | Owner |
+|---|---|---|
+| 14 | Whether ByRequest falls under the Belgian advertising rules for sexual services at all, and which further measures the royal decree requires | Belgian counsel |
+| 15 | Deemed supplier VAT treatment, OSS registration, rates and invoicing | Accountant |
+| 16 | DAC7 registration and filing format in Belgium and the Netherlands | Accountant |
+| 17 | DPIA sign off, data protection officer, processor agreements with every provider | Privacy counsel |
+| 18 | Which age assurance method the regulators and payment partner accept for buyers | Payment partner, counsel |
+| 19 | Whether municipal sex work rules in the Netherlands touch the platform | Dutch counsel |
+| 20 | Marketing rules: no targeting of students or anyone who may be under 18 | Founders, counsel |
+
+### Earlier open decisions
 
 | # | Decision | Owner |
 |---|---|---|

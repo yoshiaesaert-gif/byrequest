@@ -67,6 +67,24 @@ export const RETENTION = {
   consentEvidenceYears: 10,     // TO CONFIRM: evidence of agreement acceptance
   participantRecordsYears: 10,  // TO CONFIRM: may follow content availability plus statutory period
   removalRequestYears: 3,       // TO CONFIRM
+  chatMonthsAfterDeal: 12,      // TO CONFIRM: encrypted chats, counted from the end of the deal
+  notificationMonths: 12,
+  reportContactMonths: 12,      // contact details of a closed report
 };
 
 export const STEP_UP_MINUTES = 10;
+
+/* VAT on what the buyer pays, by the buyer's country, in basis points. Standard rates for
+   electronically supplied services. OPEN DECISION: confirm the deemed supplier treatment, OSS
+   registration and these rates with the accountant before going live. */
+export const VAT_RATES: Record<string, number> = { BE: 2100, NL: 2100, LU: 1700, DE: 1900, FR: 2000, ES: 2100, IT: 2200, IE: 2300 };
+export const vatRate = (country: string) => VAT_RATES[country] ?? 2100;
+export const BUYER_COUNTRIES = [["BE", "Belgium"], ["NL", "Netherlands"], ["LU", "Luxembourg"], ["DE", "Germany"], ["FR", "France"]] as const;
+
+/* Categories open at launch. Worn items are physical goods: shipping exposes home addresses, which
+   breaks the anonymity ByRequest promises, and adds hygiene and shipping rules. Off until solved. */
+export const ENABLED_CATEGORIES = ["video", "photos", "voice", "custom"] as const;
+
+/* Buyers verify their age once with the identity provider before they pay or open the vault.
+   A typed birth year is not enough for adult content (Commission guidelines on DSA art. 28). */
+export const BUYER_AGE_CHECK = process.env.BRQ_BUYER_AGE_CHECK !== "off";

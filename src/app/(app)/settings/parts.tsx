@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { setPref, becomeCreator, saveProfile, setMarketing } from "../actions";
+import { setPref, becomeCreator, saveProfile, setMarketing, deleteMyAccount } from "../actions";
 import { toast } from "@/components/chrome";
 
 export function Toggle({ k, on, b, s }: { k: "frost" | "discreetPush" | "neutralTab"; on: boolean; b: string; s: string }) {
@@ -44,4 +44,13 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
     <p className="t-xs muted">Shown with your username only. Your age comes from your verified date of birth. Never add your real name, address, socials or anything that identifies you.</p>
     <div className="optrow"><button className="btn btn-primary" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button><Link className="btn btn-secondary" href={`/c/${handle}`}>Preview</Link></div>
   </form>);
+}
+
+export function DeleteAccount() {
+  const [ask, setAsk] = useState(false); const [typed, setTyped] = useState(""); const [pending, start] = useTransition();
+  if (!ask) return <div className="setrow"><div><b>Delete your account</b><span className="s">Your profile, requests, vault and messages go. Payment and tax records stay as the law requires</span></div><button className="btn btn-secondary btn-sm" onClick={() => setAsk(true)}>Delete</button></div>;
+  return <div className="setrow" style={{ flexDirection: "column", alignItems: "stretch", gap: 10 }}>
+    <b>Type DELETE to confirm. This cannot be undone.</b>
+    <input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Type DELETE" />
+    <div className="optrow"><button className="btn btn-primary btn-sm" disabled={pending || typed !== "DELETE"} onClick={() => start(async () => { const r = await deleteMyAccount(); if (r && !r.ok) toast(r.error, "err"); })}>Delete for good</button><button className="btn btn-secondary btn-sm" onClick={() => setAsk(false)}>Cancel</button></div></div>;
 }

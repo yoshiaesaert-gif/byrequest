@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { split, transition, checkDelivery, vaultAtLeast, RuleError, addHours, type DealState } from "./rules";
+import { split, quote, transition, checkDelivery, vaultAtLeast, RuleError, addHours, type DealState } from "./rules";
 
 const t0 = new Date("2026-11-01T12:00:00Z");
 const held: DealState = { status: "held", dueAt: addHours(t0, 48) };
@@ -42,13 +42,13 @@ describe("escrow", () => {
     const d = transition(transition(transition(held, { type: "deliver", at: t0 }).state, { type: "review_passed", at: t0 }).state, { type: "object", at: addHours(t0, 2) }).state;
     const r = transition(d, { type: "resolve", outcome: "upheld", at: addHours(t0, 10) });
     expect(r.state.status).toBe("refunded");
-    expect(r.effects.map((e) => e.kind)).toEqual(["refund_buyer", "ban_creator"]);
+    expect(r.effects.map((e) => e.kind)).toEqual(["refund_buyer", "flag_creator"]);
   });
   it("rejected dispute pays the creator and bans the buyer", () => {
     const d = transition(transition(transition(held, { type: "deliver", at: t0 }).state, { type: "review_passed", at: t0 }).state, { type: "object", at: addHours(t0, 2) }).state;
     const r = transition(d, { type: "resolve", outcome: "rejected", at: addHours(t0, 10) });
     expect(r.state.status).toBe("released");
-    expect(r.effects.map((e) => e.kind)).toEqual(["pay_creator", "ban_buyer"]);
+    expect(r.effects.map((e) => e.kind)).toEqual(["pay_creator", "flag_buyer"]);
   });
   it("no delivery before the deadline refunds the buyer", () => {
     expect(() => transition(held, { type: "deadline_passed", at: addHours(t0, 47) })).toThrow();
@@ -82,5 +82,18 @@ describe("vault period", () => {
   it("compares periods", () => {
     expect(vaultAtLeast("1y", "30d")).toBe(true);
     expect(vaultAtLeast("7d", "30d")).toBe(false);
+  });
+});
+
+describe("quote", () => {
+  it("adds VAT on deal value plus fee and leaves the creator share alone", () => {
+    const q = quote(7500, 2100);
+    expect(q.vatCents).toBe(1733);
+    expect(q.total).toBe(8250 + 1733);
+    expect(q.creatorCents).toBe(6000);
+  });
+  it("rejects a rate that is not in basis points", () => {
+    expect(() => quote(7500, 21.5)).toThrow();
+    expect(() => quote(7500, 5000)).toThrow();
   });
 });

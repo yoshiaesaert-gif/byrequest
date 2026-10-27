@@ -28,7 +28,7 @@ export async function identityOutcome(ref: string, outcome: "adult" | "minor" | 
     person: outcome === "adult" || outcome === "minor" ? { legalName: legalName || "Alex Example", dateOfBirth: dob, country: "BE" } : undefined,
     reason: outcome === "declined" ? "Document could not be verified" : undefined,
   }, twice);
-  redirect(chk.participantId ? "/sandbox/done" : "/onboarding?step=identity");
+  redirect(chk.participantId ? "/sandbox/done" : chk.purpose === "buyer_age" ? "/verify-age?back=1" : "/onboarding?step=identity");
 }
 
 export async function payoutOutcome(ref: string, outcome: "approved" | "no_payouts" | "needs_tax" | "rejected", twice: boolean) {

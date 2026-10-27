@@ -26,7 +26,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   const accepted = (await searchParams).accepted;
   return (<div className="wrap">
     <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? "Deals" : "Offers"}</Link>
-    {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>Payment secured.</b><div className="t-sm">{euros(x.d.dealCents + x.d.feeCents)} is held by the payment partner until delivery. It shows as BRQ DIGITAL.</div></div></div> : null}
+    {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>Payment secured.</b><div className="t-sm">{euros(x.d.dealCents + x.d.feeCents + x.d.vatCents)} is held by the payment partner until delivery. It shows as BRQ DIGITAL.</div></div></div> : null}
     <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">Deal with {other.handle}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{x.r.title}</h1></div></div></div>
     <div className="two">
       <Room
@@ -50,7 +50,8 @@ export default async function DealPage({ params, searchParams }: { params: Promi
           {buyer ? (<>
             <div><dt>Offer</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
             <div><dt>Service fee</dt><dd className="num">{euros(x.d.feeCents)}</dd></div>
-            <div className="tot"><dt>Secured</dt><dd className="num">{euros(x.d.dealCents + x.d.feeCents)}</dd></div>
+            {x.d.vatCents ? <div><dt>VAT {x.d.vatRate / 100}%</dt><dd className="num">{euros(x.d.vatCents)}</dd></div> : null}
+            <div className="tot"><dt>Secured{x.d.vatCents ? ", VAT incl." : ""}</dt><dd className="num">{euros(x.d.dealCents + x.d.feeCents + x.d.vatCents)}</dd></div>
           </>) : (<>
             <div><dt>Deal value</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
             <div className="tot"><dt>You earn</dt><dd className="num">{euros(x.d.creatorCents)}</dd></div>

@@ -15,8 +15,8 @@ export default function Footer() {
         </div>
         {col("Explore", [["/for-you", "The board"], ["/post", "Post a request"], ["/vault", "Your vault"], ["/deals", "Deals"]])}
         {col("Create", [["/settings#creator", "Become a creator"], ["/studio", "Studio"], ["/legal/creator_agreement", "Creator agreement"], ["/onboarding", "Creator setup"]])}
-        {col("Trust", [["/legal/privacy", "Privacy statement"], ["/legal/terms", "Terms of use"], ["/removal", "Request removal"], ["/legal/participant_consent", "Consent to appear"]])}
-        {col("Help", [["/inbox", "Support inbox"], ["/settings", "Privacy settings"], ["mailto:support@byrequest.app", "support@byrequest.app"]])}
+        {col("Trust", [["/legal/privacy", "Privacy statement"], ["/legal/terms", "Terms of use"], ["/report", "Report a problem"], ["/removal", "Request removal"], ["/legal/participant_consent", "Consent to appear"]])}
+        {col("Help", [["/inbox", "Support inbox"], ["/settings", "Privacy settings"], ["/legal/contact", "Point of contact"], ["mailto:support@byrequest.app", "support@byrequest.app"]])}
       </div>
       <div className="ft-bottom">
         <span>© {year} ByRequest</span>

@@ -2,6 +2,7 @@ import "server-only";
 import { and, count, desc, eq, gte, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { log } from "./onboarding";
+import { issueDecision } from "./decisions";
 import { RuleError } from "@/domain/rules";
 
 /* Read models and staff actions for the back office. Money figures mirror what the payment
@@ -77,6 +78,7 @@ export async function setBan(staffId: string, userId: string, ban: boolean, reas
   await db.update(S.users).set({ bannedAt: ban ? new Date() : null, banReason: ban ? reason.slice(0, 300) : null }).where(eq(S.users.id, userId));
   if (ban) await db.delete(S.sessions).where(eq(S.sessions.userId, userId));
   await log(db, `staff:${staffId}`, ban ? "staff.account_blocked" : "staff.account_unblocked", userId, ban ? { reason: reason.slice(0, 300) } : {});
+  await issueDecision(db, { userId, action: ban ? "account_blocked" : "account_unblocked", ground: "terms", facts: ban ? reason : "After review the account was reopened.", scope: ban ? "Whole account. You cannot sign in, post requests, make offers or open your vault." : "Whole account.", decidedBy: "staff" });
 }
 
 /* ---------- money ---------- */
@@ -123,4 +125,15 @@ export async function auditRows(f: { q?: string; subject?: string; limit?: numbe
     const m = r.a.actor.match(/^(staff|user):([0-9a-f-]{36})$/);
     return { ...r.a, subject: r.handle, by: m ? `${m[1] === "staff" ? "staff " : ""}${names[m[2]] ?? "unknown"}` : r.a.actor };
   });
+}
+
+/* DSA transparency figures for a year: notices by kind and outcome, measures, appeals. */
+export async function transparency(year: number) {
+  const from = new Date(Date.UTC(year, 0, 1)), to = new Date(Date.UTC(year + 1, 0, 1));
+  const [rep, dec, app] = await Promise.all([
+    db.select({ kind: S.reports.kind, status: S.reports.status, n: count(), hours: sql<number>`coalesce(round(avg(extract(epoch from (${S.reports.handledAt} - ${S.reports.createdAt})) / 3600)), 0)::int` }).from(S.reports).where(and(gte(S.reports.createdAt, from), sql`${S.reports.createdAt} < ${to}`)).groupBy(S.reports.kind, S.reports.status),
+    db.select({ action: S.decisions.action, automated: S.decisions.automated, n: count() }).from(S.decisions).where(and(gte(S.decisions.createdAt, from), sql`${S.decisions.createdAt} < ${to}`)).groupBy(S.decisions.action, S.decisions.automated),
+    db.select({ status: S.appeals.status, n: count() }).from(S.appeals).where(and(gte(S.appeals.createdAt, from), sql`${S.appeals.createdAt} < ${to}`)).groupBy(S.appeals.status),
+  ]);
+  return { rep, dec, app };
 }

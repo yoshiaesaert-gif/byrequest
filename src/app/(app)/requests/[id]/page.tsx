@@ -50,6 +50,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
             <div><dt>Deliver within</dt><dd>{r.dueHours < 72 ? `${r.dueHours} hours` : `${Math.round(r.dueHours / 24)} days`}</dd></div>
             <div><dt>Vault at least</dt><dd>{VAULT_LABEL[r.minVault]}</dd></div>
           </dl>
+          <Link href={`/report?type=request&ref=${r.id}`} className="report-link"><I n="alert" c="sm" />Report this request</Link>
           <p className="rd-how">You make an offer and the buyer picks one creator. The payment is secured before you start, and {euros(m.creatorCents)} is released to you after review and the 24 hour window.</p>
         </div>
       </div>

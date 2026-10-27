@@ -30,6 +30,7 @@ export const identityChecks = pgTable("identity_checks", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),     // null for a participant without an account
   participantId: uuid("participant_id"),
+  purpose: text("purpose").$type<"creator" | "participant" | "buyer_age">().notNull().default("creator"),
   provider: text("provider").notNull(),
   env: providerEnv("env").notNull(),
   externalRef: text("external_ref").notNull(),
@@ -180,10 +181,63 @@ export const removalRequests = pgTable("removal_requests", {
 export const appeals = pgTable("appeals", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  area: text("area").$type<"identity" | "payout" | "restriction" | "content">().notNull(),
+  area: text("area").$type<"identity" | "payout" | "restriction" | "content" | "account">().notNull(),
+  decisionId: uuid("decision_id"),
   message: text("message").notNull(),
   status: text("status").$type<"open" | "answered">().notNull().default("open"),
   answer: text("answer"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+
+/* Reports of abuse: exploitation or trafficking, a minor, content shared without consent, meeting
+   in person, paying outside ByRequest. Anyone can report, with or without an account. Reports
+   from recognised organisations (trusted flaggers under the DSA) are handled first. */
+export const reports = pgTable("reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  kind: text("kind").$type<"trafficking" | "minor" | "non_consensual" | "meeting" | "off_platform" | "other">().notNull(),
+  targetType: text("target_type").$type<"profile" | "request" | "deal" | "content" | "url" | "none">().notNull().default("none"),
+  targetRef: text("target_ref").notNull().default(""),
+  details: text("details").notNull(),
+  contactSealed: text("contact_sealed"),
+  reporterId: uuid("reporter_id").references(() => users.id, { onDelete: "set null" }),
+  trustedFlagger: text("trusted_flagger"),
+  status: text("status").$type<"received" | "reviewing" | "actioned" | "passed_to_police" | "rejected">().notNull().default("received"),
+  priority: integer("priority").notNull().default(2),            // 0 is most urgent
+  note: text("note"),
+  handledBy: text("handled_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  handledAt: timestamp("handled_at", { withTimezone: true }),
+}, (t) => [index("reports_open").on(t.status, t.priority, t.createdAt)]);
+
+/* DSA art. 17: every restriction comes with a statement of reasons the person can read and appeal. */
+export const decisions = pgTable("decisions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),                     // account_blocked, creator_restricted, content_rejected, ...
+  ground: text("ground").$type<"illegal_content" | "terms">().notNull(),
+  facts: text("facts").notNull(),
+  scope: text("scope").notNull(),
+  automated: boolean("automated").notNull().default(false),
+  decidedBy: text("decided_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("decisions_user").on(t.userId, t.createdAt)]);
+
+/* DAC7 seller details. Sealed like the confidential identity; only the tax report reads them. */
+export const taxProfiles = pgTable("tax_profiles", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  entity: text("entity").$type<"individual" | "business">().notNull(),
+  country: text("country").notNull(),
+  sealed: text("sealed").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* Fingerprints of removed content, so the same file cannot come back. Exact hash for every file,
+   a perceptual hash for images to catch small edits. The files themselves are deleted. */
+export const blockedHashes = pgTable("blocked_hashes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sha256: text("sha256").notNull(),
+  dhash: text("dhash"),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("blocked_sha").on(t.sha256)]);

@@ -1,11 +1,15 @@
 import "server-only";
 import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
-import { split, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
+import { quote, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
 import { payments, STATEMENT_NAME } from "./payments";
 import { ingest, remove, type Stored } from "./media";
-import { requireCap, access, log } from "./onboarding";
-import { REVIEW_MODE } from "@/config/compliance";
+import { issueDecision } from "./decisions";
+import { requireCap, access, log, isAgeVerified } from "./onboarding";
+import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
+
+/* Shown next to the checkbox at "Accept" and stored in the audit log with the deal. */
+export const WAIVER_TEXT = "I ask the creator to start now. I understand that I lose my 14 day right of withdrawal once the content is delivered to my vault. My rights when the delivery does not match the offer stay intact.";
 
 const { deals, offers, requests, messages, notifications, ledger, users, vaultItems, media, disputes } = schema;
 
@@ -34,29 +38,34 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
   });
 }
 
-export async function acceptOffer(buyerId: string, offerId: string) {
+export async function acceptOffer(buyerId: string, offerId: string, opts: { withdrawalWaiver: boolean }) {
   const o = await db.query.offers.findFirst({ where: eq(offers.id, offerId) });
   if (!o || o.status !== "pending") throw new RuleError("This offer is no longer available.");
   const r = await db.query.requests.findFirst({ where: eq(requests.id, o.requestId) });
   if (!r || r.buyerId !== buyerId) throw new RuleError("Not your request.");
   if (r.status !== "open") throw new RuleError("You already accepted an offer for this request.");
   if (!(await access(o.creatorId)).caps.offer) throw new RuleError("This creator cannot take new deals right now. Choose another offer.");
-  const m = split(r.dealCents);
-  const charge = await payments.charge({ buyerId, cents: m.buyerPays, descriptor: STATEMENT_NAME });
+  if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
+  if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start now and that you lose the 14 day withdrawal right once it is delivered.");
+  const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true } });
+  const m = quote(r.dealCents, vatRate(buyer?.country ?? "BE"));
+  const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
     const [d] = await tx.insert(deals).values({
       requestId: r.id, offerId: o.id, buyerId, creatorId: o.creatorId,
       dealCents: m.dealCents, feeCents: m.feeCents, creatorCents: m.creatorCents,
+      vatCents: m.vatCents, vatRate: m.vatRate, withdrawalWaivedAt: new Date(),
       paymentRef: charge.ref, dueAt: addHours(new Date(), o.etaHours),
     }).returning();
     await tx.update(offers).set({ status: "accepted" }).where(eq(offers.id, o.id));
     await tx.update(offers).set({ status: "declined" }).where(and(eq(offers.requestId, r.id), ne(offers.id, o.id)));
     await tx.update(requests).set({ status: "matched" }).where(eq(requests.id, r.id));
     await tx.insert(ledger).values([
-      { dealId: d.id, userId: buyerId, entry: "buyer_charge", cents: m.buyerPays },
-      { dealId: d.id, entry: "escrow_hold", cents: m.buyerPays },
+      { dealId: d.id, userId: buyerId, entry: "buyer_charge", cents: m.total },
+      { dealId: d.id, entry: "escrow_hold", cents: m.total },
     ]);
-    await system(tx, d.id, `Offer accepted. €${(m.buyerPays / 100).toFixed(2)} is held by the payment partner until delivery.`);
+    await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { dealId: d.id, text: WAIVER_TEXT });
+    await system(tx, d.id, `Offer accepted. €${(m.total / 100).toFixed(2)}, VAT included, is held by the payment partner until delivery.`);
     await notify(tx, o.creatorId, "You were chosen", "You have a new deal.", `/deals/${d.id}`);
     return d;
   });
@@ -114,6 +123,7 @@ export async function reviewDelivery(deliveryId: string, outcome: "approved" | "
       await tx.update(deals).set({ status: transition(d, { type: "review_failed", at: new Date() }).state.status }).where(eq(deals.id, d.id));
       await system(tx, d.id, "The delivery did not pass review and was not shared. The creator can deliver again before the deadline.");
       await log(tx, reviewer, "delivery.rejected", dl.creatorId, { deliveryId });
+      await issueDecision(tx, { userId: dl.creatorId, action: "content_rejected", ground: "terms", facts: note || "The delivery does not meet the content rules or the accepted offer.", scope: "This delivery only. You can upload a new one before the deadline.", decidedBy: reviewer.startsWith("staff:") ? "staff" : "automated", automated: !reviewer.startsWith("staff:") });
     });
     for (const id of dl.mediaIds) { const m = await db.query.media.findFirst({ where: eq(media.id, id) }); if (m) await remove(m.storageKey); }
     return;
@@ -234,6 +244,7 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
       await tx.insert(ledger).values([
         { dealId: d.id, userId: d.creatorId, entry: "payout_on_hold", cents: d.creatorCents },
         { dealId: d.id, entry: "platform_revenue", cents: d.dealCents + d.feeCents - d.creatorCents },
+        ...(d.vatCents ? [{ dealId: d.id, entry: "vat_payable" as const, cents: d.vatCents }] : []),
       ]);
       await log(tx, "system", "payout.on_hold", d.creatorId, { dealId: d.id, reason: a.missing });
       await notify(tx, d.creatorId, "Action needed to enable payouts", "A payment is waiting for your payout setup.", "/onboarding");
@@ -243,16 +254,19 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
     await tx.insert(ledger).values([
       { dealId: d.id, userId: d.creatorId, entry: "creator_payout", cents: d.creatorCents },
       { dealId: d.id, entry: "platform_revenue", cents: d.dealCents + d.feeCents - d.creatorCents },
+      ...(d.vatCents ? [{ dealId: d.id, entry: "vat_payable" as const, cents: d.vatCents }] : []),
     ]);
     await tx.insert(messages).values({ dealId: d.id, kind: "system", body: `Payment released. €${(d.creatorCents / 100).toFixed(2)} goes to the creator.` });
     await notify(tx, d.creatorId, "You got paid", "A payment was added to your balance.", `/deals/${d.id}`);
   } else if (ef.kind === "refund_buyer") {
-    await payments.refund({ ref: d.paymentRef, cents: d.dealCents + d.feeCents });
-    await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: d.dealCents + d.feeCents });
+    const paid = d.dealCents + d.feeCents + d.vatCents;
+    await payments.refund({ ref: d.paymentRef, cents: paid });
+    await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: paid });
     await notify(tx, d.buyerId, "Refund on its way", "You were refunded in full.", `/deals/${d.id}`);
   } else {
-    const uid = ef.kind === "ban_creator" ? d.creatorId : d.buyerId;
-    await tx.update(users).set({ bannedAt: new Date(), banReason: ef.reason }).where(eq(users.id, uid));
-    await tx.delete(schema.sessions).where(eq(schema.sessions.userId, uid));
+    // A lost dispute alone never closes an account. It is logged; staff see repeated flags on the
+    // account page and can decide to block, with a statement of reasons the person can appeal.
+    const uid = ef.kind === "flag_creator" ? d.creatorId : d.buyerId;
+    await log(tx, "system", "account.flagged", uid, { dealId: d.id, reason: ef.reason });
   }
 }

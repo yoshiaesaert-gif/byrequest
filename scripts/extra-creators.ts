@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
+import { seal } from "../src/server/seal-core";
 
 const ctx: Record<string, unknown> = { window: {}, Math, JSON, Object, Array, String, Number };
 vm.createContext(ctx);
@@ -59,6 +60,11 @@ async function main() {
     const x = await db.query.users.findFirst({ where: eq(S.users.handle, h) });
     if (x?.avatar?.kind === "3d") { const spec = A.generate({ ...q, facial: "None", glasses: "Any", skin: -1 }); await db.update(S.users).set({ avatar: { kind: "built", spec, svg: A.svg(spec) } }).where(eq(S.users.id, x.id)); }
   }
+  // Demo accounts are fictional; they get the consent that a real sign up asks for.
+  await db.execute(sql`update users set sensitive_consent_at = now() where email like '%@demo.byrequest.app' and sensitive_consent_at is null`);
+  // Demo creators get placeholder tax details so the demo can pay out. Clearly fake values.
+  const demoCreators = await db.select({ id: S.users.id, handle: S.users.handle }).from(S.users).where(and(eq(S.users.isCreator, true), sql`${S.users.email} like '%@demo.byrequest.app'`));
+  for (const c of demoCreators) await db.insert(S.taxProfiles).values({ userId: c.id, entity: "individual", country: "BE", sealed: seal({ legalName: `Demo ${c.handle}`, address: "Demo street 1, 1000 Brussels", tin: "DEMO-NOT-REAL", tinCountry: "BE", dateOfBirth: "1996-01-01" }) }).onConflictDoNothing();
   const milo = await db.query.users.findFirst({ where: eq(S.users.handle, "milo") });
   if (milo) await db.update(S.creatorProfiles).set({ visibility: "public" }).where(eq(S.creatorProfiles.userId, milo.id));
   console.log(`Extra creators: ${added} added, ${have.size} already there.`);

@@ -1,4 +1,5 @@
 import "server-only";
+import { blockFile } from "./media";
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -73,6 +74,8 @@ export async function hideDelivery(deliveryId: string, actor: string) {
   const dl = await db.query.deliveries.findFirst({ where: eq(deliveries.id, deliveryId) });
   if (!dl) return;
   const n = await db.delete(vaultItems).where(eq(vaultItems.deliveryId, deliveryId)).returning();
+  // Fingerprint what was removed, so the same file cannot be uploaded again.
+  for (const id of dl.mediaIds) { const m = await db.query.media.findFirst({ where: eq(schema.media.id, id) }); if (m) await blockFile(m.storageKey, m.mime, "removed after a removal request"); }
   if (n.length) await db.insert(schema.messages).values({ dealId: dl.dealId, kind: "system", body: "This delivery was removed from the vault after a removal request." });
   await log(db, actor, "delivery.hidden", dl.creatorId, { deliveryId, items: n.length });
 }

@@ -1,11 +1,13 @@
 "use server";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
+import { acceptDocs } from "@/server/onboarding";
+import { BUYER_COUNTRIES } from "@/config/compliance";
 import { issueCode, verifyCode, startSession, endSession, currentUser, markVerified, verifiedEmail, clearVerified } from "@/server/auth";
 
-export type AuthState = { step: "email" | "code" | "profile"; email?: string; devCode?: string | null; error?: string };
+export type AuthState = { step: "email" | "code" | "profile" | "blocked"; email?: string; devCode?: string | null; error?: string; reason?: string; sent?: boolean };
 
 const Email = z.string().trim().toLowerCase().email();
 
@@ -23,7 +25,12 @@ export async function checkCode(prev: AuthState, f: FormData): Promise<AuthState
   const ok = await verifyCode(email, String(f.get("code") ?? ""));
   if (!ok) return { ...prev, error: "That code is not right or has expired." };
   const u = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
-  if (u?.bannedAt) return { step: "email", error: "This account is closed." };
+  if (u?.bannedAt) {
+    // The person proved they own the address, so they may read the reason and appeal (DSA art. 17 and 20).
+    await markVerified(email);
+    const d = await db.query.decisions.findFirst({ where: eq(schema.decisions.userId, u.id), orderBy: desc(schema.decisions.createdAt) });
+    return { step: "blocked", email, reason: d ? `${d.facts} Scope: ${d.scope}` : u.banReason ?? "This account was closed." };
+  }
   if (u) { await startSession(u.id); redirect("/"); }
   await markVerified(email);
   return { step: "profile", email };
@@ -32,7 +39,10 @@ export async function checkCode(prev: AuthState, f: FormData): Promise<AuthState
 const Profile = z.object({
   handle: z.string().trim().toLowerCase().regex(/^[a-z0-9._]{3,20}$/, "3 to 20 letters, numbers, dots or underscores."),
   birthYear: z.coerce.number().int(),
-  adult: z.literal("on", { message: "You must confirm you are 18 or older." }),
+  adult: z.literal("on", { message: "You must confirm you are 18 or older and accept the terms." }),
+  sensitive: z.literal("on", { message: "We need your explicit consent to handle requests and chats about intimate content." }),
+  country: z.enum(BUYER_COUNTRIES.map(([c]) => c) as [string, ...string[]], { message: "Choose your country." }),
+  marketing: z.literal("on").optional(),
   look: z.string().default("kai"),
 });
 
@@ -45,7 +55,12 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   if (age < 18 || age > 110) return { ...prev, error: "ByRequest is for adults only." };
   const taken = await db.query.users.findFirst({ where: eq(schema.users.handle, p.data.handle) });
   if (taken) return { ...prev, error: "That username is taken." };
-  const [u] = await db.insert(schema.users).values({ email, handle: p.data.handle, birthYear: p.data.birthYear, avatar: { kind: "3d", look: p.data.look } }).returning();
+  const [u] = await db.insert(schema.users).values({
+    email, handle: p.data.handle, birthYear: p.data.birthYear, avatar: { kind: "3d", look: p.data.look },
+    country: p.data.country, sensitiveConsentAt: new Date(), marketingOptIn: p.data.marketing === "on",
+  }).returning();
+  // The checkbox records acceptance of the exact current terms and privacy statement (version and hash).
+  await acceptDocs(u.id, ["terms", "privacy"]);
   await clearVerified();
   await startSession(u.id);
   redirect("/?welcome=1");
@@ -66,3 +81,17 @@ export async function signOut() {
 }
 
 export async function whoami() { return (await currentUser())?.handle ?? null; }
+
+/* Appeal from a closed account. Only after the email code, so nobody can appeal for someone else. */
+export async function appealClosed(prev: AuthState, f: FormData): Promise<AuthState> {
+  const email = await verifiedEmail();
+  if (!email) return { ...prev, error: "Your code expired. Start again." };
+  const u = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
+  const msg = String(f.get("msg") ?? "").trim();
+  if (!u?.bannedAt || msg.length < 10) return { ...prev, error: "Explain in a few words why you disagree." };
+  const d = await db.query.decisions.findFirst({ where: eq(schema.decisions.userId, u.id), orderBy: desc(schema.decisions.createdAt) });
+  await db.insert(schema.appeals).values({ userId: u.id, area: "account", message: msg.slice(0, 1000), decisionId: d?.id ?? null });
+  await db.insert(schema.audit).values({ actor: `user:${u.id}`, action: "appeal.filed", subjectUserId: u.id, detail: { area: "account" } });
+  await clearVerified();
+  return { ...prev, sent: true, error: undefined };
+}

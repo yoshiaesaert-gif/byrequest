@@ -1,11 +1,13 @@
 "use server";
+import { ENABLED_CATEGORIES } from "@/config/compliance";
 import { cookies } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
-import { requireUser, requireCreator } from "@/server/auth";
+import { requireUser, requireCreator, endSession } from "@/server/auth";
+import { deleteAccount } from "@/server/privacy";
 import * as deals from "@/server/deals";
 import * as albums from "@/server/albums";
 import * as onboarding from "@/server/onboarding";
@@ -41,7 +43,7 @@ export async function toggleSave(requestId: string) {
 }
 
 const Post = z.object({
-  category: z.enum(["video", "photos", "voice", "custom"]),
+  category: z.enum(ENABLED_CATEGORIES),
   amount: z.coerce.number().int().min(1).max(60),
   title: z.string().trim().min(4, "Give it a short title.").max(70),
   details: z.string().trim().max(600).default(""),
@@ -78,10 +80,10 @@ export async function makeOffer(input: { requestId: string; showsFace: boolean; 
   });
 }
 
-export async function acceptOffer(offerId: string): Promise<Result> {
+export async function acceptOffer(offerId: string, withdrawalWaiver: boolean): Promise<Result> {
   return guard(async () => {
     const u = await requireUser();
-    const d = await deals.acceptOffer(u.id, offerId);
+    const d = await deals.acceptOffer(u.id, offerId, { withdrawalWaiver });
     redirect(`/deals/${d.id}?accepted=1`);
   });
 }
@@ -220,4 +222,23 @@ export async function addParticipant(label: string): Promise<{ ok: true; link: s
   const { link } = await participants.addParticipant(u.id, label);
   revalidatePath("/studio");
   return { ok: true, link };
+}
+
+export async function deleteMyAccount(): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    await deleteAccount(u.id);
+    await endSession();
+    redirect("/signin?deleted=1");
+  });
+}
+
+/* Existing accounts give the explicit consent for sensitive data once, like new ones do at sign up. */
+export async function giveSensitiveConsent(): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    await db.update(schema.users).set({ sensitiveConsentAt: new Date() }).where(eq(schema.users.id, u.id));
+    await onboarding.log(db, `user:${u.id}`, "consent.sensitive_data", u.id);
+    redirect("/");
+  });
 }

@@ -1,8 +1,11 @@
 import "server-only";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { eq, isNotNull } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { RuleError } from "@/domain/rules";
 import path from "node:path";
 import sharp from "sharp";
 import type { FileFacts } from "@/domain/rules";
@@ -37,6 +40,7 @@ export async function ingest(file: File): Promise<Stored> {
   const ext = EXT[file.type];
   if (!ext) throw new Error(`File type ${file.type || "unknown"} is not supported.`);
   const raw = Buffer.from(await file.arrayBuffer());
+  await refuseBlocked(raw, file.type.startsWith("image/"));
   if (file.type.startsWith("image/")) {
     const clean = await sharp(raw).rotate().jpeg({ quality: 90, mozjpeg: true }).toBuffer(); // re-encode drops EXIF and GPS
     const meta = await sharp(clean).metadata();
@@ -79,3 +83,31 @@ export async function watermarkImage(key: string, label: string) {
   return img.composite([{ input: Buffer.from(svg) }]).jpeg({ quality: 82 }).toBuffer();
 }
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" })[c]!);
+
+/* ---------- re-upload block ----------
+   When content is removed after a removal request or a report, its fingerprints go on a block
+   list: an exact hash for every file and a difference hash for images, which survives resizing
+   and recompression. A new upload that matches is refused. */
+const sha = (b: Buffer) => createHash("sha256").update(b).digest("hex");
+async function dhash(b: Buffer) {
+  const px = await sharp(b).rotate().greyscale().resize(9, 8, { fit: "fill" }).raw().toBuffer();
+  let bits = "";
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) bits += px[y * 9 + x] > px[y * 9 + x + 1] ? "1" : "0";
+  return BigInt("0b" + bits).toString(16).padStart(16, "0");
+}
+const hamming = (a: string, b: string) => { let x = BigInt("0x" + a) ^ BigInt("0x" + b), n = 0; const one = BigInt(1), zero = BigInt(0); while (x > zero) { n += Number(x & one); x >>= one; } return n; };
+
+async function refuseBlocked(raw: Buffer, image: boolean) {
+  const h = sha(raw);
+  if (await db.query.blockedHashes.findFirst({ where: eq(schema.blockedHashes.sha256, h) })) throw new RuleError("This file was removed from ByRequest and cannot be uploaded again.");
+  if (!image) return;
+  const d = await dhash(raw);
+  const list = await db.select({ dhash: schema.blockedHashes.dhash }).from(schema.blockedHashes).where(isNotNull(schema.blockedHashes.dhash));
+  if (list.some((r) => hamming(r.dhash!, d) <= 6)) throw new RuleError("This file was removed from ByRequest and cannot be uploaded again.");
+}
+
+export async function blockFile(key: string, mime: string, reason: string) {
+  const buf = await readFile(filePath(key)).catch(() => null);
+  if (!buf) return;
+  await db.insert(schema.blockedHashes).values({ sha256: sha(buf), dhash: mime.startsWith("image/") ? await dhash(buf) : null, reason: reason.slice(0, 200) }).onConflictDoNothing();
+}

@@ -160,7 +160,7 @@ function Overview({ p }: { p: Props }) {
       : <div><span className="eyebrow">Overview</span><h2>{p.overview.status === "pending_verification" ? "Your verification is being reviewed." : p.overview.status === "suspended" ? "Your creator account is suspended." : "Almost there"}</h2><p className="muted" style={{ marginTop: 6 }}>You can prepare your profile already. Offers, uploads and payouts open when everything below is approved.</p></div>}
     <div className="checklist">{rows.map(([k, v]) => <div key={k} className="row"><b>{k}</b><Status s={v as Check} /></div>)}
       {p.overview.areas.restriction !== "none" ? <div className="row"><b>Account</b><span className="status st-rejected">{p.overview.areas.restriction === "suspended" ? "Suspended" : "Restricted"}</span></div> : null}</div>
-    {!active && p.overview.missing.length ? <div><b>Still missing</b><ul className="docsum" style={{ marginTop: 8 }}>{p.overview.missing.map((m) => <li key={m}><Ico n="alert" c="sm" />{m}</li>)}</ul></div> : null}
+    {!active && p.overview.missing.length ? <div><b>Still missing</b><ul className="docsum" style={{ marginTop: 8 }}>{p.overview.missing.map((m) => <li key={m}><Ico n="alert" c="sm" />{m.includes("DAC7") ? <Link href="/tax">{m}</Link> : m}</li>)}</ul></div> : null}
     {p.appeals.length ? <div><b>Your requests to support</b>{p.appeals.map((x, i) => <p key={i} className="t-sm muted">{x.area}: {x.status === "answered" ? x.answer : "waiting for a reply"}</p>)}</div> : null}
     <Link href="/settings#profile" className="btn btn-secondary" style={{ alignSelf: "flex-start" }}>Prepare your public profile</Link>
   </div>);

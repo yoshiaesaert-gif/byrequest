@@ -5,6 +5,8 @@ import { profileFor } from "@/server/queries";
 import { Av, I, Stars } from "@/components/ui";
 import { euros } from "@/domain/rules";
 import AlbumAsk from "./album-ask";
+import { contactCreator } from "@/server/reports";
+import { redirect } from "next/navigation";
 
 export default async function Creator({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
@@ -27,6 +29,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
         <h1 className="t-h1">{u.handle}</h1>
         <div className="t-sm muted"><Stars sum={u.ratingSum} count={u.ratingCount} /> · {deals} deals · {replies}</div>
         <div className="optrow" style={{ justifyContent: "center" }}><span className="badge ok"><I n="shield" c="sm" />Verified creator</span><span className="badge brand">{p.showsFace ? "Face shown" : "No face"}</span></div>
+        <Link href={`/report?type=profile&ref=${encodeURIComponent(u.handle)}`} className="report-link"><I n="alert" c="sm" />Report this profile</Link>
         <div className="cp-vis"><I n={reason === "public" ? "users" : "lock"} c="sm" />{reason === "public" ? "Public creator profile" : reason === "self" ? "This is how buyers see your profile." : `Private profile. You see it because ${u.handle} ${reason === "deal" ? "has a deal with you" : "made you an offer"}.`}</div>
       </div></div>
       <div className="cp-main">
@@ -38,6 +41,9 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
           {p.never.length ? <p className="cp-never"><b>Never</b> {p.never.map((d) => d.toLowerCase()).join(", ")}</p> : null}
           <div className="list" style={{ marginTop: 14 }}>{[["Short video, 5 min", p.fromCents + 2000], ["Photo set, 6 photos", p.fromCents], ["Voice note, 2 min", Math.max(2000, p.fromCents - 1500)]].map(([t, c]) => (
             <div key={t as string} className="lrow" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><span>{t}</span><b className="num">From {euros(c as number)}</b></div>))}</div></section>
+        {me.supportOrg ? <section className="cp-sec"><span className="eyebrow">Support organisation</span>
+          <form className="bo-inline" style={{ marginTop: 10 }} action={async (f) => { "use server"; const m = await requireUser(); await contactCreator(m.id, u.handle, String(f.get("msg") ?? "")); redirect(`/c/${u.handle}?sent=1`); }}>
+            <input className="input" name="msg" placeholder={`Write to ${u.handle} as ${me.supportOrg}`} required minLength={10} /><button className="btn btn-primary btn-sm">Send</button></form></section> : null}
         <section className="cp-sec"><span className="eyebrow">Reviews</span>
           {reviews.length ? reviews.map((x, i) => <div key={i} className="cp-rev"><div><b>{x.by}</b><span className="star">{"★★★★★".slice(0, x.stars ?? 5)}</span></div></div>)
             : <p className="t-sm muted" style={{ marginTop: 8 }}>No reviews yet. Every creator verifies their identity before their first offer.</p>}</section>

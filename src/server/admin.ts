@@ -4,6 +4,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireUser } from "./auth";
 import { access, log } from "./onboarding";
+import { issueDecision } from "./decisions";
 import { unseal } from "./seal";
 import { RuleError } from "@/domain/rules";
 
@@ -52,6 +53,7 @@ export async function setRestriction(staffId: string, userId: string, level: "no
   if (level === "none" && o?.restrictionReason === "Age requirement not met") throw new RuleError("An age based suspension cannot be lifted here.");
   await db.update(S.onboarding).set({ restriction: level, restrictionReason: level === "none" ? null : reason, updatedAt: new Date() }).where(eq(S.onboarding.userId, userId));
   await log(db, `staff:${staffId}`, "staff.restriction", userId, { level, reason });
+  await issueDecision(db, { userId, action: level === "none" ? "creator_restriction_lifted" : level === "restricted" ? "creator_restricted" : "creator_suspended", ground: "terms", facts: level === "none" ? "After review the restriction was lifted." : reason, scope: level === "suspended" ? "Selling: no offers, uploads or payouts. Buying stays possible." : level === "restricted" ? "Selling: no new offers until this is solved." : "Selling.", decidedBy: "staff" });
 }
 
 export async function answerAppeal(staffId: string, appealId: string, answer: string) {

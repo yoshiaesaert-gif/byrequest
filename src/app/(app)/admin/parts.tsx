@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -17,7 +17,7 @@ export function AlbumReview({ id }: { id: string }) {
 }
 export function DisputeDecide({ id }: { id: string }) {
   const [p, start] = useTransition();
-  return <div className="optrow" style={{ marginTop: 10 }}><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "upheld"), "Buyer refunded, creator removed"))}>Buyer is right</button><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "rejected"), "Creator paid, buyer removed"))}>Delivery matches</button></div>;
+  return <div className="optrow" style={{ marginTop: 10 }}><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "upheld"), "Buyer refunded, creator flagged for review"))}>Buyer is right</button><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "rejected"), "Creator paid, buyer flagged for review"))}>Delivery matches</button></div>;
 }
 export function RemovalHandle({ id }: { id: string }) {
   const [dl, setDl] = useState(""); const [p, start] = useTransition();
@@ -69,4 +69,20 @@ export function TeamRole({ handle, role, self }: { handle: string; role: string;
   return <div className="optrow">
     {role !== "admin" ? <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "admin"), "Now admin"))}>Make admin</button> : <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "support"), "Now support"))}>Make support</button>}
     <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await staffRole(handle, "none"), "Removed from the team"))}>Remove</button></div>;
+}
+
+export function ReportHandle({ id }: { id: string }) {
+  const [note, setNote] = useState(""); const [p, start] = useTransition();
+  const go = (st: "reviewing" | "actioned" | "passed_to_police" | "rejected", msg: string) => start(async () => say(await handleR(id, st, note), msg));
+  return <div className="upbox"><input className="input" placeholder="What was done (logged, no sensitive data)" value={note} onChange={(e) => setNote(e.target.value)} />
+    <div className="optrow"><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => go("reviewing", "Marked as in review")}>Take it</button>
+      <button className="btn btn-primary btn-sm" disabled={p || note.trim().length < 5} onClick={() => go("passed_to_police", "Logged as passed to the police")}>Passed to police</button>
+      <button className="btn btn-secondary btn-sm" disabled={p || note.trim().length < 5} onClick={() => go("actioned", "Closed with action")}>Action taken</button>
+      <button className="btn btn-secondary btn-sm" disabled={p || note.trim().length < 5} onClick={() => go("rejected", "Closed without action")}>No violation</button></div></div>;
+}
+export function SupportOrgForm({ id, org }: { id: string; org: string | null }) {
+  const [v, setV] = useState(org ?? ""); const [p, start] = useTransition();
+  return <div className="bo-inline"><input className="input" placeholder="Organisation name, for example a recognised centre" value={v} onChange={(e) => setV(e.target.value)} />
+    <button className="btn btn-secondary btn-sm" disabled={p || !v.trim()} onClick={() => start(async () => say(await supportOrg(id, v), "Marked as support organisation"))}>Save</button>
+    {org ? <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => { const r = await supportOrg(id, null); say(r, "Removed"); if (r.ok) setV(""); })}>Remove</button> : null}</div>;
 }

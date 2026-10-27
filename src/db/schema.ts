@@ -36,6 +36,11 @@ export const users = pgTable("users", {
   prefs: jsonb("prefs").$type<Prefs>().notNull().default({ frost: true, discreetPush: true, neutralTab: false }),
   ratingSum: integer("rating_sum").notNull().default(0),
   ratingCount: integer("rating_count").notNull().default(0),
+  country: text("country").notNull().default("BE"),                 // for VAT and tax reporting, ISO 3166 alpha 2
+  ageVerifiedAt: timestamp("age_verified_at", { withTimezone: true }), // buyer age check passed at the provider
+  sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
+  supportOrg: text("support_org"),                                    // name of a recognised support organisation, set by staff
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("users_email").on(t.email), uniqueIndex("users_handle").on(t.handle)]);
 
@@ -117,6 +122,9 @@ export const deals = pgTable("deals", {
   dealCents: integer("deal_cents").notNull(),
   feeCents: integer("fee_cents").notNull(),
   creatorCents: integer("creator_cents").notNull(),
+  vatCents: integer("vat_cents").notNull().default(0),
+  vatRate: integer("vat_rate_bp").notNull().default(0),              // basis points, 2100 = 21%
+  withdrawalWaivedAt: timestamp("withdrawal_waived_at", { withTimezone: true }),
   paymentRef: text("payment_ref").notNull(),
   status: dealStatus("status").notNull().default("held"),
   dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
@@ -207,7 +215,7 @@ export const ledger = pgTable("ledger", {
   id: uuid("id").primaryKey().defaultRandom(),
   dealId: uuid("deal_id").references(() => deals.id),
   userId: uuid("user_id").references(() => users.id),
-  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund">().notNull(),
+  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable">().notNull(),
   cents: integer("cents").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -4,7 +4,7 @@ import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import { access } from "@/server/onboarding";
 import { Av, I } from "@/components/ui";
-import { Toggle, BecomeCreator, ProfileForm, Marketing } from "./parts";
+import { Toggle, BecomeCreator, ProfileForm, Marketing, DeleteAccount } from "./parts";
 
 export default async function Settings() {
   const u = await requireUser();
@@ -25,6 +25,11 @@ export default async function Settings() {
           <div className="setrow"><div><b>Quick hide</b><span className="s">Press Esc twice, or tap the eye icon on mobile</span></div><span className="badge">Always</span></div>
         </div>
         <div className="card group"><h3 className="t-h3">Messages from ByRequest</h3><Marketing on={u.marketingOptIn} /></div>
+        <div className="card group" id="privacy"><h3 className="t-h3">Your data</h3>
+          <div className="setrow"><div><b>Download your data</b><span className="s">Everything we hold about you, in one file</span></div><a href="/api/me/export" className="btn btn-secondary btn-sm">Download</a></div>
+          <div className="setrow"><div><b>Privacy statement</b><span className="s">What we keep, why, and for how long</span></div><Link href="/legal/privacy" className="btn btn-secondary btn-sm">Read</Link></div>
+          <DeleteAccount />
+        </div>
         <div className="card group" id="creator"><h3 className="t-h3">Creating</h3>
           {!u.isCreator ? <BecomeCreator /> : (<>
             <div className="setrow"><div><b>Creator setup</b><span className="s">{a!.status === "active" ? "Identity, agreement and payouts approved" : a!.missing.join(" · ")}</span></div><Link href="/onboarding" className="btn btn-secondary btn-sm">{a!.status === "active" ? "View" : "Continue"}</Link></div>

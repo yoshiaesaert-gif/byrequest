@@ -21,6 +21,9 @@ type Props = {
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eur = (c: number) => "€" + Math.round(c / 100);
 const noop = () => () => {};
+/* The chat is end to end encrypted, so ByRequest cannot scan it. This check runs only on the
+   sender's device, before encryption, and only warns: nothing is sent to the server. */
+const RISKY = [/\b(?:\+?\d[\d\s().-]{7,}\d)\b/, /[\w.+-]+@[\w-]+\.[\w.]{2,}/, /\b(?:whats\s?app|telegram|signal|snap(?:chat)?|insta(?:gram)?|onlyfans|tiktok|paypal|tikkie|payconiq|revolut|iban|bitcoin|crypto)\b/i, /\b(?:meet|meeting|in person|irl|hotel|my place|your place|afspreken|ontmoeten|langskomen)\b/i];
 const REASONS = ["Not what was agreed", "Face does not match the offer", "Unusable, for example black or silent", "Someone other than the creator"];
 
 export default function Room(p: Props) {
@@ -48,10 +51,13 @@ export default function Room(p: Props) {
   const cur = s === "held" ? 1 : s === "reviewing" ? 2 : s === "disputed" ? 3 : s === "delivered" ? 4 : 5;
   const chat = p.msgs.some((m) => m.kind === "e2e");
 
+  const [warned, setWarned] = useState(false);
   const send = (e: React.FormEvent) => {
     e.preventDefault();
     const t = text.trim();
     if (!t || !kp) return;
+    if (!warned && RISKY.some((r) => r.test(t))) { setWarned(true); return; }
+    setWarned(false);
     if (!p.other.publicKey) { toast(`${p.other.handle} has not opened ByRequest on a device yet. Try again soon.`, "err"); return; }
     const sealed = seal(t, p.other.publicKey, kp);
     setText("");
@@ -90,7 +96,8 @@ export default function Room(p: Props) {
         })}
         {!chat && s === "held" ? <p className="chat-empty">No messages yet. Agree on the details with {p.other.handle} here.</p> : null}
       </div>
-      <p className="safety-note"><Ico n="lock" c="sm" /><b>End to end encrypted.</b>&nbsp;Only you and {p.other.handle} can read this chat. Never share your real name, address or socials.</p>
+      <p className="safety-note"><Ico n="lock" c="sm" /><b>End to end encrypted.</b>&nbsp;Only you and {p.other.handle} can read this chat. Meeting in person, paying outside ByRequest and sharing contact details are not allowed. <Link href={`/report?type=deal&ref=${p.deal.id}`}>Report this chat</Link></p>
+      {warned ? <p className="chat-warn" role="alert"><Ico n="alert" c="sm" />This looks like contact details, a payment outside ByRequest or a meeting. That is not allowed and removes your protection: no review, no refund, no help. Send anyway only if it is something else.</p> : null}
       <form className="composer" onSubmit={send}><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={p.other.publicKey ? `Message ${p.other.handle}` : `The chat opens once ${p.other.handle} signs in on a device`} disabled={!p.other.publicKey} autoComplete="off" aria-label="Message" maxLength={2000} /><button className="btn btn-primary" aria-label="Send" disabled={pending || !p.other.publicKey}><Ico n="send" /></button></form>
     </div>
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
@@ -111,7 +118,7 @@ function ObjectSheet({ dealId, onClose }: { dealId: string; onClose: () => void 
     <div className="sheet-h"><h3 className="t-h2">What does not match?</h3><button className="icon-btn" onClick={onClose} aria-label="Close"><Ico n="x" /></button></div>
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{REASONS.map((r) => <button key={r} className={"choice" + (reason === r ? " is-on" : "")} onClick={() => setReason(r)}><span className="ci" style={{ background: "var(--sunk)", color: "var(--ink)" }}><Ico n="alert" /></span><b>{r}</b></button>)}</div>
     <div className="field"><label htmlFor="on">Add a short note, optional</label><input id="on" className="input" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} /></div>
-    <div className="verd"><div><b><Ico n="check" c="sm" />You are right</b><span>Full refund. The creator is not paid and is removed.</span></div><div><b><Ico n="alert" c="sm" />The report is unfounded</b><span>The creator is paid. You lose the amount and your account is closed.</span></div></div>
+    <div className="verd"><div><b><Ico n="check" c="sm" />The delivery does not match</b><span>You get a full refund. The creator is not paid.</span></div><div><b><Ico n="alert" c="sm" />The delivery matches the offer</b><span>The creator is paid. Only reports made in bad faith, again and again, can lead to closing an account, and you can always appeal.</span></div></div>
     <button className="btn btn-primary btn-lg btn-block" disabled={pending} onClick={() => start(async () => { const r = await object(dealId, reason, note); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); if (r.ok) onClose(); })}>{pending ? "Sending…" : "Send report"}</button>
     <p className="t-sm muted">A person reviews the file against the terms of the accepted offer within 24 hours. Your chat stays encrypted.</p>
   </div></div>);

@@ -10,7 +10,8 @@ const eur2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eta = (h: number) => (h < 24 ? `Within ${h} hours` : h < 72 ? `Within ${h} hours` : `Within ${Math.round(h / 24)} days`);
 
-export default function Picker({ requestId, open, dealId, money, offers }: { requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; total: number }; offers: O[] }) {
+export default function Picker({ requestId, open, dealId, money, offers, ageOk, waiver }: { requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; vat: number; vatPct: number; total: number }; offers: O[]; ageOk: boolean; waiver: string }) {
+  const [waived, setWaived] = useState(false);
   const [sort, setSort] = useState("Best match");
   const [sel, setSel] = useState<string | null>(offers.find((o) => o.status === "pending")?.id ?? null);
   const [pending, start] = useTransition();
@@ -51,8 +52,14 @@ export default function Picker({ requestId, open, dealId, money, offers }: { req
           <Link href={`/deals/${dealId}`} className="btn btn-primary btn-block">Open deal</Link></>)
           : o ? (<>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>{o.look ? <img src={o.look} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} /> : null}<div><b>{o.handle}</b><div className="t-sm muted">{o.showsFace ? "Face shown" : "No face"} · Vault {VAULT_LABEL[o.vault]} · {eta(o.etaHours).toLowerCase()}</div></div></div>
-            <div className="breakdown"><div><span className="muted">Offer</span><span className="num">{eur2(money.deal)}</span></div><div><span className="muted">Service fee</span><span className="num">{eur2(money.fee)}</span></div><div className="tot"><span>Secured now</span><span className="num">{eur2(money.total)}</span></div></div>
-            <button className="btn btn-brand btn-lg btn-block" disabled={pending || !open} onClick={() => start(async () => { const r = await acceptOffer(o.id); if (r && !r.ok) toast(r.error, "err"); })}>{pending ? "Securing payment…" : `Accept and secure ${eur2(money.total)}`}</button>
+            <div className="breakdown"><div><span className="muted">Offer</span><span className="num">{eur2(money.deal)}</span></div><div><span className="muted">Service fee</span><span className="num">{eur2(money.fee)}</span></div><div><span className="muted">VAT {money.vatPct}%</span><span className="num">{eur2(money.vat)}</span></div><div className="tot"><span>Total, VAT included</span><span className="num">{eur2(money.total)}</span></div></div>
+            {ageOk ? (<>
+              <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{waiver}</span></label>
+              <button className="btn btn-brand btn-lg btn-block" disabled={pending || !open || !waived} onClick={() => start(async () => { const r = await acceptOffer(o.id, waived); if (r && !r.ok) toast(r.error, "err"); })}>{pending ? "Securing payment…" : `Accept and secure ${eur2(money.total)}`}</button>
+            </>) : (<>
+              <p className="t-sm">Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.</p>
+              <Link href={`/verify-age?next=${encodeURIComponent(`/requests/${requestId}/offers`)}`} className="btn btn-brand btn-lg btn-block">Confirm my age</Link>
+            </>)}
             <div className="protect"><span><Ico n="shield" c="sm" />Paid out only after review and your 24 hours to object</span><span><Ico n="lock" c="sm" />Watermarked, no download, no forwarding</span><span><Ico n="check" c="sm" />Shows as BRQ DIGITAL on your statement</span></div></>)
           : <p className="t-sm muted">Select an offer to see the total.</p>}
       </div></aside>

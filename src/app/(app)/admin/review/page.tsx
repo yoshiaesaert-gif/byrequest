@@ -2,14 +2,34 @@ import Link from "next/link";
 import { requireStaff, creatorsOverview, reviewQueue } from "@/server/admin";
 import { CAT_LABEL, amountLabel } from "@/domain/rules";
 import { PROVIDER_ENV, PROVIDERS, REVIEW_MODE } from "@/config/compliance";
-import { DeliveryReview, AlbumReview, DisputeDecide, RemovalHandle } from "../parts";
+import { DeliveryReview, AlbumReview, DisputeDecide, RemovalHandle, ReportHandle, AppealAnswer } from "../parts";
+import { db, schema } from "@/db";
+import { eq, asc } from "drizzle-orm";
+import { ACTION_LABEL } from "@/server/decisions";
+import { openReports, REPORT_KINDS } from "@/server/reports";
+import { when } from "@/components/ui";
 
 export default async function Review() {
   const { role } = await requireStaff();
-  const [creators, q] = await Promise.all([creatorsOverview(), reviewQueue()]);
+  const [creators, q, reps, appeals] = await Promise.all([creatorsOverview(), reviewQueue(), openReports(),
+    db.select({ a: schema.appeals, handle: schema.users.handle, action: schema.decisions.action, facts: schema.decisions.facts }).from(schema.appeals)
+      .innerJoin(schema.users, eq(schema.users.id, schema.appeals.userId)).leftJoin(schema.decisions, eq(schema.decisions.id, schema.appeals.decisionId))
+      .where(eq(schema.appeals.status, "open")).orderBy(asc(schema.appeals.createdAt))]);
   return (<div className="wrap adm">
     <div className="page-h"><div><span className="eyebrow">Support · {role}</span><h1 className="t-h1" style={{ marginTop: 6 }}>Review queue</h1>
       <p className="muted t-sm" style={{ marginTop: 6 }}>Environment: <b>{PROVIDER_ENV}</b> · review mode: <b>{REVIEW_MODE}</b> · every view of a file and of confidential data is logged.</p></div></div>
+
+    <section className="sec"><div className="sec-h"><h2 className="t-h2">Reports ({reps.length})</h2><span className="t-sm muted">Exploitation, trafficking and minors first. Pass suspected abuse to the police without delay.</span></div>
+      {reps.map(({ r, by }) => <div key={r.id} className={"card rep p" + r.priority} style={{ marginBottom: 12 }}>
+        <div className="rep-h"><b>{REPORT_KINDS[r.kind]}</b>{r.trustedFlagger ? <span className="bo-tag">trusted · {r.trustedFlagger}</span> : null}<span className="t-xs muted">{when(r.createdAt)} · {by ?? "no account"}{r.targetRef ? ` · ${r.targetType} ${r.targetRef.slice(0, 12)}` : ""} · {r.status}</span></div>
+        <p className="t-sm" style={{ whiteSpace: "pre-wrap", margin: "8px 0" }}>{r.details}</p><ReportHandle id={r.id} /></div>)}
+      {!reps.length ? <p className="muted">No open reports.</p> : null}</section>
+
+    <section className="sec"><div className="sec-h"><h2 className="t-h2">Appeals ({appeals.length})</h2><span className="t-sm muted">Someone other than the first decision maker answers. Reverse the decision on the account page if they are right.</span></div>
+      {appeals.map(({ a, handle, action, facts }) => <div key={a.id} className="card" style={{ marginBottom: 12 }}>
+        <b>{handle} · {action ? ACTION_LABEL[action] ?? action : a.area}</b>{facts ? <div className="t-xs muted">Decision: {facts}</div> : null}
+        <p className="t-sm" style={{ margin: "8px 0", whiteSpace: "pre-wrap" }}>{a.message}</p><AppealAnswer id={a.id} /></div>)}
+      {!appeals.length ? <p className="muted">No open appeals.</p> : null}</section>
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">Content review ({q.dls.length + q.albums.length})</h2><span className="t-sm muted">A technical pass is not a content approval</span></div>
       <div className="grid">{q.dls.map((x) => (
