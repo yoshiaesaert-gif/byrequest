@@ -6,8 +6,13 @@ import { requireUser } from "@/server/auth";
 import { request } from "@/server/queries";
 import { access } from "@/server/onboarding";
 import { BigNum, Chips, Cover, I, leftLabel } from "@/components/ui";
-import { CAT_LABEL, VAULT_LABEL, amountLabel, euros, split } from "@/domain/rules";
+import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
+
+const CAT_ICON: Record<string, string> = { video: "video", photos: "image", voice: "mic", custom: "spark", worn: "shirt" };
+function Fact({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
+  return <div className="rd-fact"><span className="rd-fi"><I n={icon} c="sm" /></span><span className="rd-fl">{label}</span><b>{value}{sub ? <small>{sub}</small> : null}</b></div>;
+}
 
 export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,22 +34,30 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
     <Link href="/for-you" className="back"><I n="left" c="sm" />Requests</Link>
     <div className="two">
       <div>
-        <div className="card reqhero">
-          <div className="media" style={{ aspectRatio: "16/10", borderRadius: "var(--r-lg)", overflow: "hidden", position: "relative" }}>
-            <Cover cover={r.cover} frost={u.prefs.frost} />
-            <div className="ov" style={{ position: "absolute", inset: 0, padding: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", color: "#fff" }}><div><Chips r={card} /><BigNum r={card} /></div></div>
+        <div className="rd">
+          <div className="rd-media">
+            <Cover cover={r.cover} />
+            <span className="rd-shade" />
+            <div className="rd-top"><Chips r={card} />{offers.length ? <span className="mc">{offers.length} {offers.length === 1 ? "offer" : "offers"}</span> : null}</div>
+            <div className="rd-bottom">
+              <div className="rd-title">
+                <span className="rd-cat"><I n={CAT_ICON[r.category]} c="sm" />{CAT_LABEL[r.category]} · {open ? `closes in ${leftLabel(r.closesAt).replace(" left", "")}` : "closed"}</span>
+                <h1>{r.title}</h1>
+              </div>
+              <BigNum r={card} />
+            </div>
           </div>
-          <div style={{ padding: "20px 4px 4px" }}>
-            <span className="eyebrow">{CAT_LABEL[r.category]} · {amountLabel(r.category, r.amount)} · {open ? `closes in ${leftLabel(r.closesAt).replace(" left", "")}` : "closed"}</span>
-            <h1 className="t-h1" style={{ marginTop: 6 }}>{r.title}</h1>
-            {r.details ? <p style={{ marginTop: 10, color: "var(--ink-2)" }}>{r.details}</p> : null}
-            <dl className="dl" style={{ marginTop: 16 }}>
-              <dt>Looking for</dt><dd>{r.who}, {r.ageMin} to {r.ageMax}</dd>
-              <dt>Face</dt><dd>{r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required"}</dd>
-              <dt>Deliver within</dt><dd>{r.dueHours < 72 ? `${r.dueHours} hours` : `${Math.round(r.dueHours / 24)} days`}</dd>
-              <dt>Vault at least</dt><dd>{VAULT_LABEL[r.minVault]}</dd>
-              <dt>Offers so far</dt><dd>{offers.length}</dd>
-            </dl>
+          {r.details ? <blockquote className="rd-note"><span>From the buyer</span>{r.details}</blockquote> : null}
+          <div className="rd-facts">
+            <Fact icon="users" label="Looking for" value={r.who} sub={`${r.ageMin} to ${r.ageMax}`} />
+            <Fact icon="eye" label="Face" value={r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required"} />
+            <Fact icon="clock" label="Deliver within" value={r.dueHours < 72 ? `${r.dueHours} hours` : `${Math.round(r.dueHours / 24)} days`} />
+            <Fact icon="vault" label="Vault at least" value={VAULT_LABEL[r.minVault]} />
+          </div>
+          <div className="rd-steps">
+            <div><b>1</b><span><strong>Make an offer</strong>Say how you would do it. The buyer picks one creator.</span></div>
+            <div><b>2</b><span><strong>Create and deliver</strong>Payment is secured before you start. Upload in the private deal room.</span></div>
+            <div><b>3</b><span><strong>Get paid</strong>{euros(m.creatorCents)} is released after review and the 24 hour window.</span></div>
           </div>
         </div>
       </div>
