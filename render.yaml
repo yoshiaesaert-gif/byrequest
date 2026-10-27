@@ -1,0 +1,33 @@
+# Render Blueprint: the web app (Docker) and a Postgres database, wired together.
+services:
+  - type: web
+    name: byrequest
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: { name: byrequest-db, property: connectionString }
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: CONFIDENTIAL_KEY
+        generateValue: true
+      - key: SANDBOX_WEBHOOK_SECRET
+        generateValue: true
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: DEV_SHOW_CODE
+        value: "1"
+      - key: BRQ_PROVIDER_ENV
+        value: test
+      - key: STORAGE_DIR
+        value: /app/storage
+databases:
+  - name: byrequest-db
+    plan: free
+    region: frankfurt
+    databaseName: byrequest
+    user: byrequest

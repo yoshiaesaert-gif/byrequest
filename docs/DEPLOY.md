@@ -1,4 +1,19 @@
-# Hosted demo on Railway
+# Hosted demo
+
+## Render (recommended now)
+
+1. Sign in at https://render.com with GitHub.
+2. New, then Blueprint, then choose `yoshiaesaert-gif/byrequest`. Render reads `render.yaml` and creates the web service and the Postgres database, with all secrets generated.
+3. Fill in `DEMO_PASSWORD` when asked, then Apply.
+4. Open the URL Render shows once the deploy is live. Any username, and the demo password.
+
+The free plan sleeps after 15 minutes without visits (the first visit then takes about a minute) and has no persistent disk: seeded demo files are rebuilt on start, new uploads are lost on a restart. A paid instance with a disk at `/app/storage` keeps them. The free database expires after 30 days.
+
+## Vercel (needs changes first)
+
+Vercel needs ffmpeg bundled (for example `ffmpeg-static`), object storage for uploads (Vercel Blob or S3, with direct client uploads because of the request size limit) and a scheduler for the release worker.
+
+# Railway
 
 One service runs the web app, the migrations and the release worker. Postgres is a Railway database. Uploads live on a Railway volume. The whole site sits behind a password (`DEMO_PASSWORD`), and verification and payouts use the clearly marked test provider.
 

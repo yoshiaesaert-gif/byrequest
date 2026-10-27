@@ -17,7 +17,7 @@ const H = (h: number) => addHours(new Date(), h);
 async function main() {
   if (process.argv.includes("--if-empty")) {
     const r = await db.execute(sql`select count(*)::int as n from users`);
-    if (Number((r.rows[0] as { n: number }).n) > 0) { console.log("Database already has data, seed skipped."); process.exit(0); }
+    if (Number((r.rows[0] as { n: number }).n) > 0) { await repairSeedMedia(); console.log("Database already has data, seed skipped."); process.exit(0); }
   }
   await db.execute(sql`truncate appeals, removal_requests, participant_consents, participants, deliveries, audit_log, provider_events, consents, legal_documents, payout_accounts, confidential_identity, identity_checks, creator_onboarding, staff, ledger, saves, notifications, preview_albums, messages, disputes, vault_items, media, deals, offers, requests, creator_profiles, sessions, login_codes, users cascade`);
   const storage = path.resolve(process.env.STORAGE_DIR || "./storage");
@@ -146,4 +146,21 @@ async function main() {
   console.log(`Seeded ${buyers.length + creators.length} users, ${reqs.length + 1} open requests, ${hist.length + 2} completed deals.`);
   process.exit(0);
 }
+/* Hosting without a persistent disk loses files on restart. Seeded vault files are rebuilt from
+   the public images so the demo keeps working; real uploads need a disk or object storage. */
+async function repairSeedMedia() {
+  const storage = path.resolve(process.env.STORAGE_DIR || "./storage");
+  const rows = await db.select().from(S.media).where(sql`${S.media.storageKey} like 'seed/%'`);
+  let fixed = 0;
+  for (const [i, m] of rows.entries()) {
+    const p = path.join(storage, m.storageKey);
+    try { await readFile(p); continue; } catch {}
+    await mkdir(path.dirname(p), { recursive: true });
+    const src = await readFile(path.resolve("public/img", `c${String(((i * 5 + 7) % 30) + 1).padStart(2, "0")}.webp`));
+    await sharp(src).resize(1200, 1800, { fit: "cover" }).jpeg({ quality: 86 }).toFile(p);
+    fixed++;
+  }
+  if (fixed) console.log(`Rebuilt ${fixed} seeded media files.`);
+}
+
 main().catch((e) => { console.error(e); process.exit(1); });
