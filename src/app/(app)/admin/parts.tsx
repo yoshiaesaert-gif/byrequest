@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -85,4 +85,18 @@ export function SupportOrgForm({ id, org }: { id: string; org: string | null }) 
   return <div className="bo-inline"><input className="input" placeholder="Organisation name, for example a recognised centre" value={v} onChange={(e) => setV(e.target.value)} />
     <button className="btn btn-secondary btn-sm" disabled={p || !v.trim()} onClick={() => start(async () => say(await supportOrg(id, v), "Marked as support organisation"))}>Save</button>
     {org ? <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => { const r = await supportOrg(id, null); say(r, "Removed"); if (r.ok) setV(""); })}>Remove</button> : null}</div>;
+}
+
+export function HouseAccept({ id }: { id: string }) {
+  const [p, start] = useTransition();
+  return <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await houseAccept(id), "Accepted. Payment secured, the creator can start."))}>Accept</button>;
+}
+export function HouseRate({ id }: { id: string }) {
+  const [p, start] = useTransition();
+  return <div className="optrow">{[5, 4, 3, 2, 1].map((n) => <button key={n} className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await houseRate(id, n), "Rated"))}>{"★".repeat(n)}</button>)}</div>;
+}
+export function HouseBudget({ euros }: { euros: number }) {
+  const [v, setV] = useState(String(euros)); const [p, start] = useTransition();
+  return <div className="bo-inline" style={{ maxWidth: 360 }}><input className="input" inputMode="numeric" value={v} onChange={(e) => setV(e.target.value)} aria-label="Budget in euros" />
+    <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await houseBudget(Number(v)), "Budget saved"))}>Save budget</button></div>;
 }

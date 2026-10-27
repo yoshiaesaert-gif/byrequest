@@ -14,12 +14,16 @@ export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | 
   const rows = await db.select({
     r: requests,
     offers: sql<number>`(select count(*)::int from offers o where o.request_id = "requests"."id")`,
+    house: sql<boolean>`(select u.house from users u where u.id = "requests"."buyer_id")`,
   }).from(requests).where(and(...conds)).orderBy(...order).limit(opts.limit ?? 40);
-  return rows.map(({ r, offers }) => ({ ...r, offers, mine: r.buyerId === opts.viewerId }));
+  return rows.map(({ r, offers, house }) => ({ ...r, offers, house, mine: r.buyerId === opts.viewerId }));
 }
 
 export async function request(id: string) {
-  return db.query.requests.findFirst({ where: eq(requests.id, id) });
+  const r = await db.query.requests.findFirst({ where: eq(requests.id, id) });
+  if (!r) return r;
+  const b = await db.query.users.findFirst({ where: eq(users.id, r.buyerId), columns: { house: true } });
+  return { ...r, house: !!b?.house };
 }
 
 export async function offersFor(requestId: string) {
@@ -132,7 +136,8 @@ export async function savedIds(userId: string) {
 /* Live, non identifying numbers for the home page. */
 export async function pulse() {
   const since = new Date(Date.now() - 7 * 86400_000);
-  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, since)));
+  // Only real money counts: payouts to accounts that are not demo accounts.
+  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, since), sql`${ledger.userId} not in (select id from users where email like '%@demo.byrequest.app')`));
   const [open] = await db.select({ n: count() }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
   const [done] = await db.select({ n: count() }).from(deals).where(eq(deals.status, "released"));
   const [avg] = await db.select({ h: sql<number>`coalesce(avg(extract(epoch from (${deals.deliveredAt} - ${deals.createdAt}))/3600),0)::float` }).from(deals).where(sql`${deals.deliveredAt} is not null`);

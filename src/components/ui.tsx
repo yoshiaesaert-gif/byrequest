@@ -46,7 +46,7 @@ export function leftLabel(d: Date) {
 export function ageLabel(a: number, b: number) { return `${a} to ${b}`; }
 const UNIT: Record<Category, string> = { video: "MIN VIDEO", photos: "PHOTOS", voice: "MIN VOICE", custom: "MIN CUSTOM", worn: "ITEM" };
 
-export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number };
+export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number; house?: boolean };
 
 export function Chips({ r }: { r: CardReq }) {
   const hot = hoursLeft(r.closesAt) <= 6;
@@ -67,7 +67,7 @@ export function RequestCard({ r, frost = true }: { r: CardReq; frost?: boolean }
         <Cover cover={r.cover} frost={frost} />
         <div className="ov"><div><Chips r={r} /><BigNum r={r} /></div><Earn cents={r.dealCents} /></div>
       </div>
-      <div><div className="t">{r.title}</div><div className="m">{CAT_LABEL[r.category]} · {r.who} · {ageLabel(r.ageMin, r.ageMax)} · {r.offers} offers</div></div>
+      <div><div className="t">{r.title}</div><div className="m">{CAT_LABEL[r.category]} · {r.who} · {ageLabel(r.ageMin, r.ageMax)} · {r.offers} offers</div>{r.house ? <div className="by-brq">by ByRequest</div> : null}</div>
     </Link>
   );
 }

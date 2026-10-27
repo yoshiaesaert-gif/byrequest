@@ -44,6 +44,7 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
           {r.details ? <blockquote className="rd-note"><span>From the buyer</span>{r.details}</blockquote> : null}
+          {r.house ? <p className="by-brq">Posted by the ByRequest team, with a real budget. <Link href="/legal/team-requests">How this works</Link></p> : null}
           <dl className="rd-spec">
             <div><dt>Looking for</dt><dd>{r.who}, {r.ageMin} to {r.ageMax}</dd></div>
             <div><dt>Face</dt><dd>{r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required"}</dd></div>

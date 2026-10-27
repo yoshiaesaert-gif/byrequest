@@ -15,6 +15,13 @@
       "when": 1793115857932,
       "tag": "0001_compliance_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793118418867,
+      "tag": "0002_house_and_i18n",
+      "breakpoints": true
     }
   ]
 }

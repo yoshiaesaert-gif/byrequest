@@ -78,7 +78,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         <p>Say what you want and what it is worth. Creators who fit make an offer. You choose.</p>
         <div className="h-ask"><Ask /></div>
         <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{e}</Link>)}</div>
-        <div className="h-live"><span className="livedot" />{pulse.open} requests open now · {euros(pulse.paidCents)} paid to creators this week</div>
+        <div className="h-live"><span className="livedot" />{pulse.open} requests open now{pulse.paidCents ? ` · ${euros(pulse.paidCents)} paid to creators this week` : ""}</div>
       </div>
       {hero ? <HeroLive req={hero.req} offers={hero.offers} /> : null}
     </section>

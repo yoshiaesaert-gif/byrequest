@@ -50,7 +50,7 @@ export async function searchUsers(q: string, kind: "all" | "creators" | "buyers"
     kind === "creators" ? eq(S.users.isCreator, true) : kind === "buyers" ? eq(S.users.isCreator, false) : kind === "banned" ? sql`${S.users.bannedAt} is not null` : undefined,
   );
   return db.select({
-    id: S.users.id, handle: S.users.handle, email: S.users.email, isCreator: S.users.isCreator, bannedAt: S.users.bannedAt, createdAt: S.users.createdAt, avatar: S.users.avatar,
+    id: S.users.id, handle: S.users.handle, email: S.users.email, isCreator: S.users.isCreator, house: S.users.house, bannedAt: S.users.bannedAt, createdAt: S.users.createdAt, avatar: S.users.avatar,
     bought: sql<number>`(select count(*)::int from deals d where d.buyer_id = "users"."id")`,
     sold: sql<number>`(select count(*)::int from deals d where d.creator_id = "users"."id")`,
     staff: sql<string | null>`(select s.role::text from staff s where s.user_id = "users"."id")`,

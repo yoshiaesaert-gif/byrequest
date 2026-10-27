@@ -6,7 +6,7 @@ import { toggleSave } from "../actions";
 import { toast } from "@/components/chrome";
 import { CAT_LABEL, CREATOR_SHARE, amountLabel, euros, type Category } from "@/domain/rules";
 
-type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; saved: boolean };
+type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; saved: boolean; house?: boolean };
 const VAULT: Record<string, string> = { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
@@ -32,7 +32,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
               <div className="top"><span className={"fpill" + ((new Date(r.closesAt).getTime() - now) / 3600_000 <= 6 ? " hot" : "")}><Ico n="clock" />Closes in {left(r.closesAt, now)}</span></div>
               <div className="mid">
                 <div className="fhead"><span className="eyb">{CAT_LABEL[r.category]} · {amountLabel(r.category, r.amount)}</span><div className="t">{r.title}</div>
-                  <div className="fmeta"><span>{r.who}, {r.ageMin} to {r.ageMax}</span><span>{r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required"}</span><span>Vault {VAULT[r.minVault]}</span></div></div>
+                  <div className="fmeta"><span>{r.who}, {r.ageMin} to {r.ageMax}</span><span>{r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required"}</span><span>Vault {VAULT[r.minVault]}</span></div>{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>by ByRequest</div> : null}</div>
                 <div className="fdeal"><div className="fearn"><span className="lbl">You earn</span><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b></div>
                   <Link className="btn btn-white fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}>Make an offer<Ico n="right" c="sm" /></Link></div>
               </div>

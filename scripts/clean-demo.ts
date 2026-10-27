@@ -1,0 +1,31 @@
+/* Keeps the site honest now that the ByRequest team requests carry the board. Runs at every start.
+   1. Old demo requests from fictional buyers are closed and their offers removed, so every open
+      request on the board is either a real person's or a labelled team request.
+   2. Creator ratings and deal counts are recomputed from finished deals with a real rating, so no
+      profile shows numbers that did not happen.
+   The demo sign in accounts stay for testing. Before launch the demo accounts are removed. */
+import "dotenv/config";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { db, schema as S } from "../src/db";
+
+async function main() {
+  const demo = await db.select({ id: S.users.id }).from(S.users).where(like(S.users.email, "%@demo.byrequest.app"));
+  const ids = demo.map((d) => d.id);
+  let closed = 0, removedOffers = 0;
+  if (ids.length) {
+    const reqs = await db.select({ id: S.requests.id }).from(S.requests).where(and(inArray(S.requests.buyerId, ids), eq(S.requests.status, "open")));
+    if (reqs.length) {
+      const rid = reqs.map((r) => r.id);
+      removedOffers = (await db.delete(S.offers).where(and(inArray(S.offers.requestId, rid), eq(S.offers.status, "pending"))).returning({ id: S.offers.id })).length;
+      closed = (await db.update(S.requests).set({ status: "closed" }).where(inArray(S.requests.id, rid)).returning({ id: S.requests.id })).length;
+    }
+    // Demo creators do not offer on team requests: only real creators should.
+    removedOffers += (await db.delete(S.offers).where(and(inArray(S.offers.creatorId, ids), eq(S.offers.status, "pending"), sql`${S.offers.requestId} in (select r.id from requests r join users u on u.id = r.buyer_id where u.house)`)).returning({ id: S.offers.id })).length;
+  }
+  await db.execute(sql`update users u set rating_sum = coalesce(x.s, 0), rating_count = coalesce(x.n, 0)
+    from (select c.id, sum(d.buyer_rating)::int s, count(d.buyer_rating)::int n from users c left join deals d on d.creator_id = c.id group by c.id) x
+    where x.id = u.id and (u.rating_sum <> coalesce(x.s, 0) or u.rating_count <> coalesce(x.n, 0))`);
+  console.log(`Clean demo: ${closed} old demo requests closed, ${removedOffers} demo offers removed, ratings recomputed from real deals.`);
+  process.exit(0);
+}
+main().catch((e) => { console.error(e); process.exit(1); });

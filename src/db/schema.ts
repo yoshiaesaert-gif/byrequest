@@ -39,7 +39,8 @@ export const users = pgTable("users", {
   country: text("country").notNull().default("BE"),                 // for VAT and tax reporting, ISO 3166 alpha 2
   ageVerifiedAt: timestamp("age_verified_at", { withTimezone: true }), // buyer age check passed at the provider
   sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
-  supportOrg: text("support_org"),                                    // name of a recognised support organisation, set by staff
+  supportOrg: text("support_org"),
+  house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("users_email").on(t.email), uniqueIndex("users_handle").on(t.handle)]);
@@ -96,6 +97,7 @@ export const requests = pgTable("requests", {
   minVault: vaultPeriod("min_vault").notNull().default("30d"),
   dueHours: integer("due_hours").notNull().default(48),
   cover: text("cover"),                           // cover photo key, null means neutral cover
+  lang: text("lang").notNull().default("en"),      // language the buyer wrote in: nl, fr or en
   status: requestStatus("status").notNull().default("open"),
   closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -218,4 +220,21 @@ export const ledger = pgTable("ledger", {
   entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable">().notNull(),
   cents: integer("cents").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* Machine translations of user text, made once and reused. Keyed by a hash of the source text. */
+export const translations = pgTable("translations", {
+  key: text("key").primaryKey(),                  // sha256 of target + source text
+  source: text("source").notNull(),
+  target: text("target").notNull(),
+  text: text("text").notNull(),
+  provider: text("provider").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* Small key value settings that staff change from the back office, for example the house budget. */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").$type<unknown>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

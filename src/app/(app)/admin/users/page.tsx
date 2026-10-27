@@ -19,7 +19,7 @@ export default async function Accounts({ searchParams }: { searchParams: Promise
     <div className="bo-tabs">{KINDS.map(([k, l]) => <Link key={k} href={`/admin/users?kind=${k}${sp.q ? `&q=${encodeURIComponent(sp.q)}` : ""}`} className={k === kind ? "on" : ""}>{l}</Link>)}</div>
     <div className="bo-table"><table><thead><tr><th>Account</th><th>Email</th><th>Type</th><th className="r">Bought</th><th className="r">Sold</th><th>Joined</th><th>Status</th></tr></thead>
       <tbody>{rows.map((u) => (<tr key={u.id}>
-        <td><Link href={`/admin/users/${u.id}`} className="bo-acc"><Av a={u.avatar} name={u.handle} size={28} /><b>{u.handle}</b>{u.staff ? <span className="bo-tag">{u.staff}</span> : null}</Link></td>
+        <td><Link href={`/admin/users/${u.id}`} className="bo-acc"><Av a={u.avatar} name={u.handle} size={28} /><b>{u.handle}</b>{u.staff ? <span className="bo-tag">{u.staff}</span> : null}{u.house ? <span className="bo-tag">team profile</span> : null}</Link></td>
         <td className="t-sm">{role === "admin" ? u.email : mask(u.email)}</td><td>{u.isCreator ? "Creator" : "Buyer"}</td>
         <td className="r num">{u.bought}</td><td className="r num">{u.sold}</td><td className="t-sm">{when(u.createdAt)}</td>
         <td>{u.bannedAt ? <span className="status st-rejected">blocked</span> : <span className="status st-approved">active</span>}</td></tr>))}</tbody></table>
