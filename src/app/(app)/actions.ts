@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db, schema } from "@/db";
 import { requireUser, requireCreator, endSession } from "@/server/auth";
 import { deleteAccount } from "@/server/privacy";
+import { getLocale } from "@/i18n/server";
 import * as deals from "@/server/deals";
 import * as albums from "@/server/albums";
 import * as onboarding from "@/server/onboarding";
@@ -66,7 +67,7 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
     const { neutral, ...data } = p.data;
     const cover = neutral ? null : await chooseCover(data.category, data.title);   // picked for variety, not by the buyer
-    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, closesAt: addHours(new Date(), data.openHours) }).returning();
+    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, lang: await getLocale(), closesAt: addHours(new Date(), data.openHours) }).returning();
     redirect(`/requests/${r.id}/offers?posted=1`);
   });
 }

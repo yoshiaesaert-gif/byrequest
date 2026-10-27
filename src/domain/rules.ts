@@ -135,8 +135,8 @@ export function checkDelivery(cat: Category, amount: number, files: FileFacts[])
   return { ok: lines.every((l) => l.ok), lines };
 }
 
-export function amountLabel(cat: Category, amount: number) {
-  return cat === "photos" ? `${amount} photos` : cat === "worn" ? `${amount} item${amount > 1 ? "s" : ""}` : `${amount} min`;
+export function amountLabel(cat: Category, amount: number, t: (s: string, v?: Record<string, string | number>) => string = (x, v) => x.replace("{n}", String(v?.n ?? ""))) {
+  return cat === "photos" ? t("{n} photos", { n: amount }) : cat === "worn" ? t(amount > 1 ? "{n} items" : "{n} item", { n: amount }) : t("{n} min", { n: amount });
 }
 export const CAT_LABEL: Record<Category, string> = { video: "Video", photos: "Photos", voice: "Voice note", custom: "Custom", worn: "Worn" };
 export function euros(cents: number) { return "€" + Math.round(cents / 100).toLocaleString("en-IE"); }

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export type HeroReq = { id: string; title: string; cover: string | null; amount: number; unit: string; earn: string; ages: string; left: string };
+export type HeroReq = { id: string; title: string; cover: string | null; amount: number; unit: string; earn: string; ages: string; left: string; unitLabel?: string; earnLabel?: string; offerWord?: string; offersWord?: string };
 export type HeroOffer = { handle: string; look: string | null; rating: string | null; note: string };
 
 /* Replays the real offers on one open request: they arrive one by one, the counter follows, then it starts over. */
@@ -24,11 +24,11 @@ export default function HeroLive({ req, offers }: { req: HeroReq; offers: HeroOf
         <span className="hl-shade" />
         <div className="hl-top"><span>{req.ages}</span><span>{req.left}</span></div>
         <div className="hl-bot">
-          <b className="num">{req.amount}<small>{req.unit}</small></b>
+          <b className="num">{req.amount}<small>{req.unitLabel ?? req.unit}</small></b>
           <div className="hl-t">{req.title}</div>
-          <div className="hl-earn"><span>Earn</span><em className="num">{req.earn}</em></div>
+          <div className="hl-earn"><span>{req.earnLabel ?? "Earn"}</span><em className="num">{req.earn}</em></div>
         </div>
-        <span className={"hl-count" + (shown ? " on" : "")} key={shown}>{shown} {shown === 1 ? "offer" : "offers"}</span>
+        {offers.length ? <span className={"hl-count" + (shown ? " on" : "")} key={shown}>{shown} {shown === 1 ? req.offerWord ?? "offer" : req.offersWord ?? "offers"}</span> : null}
       </Link>
       <div className="hl-feed">{list.map((o, i) => (
         <div key={o.handle} className="hl-of" style={{ ["--i" as string]: i }}>

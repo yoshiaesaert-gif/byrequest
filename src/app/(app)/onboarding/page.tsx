@@ -1,3 +1,4 @@
+import { getT } from "@/i18n/server";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -9,9 +10,10 @@ import Steps from "./steps";
 import { BecomeCreator } from "../settings/parts";
 
 export default async function Onboarding({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+  const { t } = await getT();
   const u = await requireUser();
   if (!u.isCreator) return (<div className="wrap"><div className="ob"><div className="card ob-card">
-    <h1 className="t-h1">Become a creator</h1><p className="muted">Earn by making what buyers ask for. You choose every request yourself. Verify once and keep your profile private.</p>
+    <h1 className="t-h1">{t("Become a creator")}</h1><p className="muted">{t("Earn by making what buyers ask for. You choose every request yourself. Verify once and keep your profile private.")}</p>
     <BecomeCreator /></div></div></div>);
   const o = await ob.ensure(u.id);
   const [a, terms, privacy, agreementDoc, idCheck, appeals, fresh] = await Promise.all([
@@ -28,10 +30,10 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
   const idProvider = activeProvider("identity"), payProvider = activeProvider("payout");
 
   return (<div className="wrap"><div className="ob">
-    <Link href="/" className="back"><I n="left" c="sm" />Continue later</Link>
-    <h1 className="t-h1">Become a creator</h1>
-    <p className="muted" style={{ marginTop: 6 }}>Verify once. Keep your profile private. Your progress is saved after every step.</p>
-    {PROVIDER_ENV === "test" ? <div className="banner test" style={{ marginTop: 16, marginBottom: 0 }}><I n="alert" /><div className="grow"><b>Test environment</b><div className="t-sm">Verification and payouts run against a simulated provider. Approvals here are not production checks.</div></div></div> : null}
+    <Link href="/" className="back"><I n="left" c="sm" />{t("Continue later")}</Link>
+    <h1 className="t-h1">{t("Become a creator")}</h1>
+    <p className="muted" style={{ marginTop: 6 }}>{t("Verify once. Keep your profile private. Your progress is saved after every step.")}</p>
+    {PROVIDER_ENV === "test" ? <div className="banner test" style={{ marginTop: 16, marginBottom: 0 }}><I n="alert" /><div className="grow"><b>{t("Test environment")}</b><div className="t-sm">{t("Verification and payouts run against a simulated provider. Approvals here are not production checks.")}</div></div></div> : null}
     <Steps
       step={step}
       handle={u.handle}

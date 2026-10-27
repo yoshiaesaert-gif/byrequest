@@ -11,6 +11,9 @@ export function toast(msg: string, kind: "ok" | "err" = "ok") { window.dispatchE
 
 function useEsc(fn: () => void) { useEffect(() => { const h = (e: KeyboardEvent) => e.key === "Escape" && fn(); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [fn]); }
 
+import { useT } from "@/i18n/client";
+import LangSwitch from "./lang-switch";
+
 export function MenuButton({ handle, avatar, big, mode, isCreator, verified, compact, staff }: { handle: string; avatar: React.ReactNode; big: React.ReactNode; mode: "buy" | "sell"; isCreator: boolean; verified: boolean; compact?: boolean; staff?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -18,26 +21,28 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
   useEffect(() => { if (!open) return; const h = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
   useEsc(() => setOpen(false));
   const buy = mode === "buy";
+  const t = useT();
   return (
     <div ref={ref} style={{ position: compact ? "static" : "relative" }}>
-      <button className={compact ? "icon-btn" : "avatar-btn"} onClick={() => setOpen((o) => !o)} aria-label="Account menu" aria-expanded={open}>
+      <button className={compact ? "icon-btn" : "avatar-btn"} onClick={() => setOpen((o) => !o)} aria-label={t("Account menu")} aria-expanded={open}>
         {compact ? null : <svg className="ico sm" aria-hidden="true"><use href="#i-menu" /></svg>}{avatar}
       </button>
       {open ? (
         <div className="menu" role="menu" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
-          <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? "Buying" : "Creating"}{isCreator ? (verified ? " · Verified creator" : " · Setup not finished") : ""}</div></div></div>
+          <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? t("Buying") : t("Creating")}{isCreator ? (verified ? ` · ${t("Verified creator")}` : ` · ${t("Setup not finished")}`) : ""}</div></div></div>
           {isCreator
-            ? <button className="mi switch" onClick={async () => { await setMode(buy ? "sell" : "buy"); setOpen(false); toast(buy ? "You are now creating" : "You are now buying"); router.push("/"); }}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? "Switch to creating" : "Switch to buying"}</button>
-            : <Link className="mi switch" href="/settings#creator"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>Start creating, earn money</Link>}
+            ? <button className="mi switch" onClick={async () => { await setMode(buy ? "sell" : "buy"); setOpen(false); toast(buy ? t("You are now creating") : t("You are now buying")); router.push("/"); }}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? t("Switch to creating") : t("Switch to buying")}</button>
+            : <Link className="mi switch" href="/settings#creator"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Start creating, earn money")}</Link>}
           <hr />
-          <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>Profile and privacy</Link>
-          <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>Edit your avatar</Link>
-          <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>Inbox</Link>
-          {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>Vault</Link> : <Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>Studio and earnings</Link>}
-          {staff ? <Link className="mi" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>Trust and safety</Link> : null}
+          <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>{t("Profile and privacy")}</Link>
+          <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Edit your avatar")}</Link>
+          <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>{t("Inbox")}</Link>
+          {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>{t("Vault")}</Link> : <Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>{t("Studio and earnings")}</Link>}
+          {staff ? <Link className="mi" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>{t("Trust and safety")}</Link> : null}
           <hr />
-          <button className="mi" onClick={() => { setOpen(false); hide(); }}><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg>Quick hide <span className="muted t-sm" style={{ marginLeft: "auto" }}>Esc twice</span></button>
-          <form action={signOut}><button className="mi"><svg className="ico" aria-hidden="true"><use href="#i-logout" /></svg>Sign out</button></form>
+          <LangSwitch />
+          <button className="mi" onClick={() => { setOpen(false); hide(); }}><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg>{t("Quick hide")} <span className="muted t-sm" style={{ marginLeft: "auto" }}>{t("Esc twice")}</span></button>
+          <form action={signOut}><button className="mi"><svg className="ico" aria-hidden="true"><use href="#i-logout" /></svg>{t("Sign out")}</button></form>
         </div>
       ) : null}
     </div>

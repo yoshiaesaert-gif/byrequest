@@ -10,10 +10,12 @@ import { vatRate, BUYER_AGE_CHECK } from "@/config/compliance";
 import { isAgeVerified } from "@/server/onboarding";
 import { WAIVER_TEXT } from "@/server/deals";
 import Picker from "./picker";
+import { getT } from "@/i18n/server";
 
 export default async function Offers({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ posted?: string }> }) {
   const { id } = await params;
   const u = await requireUser();
+  const { t } = await getT();
   const r = await request(id);
   if (!r || r.buyerId !== u.id) notFound();
   const list = await offersFor(id);
@@ -22,10 +24,10 @@ export default async function Offers({ params, searchParams }: { params: Promise
   const ageOk = !BUYER_AGE_CHECK || (await isAgeVerified(u.id));
   const open = r.status === "open" && r.closesAt > new Date();
   return (<div className="wrap">
-    <Link href="/deals" className="back"><I n="left" c="sm" />Deals</Link>
-    {(await searchParams).posted ? <div className="banner ok"><I n="check" /><div className="grow"><b>Your request is live.</b><div className="t-sm">Creators who fit will make offers. You get a neutral notification for each one.</div></div></div> : null}
-    <div className="page-h"><div><span className="eyebrow">Your request · {open ? "open" : "closed"}</span><h1 className="t-h1" style={{ marginTop: 6 }}>{r.title}</h1>
-      <p className="muted t-sm" style={{ marginTop: 6 }}>{CAT_LABEL[r.category]} · {amountLabel(r.category, r.amount)} · {r.who}, {r.ageMin} to {r.ageMax} · {r.face === "not_needed" ? "No face needed" : r.face === "optional" ? "Face optional" : "Face required"} · Vault at least {VAULT_LABEL[r.minVault].toLowerCase()}</p></div></div>
+    <Link href="/deals" className="back"><I n="left" c="sm" />{t("Deals")}</Link>
+    {(await searchParams).posted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Your request is live.")}</b><div className="t-sm">{t("Creators who fit will make offers. You get a neutral notification for each one.")}</div></div></div> : null}
+    <div className="page-h"><div><span className="eyebrow">{t("Your request")} · {open ? t("open") : t("closed")}</span><h1 className="t-h1" style={{ marginTop: 6 }}>{r.title}</h1>
+      <p className="muted t-sm" style={{ marginTop: 6 }}>{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {t(r.face === "not_needed" ? "No face needed" : r.face === "optional" ? "Face optional" : "Face required")} · {t("Vault at least")} {t(VAULT_LABEL[r.minVault]).toLowerCase()}</p></div></div>
     <Picker
       requestId={r.id} open={open} dealId={deal?.id ?? null}
       money={{ deal: m.dealCents, fee: m.feeCents, vat: m.vatCents, vatPct: m.vatRate / 100, total: m.total }} ageOk={ageOk} waiver={WAIVER_TEXT}

@@ -37,43 +37,47 @@ export const TZ = "Europe/Brussels";
 export function when(d: Date | string) { return new Date(d).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ }); }
 
 export function hoursLeft(d: Date) { return Math.max(0, (d.getTime() - Date.now()) / 3600_000); }
-export function leftLabel(d: Date) {
+type Tr = (s: string, v?: Record<string, string | number>) => string;
+const same: Tr = (s, v) => { let o = s; for (const [k, x] of Object.entries(v ?? {})) o = o.split(`{${k}}`).join(String(x)); return o; };
+export function leftLabel(d: Date, t: Tr = same) {
   const h = hoursLeft(d);
-  if (h < 1) return `${Math.max(1, Math.round(h * 60))}m left`;
-  if (h < 48) return `${Math.round(h)}h left`;
-  return `${Math.round(h / 24)} days left`;
+  if (h < 1) return t("{n}m left", { n: Math.max(1, Math.round(h * 60)) });
+  if (h < 48) return t("{n}h left", { n: Math.round(h) });
+  return t("{n} days left", { n: Math.round(h / 24) });
 }
-export function ageLabel(a: number, b: number) { return `${a} to ${b}`; }
+export function ageLabel(a: number, b: number, t: Tr = same) { return t("{a} to {b}", { a, b }); }
 const UNIT: Record<Category, string> = { video: "MIN VIDEO", photos: "PHOTOS", voice: "MIN VOICE", custom: "MIN CUSTOM", worn: "ITEM" };
 
-export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number; house?: boolean };
+/* translated: the title shown is a machine translation, marked above it (see server/translate.ts). */
+export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number; house?: boolean; translated?: boolean };
 
-export function Chips({ r }: { r: CardReq }) {
+export function Chips({ r, t = same }: { r: CardReq; t?: Tr }) {
   const hot = hoursLeft(r.closesAt) <= 6;
   return (<div className="chips">
-    <span className="mc"><I n="user" />{ageLabel(r.ageMin, r.ageMax)}</span>
-    <span className={"mc" + (hot ? " hot" : "")}><I n="clock" />{leftLabel(r.closesAt)}</span>
+    <span className="mc"><I n="user" />{ageLabel(r.ageMin, r.ageMax, t)}</span>
+    <span className={"mc" + (hot ? " hot" : "")}><I n="clock" />{leftLabel(r.closesAt, t)}</span>
   </div>);
 }
-export function BigNum({ r }: { r: CardReq }) { return <div className="bn num">{r.amount}<small>{UNIT[r.category]}</small></div>; }
-export function Earn({ cents }: { cents: number }) {
-  return <div className="pr"><span className="lbl">Earn</span><b className="num">{euros(Math.round(cents * CREATOR_SHARE))}</b></div>;
+export function BigNum({ r, t = same }: { r: CardReq; t?: Tr }) { return <div className="bn num">{r.amount}<small>{t(UNIT[r.category])}</small></div>; }
+export function Earn({ cents, t = same }: { cents: number; t?: Tr }) {
+  return <div className="pr"><span className="lbl">{t("Earn")}</span><b className="num">{euros(Math.round(cents * CREATOR_SHARE))}</b></div>;
 }
+export const who = (w: string, t: Tr = same) => t(w);
 
-export function RequestCard({ r, frost = true }: { r: CardReq; frost?: boolean }) {
+export function RequestCard({ r, frost = true, t = same }: { r: CardReq; frost?: boolean; t?: Tr }) {
   return (
     <Link href={`/requests/${r.id}`} className="rq">
       <div className="media">
         <Cover cover={r.cover} frost={frost} />
-        <div className="ov"><div><Chips r={r} /><BigNum r={r} /></div><Earn cents={r.dealCents} /></div>
+        <div className="ov"><div><Chips r={r} t={t} /><BigNum r={r} t={t} /></div><Earn cents={r.dealCents} t={t} /></div>
       </div>
-      <div><div className="t">{r.title}</div><div className="m">{CAT_LABEL[r.category]} · {r.who} · {ageLabel(r.ageMin, r.ageMax)} · {r.offers} offers</div>{r.house ? <div className="by-brq">by ByRequest</div> : null}</div>
+      <div>{r.translated ? <div className="tr-note">{t("Automatically translated")}</div> : null}<div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)} · {t("{n} offers", { n: r.offers })}</div>{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
     </Link>
   );
 }
 
-export function Stars({ sum, count }: { sum: number; count: number }) {
-  return count ? <><span className="star">★</span> {(sum / count).toFixed(1)}</> : <span className="badge ok">New</span>;
+export function Stars({ sum, count, t = same }: { sum: number; count: number; t?: Tr }) {
+  return count ? <><span className="star">★</span> {(sum / count).toFixed(1)}</> : <span className="badge ok">{t("New")}</span>;
 }
 
 export function Empty({ icon, title, text, action }: { icon: string; title: string; text: string; action?: React.ReactNode }) {

@@ -372,3 +372,7 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .hr-row{padding:14px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .hr-h{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.hr-h .t-sm{flex-basis:100%}
 .hr-offer,.hr-deal{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.86rem;padding:8px 12px;border-radius:12px;background:var(--sunk)}
+.lang{display:inline-flex;gap:2px;padding:2px;border-radius:999px;box-shadow:inset 0 0 0 1px currentColor;opacity:.85}.lang button{height:26px;min-width:34px;padding:0 8px;border-radius:999px;font-size:.72rem;font-weight:700;color:inherit;background:none}.lang button.on{background:currentColor}.lang button.on{color:var(--paper)}.ft .lang button.on{color:#0E0D17;background:#fff}.menu .lang{margin:4px 12px 8px;color:var(--ink)}
+.ft-lang{margin-top:16px;color:#fff}
+.tr-note{font-size:.7rem;color:var(--muted);font-style:italic;margin-bottom:2px}
+.rd-tr{display:block;margin-top:6px;font-size:.74rem;opacity:.85;font-style:italic}.rd-tr a{color:inherit;text-decoration:underline}

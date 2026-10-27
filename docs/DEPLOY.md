@@ -46,3 +46,8 @@ One service runs the web app, the migrations and the release worker. Postgres is
 1. `SEED_DEMO=0` skips the demo data on an empty database.
 2. Leave `DEV_SHOW_CODE` off for anything beyond a private demo: with it on, login codes are shown on screen.
 3. Email sending, real payments and real verification providers are not connected in this environment.
+
+## Translation
+The site is in Dutch, English and French. Fixed texts are translated by hand in `src/i18n/nl.ts` and `src/i18n/fr.ts`. What people write is translated automatically, once, by the minute scheduler, and always marked "Automatically translated" with the original one click away.
+* `DEEPL_API_KEY`: optional. A DeepL API Free key (ends in `:fx`) gives 500,000 characters a month for free. Without it the free MyMemory tier is used, which allows far less per day.
+* `TRANSLATE_PROVIDER=off`: turns machine translation off.

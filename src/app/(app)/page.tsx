@@ -5,6 +5,8 @@ import * as q from "@/server/queries";
 import { access } from "@/server/onboarding";
 import { Av, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
 import HeroLive from "@/components/hero-live";
+import { getT } from "@/i18n/server";
+import { localize } from "@/server/translate";
 import Ask from "@/components/ask";
 import { parseAsk as parseAskHref } from "@/components/ask-parse";
 import { PromiseIcon } from "@/components/promise-icons";
@@ -37,10 +39,12 @@ const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout 
 
 async function BuyerHome({ userId, handle, welcome, board }: { userId: string; handle: string; welcome: boolean; board?: string }) {
   const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
-  const [mine, myDeals, pulse, top, boardItems, ending, creators, stats] = await Promise.all([
+  const [mine, myDeals, pulse, rawTop, rawBoard, rawEnding, creators, stats] = await Promise.all([
     q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }),
     q.feed({ viewerId: userId, tab: "ending", limit: 16 }), q.publicCreators(18), q.categoryStats(),
   ]);
+  const { t, locale } = await getT();
+  const [top, boardItems, ending] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale), localize(rawEnding, locale)]);
   const openMine = mine.find((m) => m.r.status === "open");
   const live = myDeals.find((d) => d.d.buyerId === userId && ["held", "reviewing", "delivered", "disputed"].includes(d.d.status));
   // Every request shows once on the page: hero, board and closing soon never repeat each other.
@@ -56,91 +60,91 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
   for (const c of cands) { const d3 = c.o.filter((x) => x.u.avatar?.kind === "3d"); if (d3.length >= 2) c.o = d3; }
   const best = cands.sort((a, b) => b.o.length - a.o.length)[0];
   const hero = best ? {
-    req: { id: best.r.id, title: best.r.title, cover: best.r.cover, amount: best.r.amount, unit: best.r.category === "photos" ? "photos" : best.r.category === "worn" ? "item" : "min", earn: euros(Math.round(best.r.dealCents * CREATOR_SHARE)), ages: `${best.r.ageMin} to ${best.r.ageMax}`, left: leftLabel(best.r.closesAt) },
+    req: { id: best.r.id, title: best.r.title, cover: best.r.cover, amount: best.r.amount, unit: best.r.category === "photos" ? "photos" : best.r.category === "worn" ? "item" : "min", earn: euros(Math.round(best.r.dealCents * CREATOR_SHARE)), ages: t("{a} to {b}", { a: best.r.ageMin, b: best.r.ageMax }), left: leftLabel(best.r.closesAt, t), unitLabel: t(best.r.category === "photos" ? "photos" : best.r.category === "worn" ? "item" : "min"), earnLabel: t("Earn"), offerWord: t("offer"), offersWord: t("offers") },
     offers: best.o.slice(0, 5).map(({ o, u: c }) => ({
       handle: c.handle,
       look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? svgSrc(c.avatar.svg) : null,
       rating: c.ratingCount ? (c.ratingSum / c.ratingCount).toFixed(1) : null,
-      note: `made an offer · ${o.showsFace ? "face shown" : "no face"}`,
+      note: `${t("made an offer")} · ${o.showsFace ? t("face shown") : t("no face")}`,
     })),
   } : null;
   const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
-  const tabs: [string | undefined, string][] = [[undefined, "Everything"], ["video", "Video"], ["photos", "Photos"], ["voice", "Voice"], ["custom", "Custom"]];
+  const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
 
   return (<div className="wrap home">
-    {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>Welcome, {handle}.</b><div className="t-sm">Post your first request. Nothing is charged until you accept an offer.</div></div></div> : null}
+    {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Nothing is charged until you accept an offer.")}</div></div></div> : null}
 
     <section className="h-hero">
       <div className="h-hero-bg"><Cover cover="c20" /></div>
       <div className="h-hero-tx">
-        <span className="h-kick">{greet()}, {handle}</span>
-        <h1>Ask for it.<br />Someone makes it.</h1>
-        <p>Say what you want and what it is worth. Creators who fit make an offer. You choose.</p>
+        <span className="h-kick">{t(greet())}, {handle}</span>
+        <h1>{t("Ask for it.")}<br />{t("Someone makes it.")}</h1>
+        <p>{t("Say what you want and what it is worth. Creators who fit make an offer. You choose.")}</p>
         <div className="h-ask"><Ask /></div>
-        <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{e}</Link>)}</div>
-        <div className="h-live"><span className="livedot" />{pulse.open} requests open now{pulse.paidCents ? ` · ${euros(pulse.paidCents)} paid to creators this week` : ""}</div>
+        <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{t(e)}</Link>)}</div>
+        <div className="h-live"><span className="livedot" />{t("{n} requests open now", { n: pulse.open })}{pulse.paidCents ? ` · ${t("{amount} paid to creators this week", { amount: euros(pulse.paidCents) })}` : ""}</div>
       </div>
       {hero ? <HeroLive req={hero.req} offers={hero.offers} /> : null}
     </section>
 
     {openMine || live ? (
       <div className="h-mine">
-        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="livedot" /><span className="tx"><b>{openMine.offers} offers</b> on “{openMine.r.title}”</span><span className="go">Review <I n="right" c="sm" /></span></Link> : null}
-        {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{live.r.title}</b> · {live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review"}</span><span className="go">Open <I n="right" c="sm" /></span></Link> : null}
+        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="livedot" /><span className="tx"><b>{t("{n} offers", { n: openMine.offers })}</b> {t("on")} “{openMine.r.title}”</span><span className="go">{t("Review")} <I n="right" c="sm" /></span></Link> : null}
+        {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{live.r.title}</b> · {t(live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review")}</span><span className="go">{t("Open")} <I n="right" c="sm" /></span></Link> : null}
       </div>) : null}
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">Live board</span><h2>What people are asking for</h2></div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
         <nav className="h-tabs">{tabs.map(([k, l]) => <Link key={l} href={k ? `/?board=${k}` : "/"} scroll={false} className={cat === k ? "on" : ""}>{l}</Link>)}</nav></div>
       {feat ? (
         <div className="h-board">
           <Link href={`/requests/${feat.id}`} className="h-feat media">
             <Cover cover={feat.cover} frost />
             <div className="h-feat-in">
-              <div className="h-feat-top"><span className="h-chip">New · {feat.offers} offers</span><span className="h-chip">{leftLabel(feat.closesAt)}</span></div>
-              <div className="h-feat-num num">{feat.amount}<small>{feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : "MIN " + feat.category.toUpperCase()}</small></div>
-              <div className="h-feat-b"><div><span className="h-kick">{CAT_LABEL[feat.category]} · {feat.who}, {feat.ageMin} to {feat.ageMax}</span><h3>{feat.title}</h3></div>
-                <div className="h-earn"><span>Earn</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
+              <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
+              <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
+              <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span>{feat.translated ? <span className="tr-note" style={{ color: "rgba(255,255,255,.7)" }}>{t("Automatically translated")}</span> : null}<h3>{feat.title}</h3>{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
+                <div className="h-earn"><span>{t("Earn")}</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
             </div>
           </Link>
-          {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} />)}
-        </div>) : <div className="card empty"><b className="t-h3">Nothing in this category right now</b><Link href="/post" className="btn btn-primary">Be the first</Link></div>}
-      <div className="h-more"><Link href="/for-you" className="btn btn-primary btn-lg">Open the full board <I n="right" c="sm" /></Link><Link href="/post" className="btn btn-secondary btn-lg">Post your own</Link></div>
+          {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} t={t} />)}
+        </div>) : <div className="card empty"><b className="t-h3">{t("Nothing in this category right now")}</b><Link href="/post" className="btn btn-primary">{t("Be the first")}</Link></div>}
+      <div className="h-more"><Link href="/for-you" className="btn btn-primary btn-lg">{t("Open the full board")} <I n="right" c="sm" /></Link><Link href="/post" className="btn btn-secondary btn-lg">{t("Post your own")}</Link></div>
     </section>
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">This week</span><h2>Moods people are into</h2></div></div>
+      <div className="h-head"><div><span className="h-kick dark">{t("This week")}</span><h2>{t("Moods people are into")}</h2></div></div>
       <div className="h-drops">{DROPS.map((x) => { const n = stats[x.c]?.n ?? 0; return (
         <Link key={x.k} href={x.href} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{x.k}</span><h3>{x.t}</h3><p>{x.d}</p><span className="h-drop-cta">{n} open · start yours <I n="right" c="sm" /></span></div></Link>); })}</div>
+          <div className="h-drop-in"><span className="h-kick">{t(x.k)}</span><h3>{t(x.t)}</h3><p>{t(x.d)}</p><span className="h-drop-cta">{t("{n} open · start yours", { n })} <I n="right" c="sm" /></span></div></Link>); })}</div>
     </section>
 
     <section className="h-promise">
-      <div className="h-promise-head"><span className="h-kick">Our promises</span><h2>Private by design.<br />Safe by default.</h2><p>Everything that matters happens inside ByRequest, so everyone is protected from the first offer to the last view.</p></div>
-      <div className="h-promise-grid">{PROMISES.map((x) => <div key={x.t} className="h-pr"><PromiseIcon name={x.i} /><b>{x.t}</b><p>{x.d}</p></div>)}</div>
+      <div className="h-promise-head"><span className="h-kick">{t("Our promises")}</span><h2>{t("Private by design.")}<br />{t("Safe by default.")}</h2><p>{t("Everything that matters happens inside ByRequest, so everyone is protected from the first offer to the last view.")}</p></div>
+      <div className="h-promise-grid">{PROMISES.map((x) => <div key={x.t} className="h-pr"><PromiseIcon name={x.i} /><b>{t(x.t)}</b><p>{t(x.d)}</p></div>)}</div>
     </section>
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">Last chance</span><h2>Closing soon</h2></div><Link href="/for-you?tab=ending" className="h-link">See all <I n="right" c="sm" /></Link></div>
-      <div className="rail">{soon.map((r) => <RequestCard key={r.id} r={r} />)}</div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Last chance")}</span><h2>{t("Closing soon")}</h2></div><Link href="/for-you?tab=ending" className="h-link">{t("See all")} <I n="right" c="sm" /></Link></div>
+      <div className="rail">{soon.map((r) => <RequestCard key={r.id} r={r} t={t} />)}</div>
     </section>
 
     <section className="h-sec h-split">
-      <div className="h-most"><span className="h-kick dark">Most wanted</span><h2>What sells right now</h2>
+      <div className="h-most"><span className="h-kick dark">{t("Most wanted")}</span><h2>{t("What sells right now")}</h2>
         <ol>{most.map((x, i) => (
-          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{CAT_LABEL[x.k]}</b><span>{x.s!.n} open · typically {euros(x.s!.lo)} to {euros(x.s!.hi)}</span></div><Link href={`/?board=${x.k}`} scroll={false} aria-label={`Show ${CAT_LABEL[x.k]}`}><I n="right" /></Link></li>))}</ol></div>
-      <div className="h-how"><span className="h-kick">How it works</span>
-        <div className="h-step"><span className="num">1</span><div><b>Ask</b><p>Type, length, who, budget. Free to post.</p></div></div>
-        <div className="h-step"><span className="num">2</span><div><b>Choose</b><p>Compare offers: face or not, vault time, rating.</p></div></div>
-        <div className="h-step"><span className="num">3</span><div><b>Enjoy</b><p>Checked, reviewed, in your private vault.</p></div></div>
-        <Link href="/post" className="btn btn-white btn-lg">Post a request</Link></div>
+          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(CAT_LABEL[x.k])}</b><span>{t("{n} open · typically {lo} to {hi}", { n: x.s!.n, lo: euros(x.s!.lo), hi: euros(x.s!.hi) })}</span></div><Link href={`/?board=${x.k}`} scroll={false} aria-label={t(CAT_LABEL[x.k])}><I n="right" /></Link></li>))}</ol></div>
+      <div className="h-how"><span className="h-kick">{t("How it works")}</span>
+        <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Free to post.")}</p></div></div>
+        <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare offers: face or not, vault time, rating.")}</p></div></div>
+        <div className="h-step"><span className="num">3</span><div><b>{t("Enjoy")}</b><p>{t("Checked, reviewed, in your private vault.")}</p></div></div>
+        <Link href="/post" className="btn btn-white btn-lg">{t("Post a request")}</Link></div>
     </section>
 
     {creators.length ? (
-      <section className="h-sec"><div className="h-head"><div><span className="h-kick dark">Open profiles</span><h2>Creators you can ask directly</h2></div><span className="t-sm muted">Others only show when they make you an offer</span></div>
+      <section className="h-sec"><div className="h-head"><div><span className="h-kick dark">{t("Open profiles")}</span><h2>{t("Creators you can ask directly")}</h2></div><span className="t-sm muted">{t("Others only show when they make you an offer")}</span></div>
         <div className="creators">{creators.map(({ u: c, p }) => (
-          <Link key={c.id} href={`/c/${c.handle}`} className="cr"><div className="media avfill"><Av a={c.avatar} name={c.handle} size={300} square /><div className="top"><span className="badge glass">{p.showsFace ? "Face shown" : "No face"}</span></div></div>
-            <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} /></span></div><div className="m">{c.ratingCount ? `${c.ratingCount} deals · ` : ""}from {euros(p.fromCents)}</div></div></Link>))}</div>
+          <Link key={c.id} href={`/c/${c.handle}`} className="cr"><div className="media avfill"><Av a={c.avatar} name={c.handle} size={300} square /><div className="top"><span className="badge glass">{p.showsFace ? t("Face shown") : t("No face")}</span></div></div>
+            <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} t={t} /></span></div><div className="m">{c.ratingCount ? `${t("{n} deals", { n: c.ratingCount })} · ` : ""}{t("from {amount}", { amount: euros(p.fromCents) })}</div></div></Link>))}</div>
       </section>) : null}
   </div>);
 }
@@ -151,32 +155,34 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
   const mx = Math.max(...pts, 1), W = 600, H = 80;
   const d = pts.map((v, i) => `${i ? "L" : "M"}${((i * W) / Math.max(pts.length - 1, 1)).toFixed(1)} ${(H - 6 - (v / mx) * (H - 16)).toFixed(1)}`).join(" ");
   const pendingOffers = offers.filter((o) => o.o.status === "pending").length;
+  const { t, locale } = await getT();
+  const fitL = await localize(fit, locale);
   return (<div className="wrap">
     {a.status === "active"
-      ? <div className="banner ok"><I n="check" /><div className="grow"><b>You’re ready to earn.</b><div className="t-sm">Identity, agreement and payouts are approved{a.payout?.env === "test" ? " in the test environment" : ""}.</div></div>{a.payout?.env === "test" ? <span className="envtag">Test</span> : null}</div>
+      ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{a.payout?.env === "test" ? t("Identity, agreement and payouts are approved in the test environment.") : t("Identity, agreement and payouts are approved.")}</div></div>{a.payout?.env === "test" ? <span className="envtag">Test</span> : null}</div>
       : <div className={"banner " + (a.status === "action_required" || a.status === "restricted" ? "warn" : "info")}><I n={a.status === "pending_verification" ? "clock" : "alert"} />
-          <div className="grow"><b>{a.status === "pending_verification" ? "Your verification is being reviewed." : a.status === "draft" ? "Verify once. Keep your profile private." : a.status === "suspended" ? "Your creator account is suspended." : a.areas.payout !== "approved" ? "Action needed to enable payouts." : "Action needed to finish your setup."}</b>
-            <div className="t-sm">{a.missing.join(" · ")}</div></div>
-          {a.status !== "suspended" ? <Link href="/onboarding" className="btn btn-primary btn-sm">Continue setup</Link> : null}</div>}
+          <div className="grow"><b>{t(a.status === "pending_verification" ? "Your verification is being reviewed." : a.status === "draft" ? "Verify once. Keep your profile private." : a.status === "suspended" ? "Your creator account is suspended." : a.areas.payout !== "approved" ? "Action needed to enable payouts." : "Action needed to finish your setup.")}</b>
+            <div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div>
+          {a.status !== "suspended" ? <Link href="/onboarding" className="btn btn-primary btn-sm">{t("Continue setup")}</Link> : null}</div>}
 
-    <div className="hello"><div><span className="eyebrow">Hi {handle}</span><h1 className="t-display" style={{ marginTop: 10 }}>{fit.length} requests are open now</h1></div><Link href="/for-you" className="btn btn-primary"><I n="foryou" c="sm" />Browse requests</Link></div>
+    <div className="hello"><div><span className="eyebrow">{t("Hi {name}", { name: handle })}</span><h1 className="t-display" style={{ marginTop: 10 }}>{t("{n} requests are open now", { n: fit.length })}</h1></div><Link href="/for-you" className="btn btn-primary"><I n="foryou" c="sm" />{t("Browse requests")}</Link></div>
 
     <div className="earn-hero">
       <div className="card earn-card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}><div><span className="eyebrow">Earned this month</span><div className="big num" style={{ marginTop: 10 }}>{euros(earn.monthCents)}</div></div>{earn.heldCents ? <span className="badge amber">{euros(earn.heldCents)} waiting for payout setup</span> : null}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}><div><span className="eyebrow">{t("Earned this month")}</span><div className="big num" style={{ marginTop: 10 }}>{euros(earn.monthCents)}</div></div>{earn.heldCents ? <span className="badge amber">{t("{amount} waiting for payout setup", { amount: euros(earn.heldCents) })}</span> : null}</div>
         <svg className="spark" viewBox="0 0 600 80" preserveAspectRatio="none" role="img" aria-label="Weekly earnings, last 12 weeks"><path d={`${d} L600 80 L0 80 Z`} fill="var(--brand-soft)" /><path d={d} fill="none" stroke="var(--brand)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" /></svg>
-        <div className="kv"><div><b className="num">{euros(earn.pendingCents)}</b><span>In progress</span></div><div><b>{a.caps.receivePayouts ? "Friday" : "Not yet"}</b><span>Next payout</span></div><div><b className="num">{pendingOffers}</b><span>Open offers</span></div></div>
+        <div className="kv"><div><b className="num">{euros(earn.pendingCents)}</b><span>{t("In progress")}</span></div><div><b>{a.caps.receivePayouts ? t("Friday") : t("Not yet")}</b><span>{t("Next payout")}</span></div><div><b className="num">{pendingOffers}</b><span>{t("Open offers")}</span></div></div>
       </div>
-      <div className="card terms"><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h3 className="t-h3">Preview requests</h3><Link href="/studio" className="btn btn-ghost btn-sm">Studio</Link></div>
-        <p className="t-sm muted">Buyers who are choosing can ask for a view once preview. You decide.</p>
-        {albums.length ? albums.slice(0, 3).map((x) => <div key={x.a.id} className="term"><span className="muted">{x.buyer} · {x.a.kind}</span><Link href="/studio" className="btn btn-secondary btn-sm">Answer</Link></div>) : <div className="term"><span className="muted">No requests right now</span><b>All clear</b></div>}
+      <div className="card terms"><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h3 className="t-h3">{t("Preview requests")}</h3><Link href="/studio" className="btn btn-ghost btn-sm">{t("Studio")}</Link></div>
+        <p className="t-sm muted">{t("Buyers who are choosing can ask for a view once preview. You decide.")}</p>
+        {albums.length ? albums.slice(0, 3).map((x) => <div key={x.a.id} className="term"><span className="muted">{x.buyer} · {x.a.kind}</span><Link href="/studio" className="btn btn-secondary btn-sm">{t("Answer")}</Link></div>) : <div className="term"><span className="muted">{t("No requests right now")}</span><b>{t("All clear")}</b></div>}
       </div>
     </div>
 
-    <section className="sec"><div className="sec-h"><h2 className="t-h2">Requests for you</h2><Link href="/for-you">Open feed <I n="right" c="sm" /></Link></div>
-      <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fit.filter((r) => !r.mine).map((r) => (
-        <Link key={r.id} href={`/requests/${r.id}`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{r.title}</b><div className="t-sm muted">{CAT_LABEL[r.category]} · {amountLabel(r.category, r.amount)} · {r.ageMin} to {r.ageMax} · closes in {leftLabel(r.closesAt).replace(" left", "")}</div></div>
-          <div className="r"><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b><span className="t-xs muted">you earn</span></div></Link>))}</div></div>
+    <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
+      <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (
+        <Link key={r.id} href={`/requests/${r.id}`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{r.title}</b>{r.translated ? <span className="tr-note"> · {t("Automatically translated")}</span> : null}<div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {leftLabel(r.closesAt, t)}</div></div>
+          <div className="r"><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b><span className="t-xs muted">{t("you earn")}</span></div></Link>))}</div></div>
     </section>
   </div>);
 }

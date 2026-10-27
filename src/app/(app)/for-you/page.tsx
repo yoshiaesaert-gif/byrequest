@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
 import { feed, savedIds } from "@/server/queries";
 import Feed from "./feed";
+import { getLocale } from "@/i18n/server";
+import { localize } from "@/server/translate";
 
 export default async function ForYou({ searchParams }: { searchParams: Promise<{ tab?: string; c?: string; q?: string }> }) {
   const u = await requireUser();
@@ -11,5 +13,6 @@ export default async function ForYou({ searchParams }: { searchParams: Promise<{
   let items = await feed({ viewerId: u.id, tab, category: sp.c, limit: 40 });
   if (sp.q) { const t = sp.q.toLowerCase(); items = items.filter((r) => r.title.toLowerCase().includes(t)); }
   const saved = await savedIds(u.id);
-  return <Feed items={items.filter((r) => !r.mine).map((r) => ({ ...r, saved: saved.has(r.id) }))} tab={tab} sell={sell} frost={u.prefs.frost} />;
+  const shown = await localize(items, await getLocale());
+  return <Feed items={shown.filter((r) => !r.mine).map((r) => ({ ...r, saved: saved.has(r.id) }))} tab={tab} sell={sell} frost={u.prefs.frost} />;
 }

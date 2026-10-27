@@ -3,6 +3,8 @@ import { SPRITE } from "@/components/sprite";
 import "./globals.css";
 import "./app.css";
 import "./home.css";
+import { getLocale } from "@/i18n/server";
+import { I18nProvider } from "@/i18n/client";
 
 export const metadata: Metadata = {
   title: "ByRequest",
@@ -13,9 +15,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#F6F6F3" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -24,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} />
-        {children}
+        <I18nProvider locale={locale}>{children}</I18nProvider>
       </body>
     </html>
   );
