@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { SPRITE } from "@/components/sprite";
 import "./globals.css";
 import "./app.css";
+import "./home.css";
 
 export const metadata: Metadata = {
   title: "ByRequest",

@@ -6,7 +6,7 @@ import { toast } from "@/components/chrome";
 import { CAT_LABEL, euros, CREATOR_SHARE, amountLabel } from "@/domain/rules";
 
 type Cat = "video" | "photos" | "voice" | "custom";
-const STEPS = ["type", "details", "who", "access", "budget", "cover", "review"] as const;
+const STEPS = ["type", "details", "who", "access", "budget", "review"] as const;
 const COVERS: Record<Cat, string[]> = { video: ["c01", "c03", "c05", "c11", "c13", "c04"], photos: ["c07", "c21", "c23", "c02", "c24", "c22"], voice: ["c17", "c16", "c15", "c18", "c19", "c20"], custom: ["c26", "c25", "c28", "c29", "c30", "c27"] };
 const CATS: { k: Cat; ic: string; img: string; sub: string }[] = [
   { k: "video", ic: "video", img: "c05", sub: "Shower, workout, routine" }, { k: "photos", ic: "image", img: "c21", sub: "A set, in full resolution" },
@@ -21,7 +21,7 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
   const [w, setW] = useState({
     category: initial.category, amount: initial.amount, title: initial.title, details: "",
     who: "Man" as "Man" | "Woman" | "Anyone", ageMin: 18, ageMax: 30, face: "not_needed" as "not_needed" | "optional" | "required",
-    dueHours: 48, minVault: "30d" as "7d" | "30d" | "1y" | "forever", budget: initial.budget || 0, cover: "", openHours: 24, shift: 0,
+    dueHours: 48, minVault: "30d" as "7d" | "30d" | "1y" | "forever", budget: initial.budget || 0, neutral: false, openHours: 24,
   });
   const [pending, start] = useTransition();
   const set = (p: Partial<typeof w>) => setW((x) => ({ ...x, ...p }));
@@ -29,15 +29,14 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
   const budget = w.budget || Math.round((band[0] + band[1]) / 2 / 5) * 5;
   const step = STEPS[i];
   const unit = w.category === "photos" ? "photos" : "min";
-  const covers = COVERS[w.category];
-  const opts = [0, 1, 2].map((k) => covers[(w.shift + k) % covers.length]).concat("neutral");
-  const cover = w.cover && opts.includes(w.cover) ? w.cover : opts[0];
+  const preview = COVERS[w.category][w.title.length % COVERS[w.category].length];
   const canNext = step === "details" ? w.title.trim().length >= 4 : true;
-  const verdict = budget < band[0] ? "Below most similar deals. Expect fewer offers." : budget > band[1] ? "Above most similar deals. Expect fast offers." : "In line with similar deals.";
+  const zone = budget < band[0] ? "low" : budget > band[1] ? "high" : "mid";
+
 
   const opt = (k: keyof typeof w, v: string | number, l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<typeof w>)}>{l}</button>;
   const submit = () => start(async () => {
-    const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin: w.ageMin, ageMax: w.ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget, cover, openHours: w.openHours });
+    const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin: w.ageMin, ageMax: w.ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget, neutral: w.neutral, openHours: w.openHours });
     if (r && !r.ok) toast(r.error, "err");
   });
 
@@ -46,7 +45,7 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
       <div className="wz-top"><Link href="/" className="icon-btn" aria-label="Close"><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{i + 1} of {STEPS.length}</span></div>
       <div className="wz-body">
         {step === "type" && (<><h2>What would you like?</h2><p className="lead">Choose a type. You add the details next.</p>
-          <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10, cover: "", shift: 0 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{CAT_LABEL[c.k]}</b><span className="s">{c.sub}</span></div></button>)}
+          <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{CAT_LABEL[c.k]}</b><span className="s">{c.sub}</span></div></button>)}
             <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>Worn items</b><span className="s">Coming soon</span></div></button></div></>)}
 
         {step === "details" && (<><h2>Tell creators the details</h2><p className="lead">Keep the title short and neutral. Everyone can see it.</p>
@@ -68,24 +67,39 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
           <div className="field"><label>Minimum time in your vault</label><div className="optrow">{opt("minVault", "7d", "7 days")}{opt("minVault", "30d", "30 days")}{opt("minVault", "1y", "1 year")}{opt("minVault", "forever", "Forever")}</div><span className="t-sm muted">Creators with a shorter access period cannot make an offer.</span></div>
           <div className="field"><label>Keep the request open for</label><div className="optrow">{opt("openHours", 6, "6 hours")}{opt("openHours", 24, "24 hours")}{opt("openHours", 72, "3 days")}</div></div></>)}
 
-        {step === "budget" && (<><h2>Set your budget</h2><p className="lead">This is the deal value creators see. A 10% service fee is added at checkout.</p>
-          <div className="card pricebox"><div className="stepperx"><button type="button" onClick={() => set({ budget: Math.max(10, budget - 5) })} aria-label="Lower"><Ico n="minus" /></button><span className="big num">{euros(budget * 100)}</span><button type="button" onClick={() => set({ budget: Math.min(2000, budget + 5) })} aria-label="Higher"><Ico n="plus" /></button></div>
-            <div className="guide"><div className="bar"><span className="band" style={{ left: `${(band[0] / 300) * 100}%`, width: `${((band[1] - band[0]) / 300) * 100}%` }} /><input type="range" className="range" min={10} max={300} step={5} value={Math.min(budget, 300)} onChange={(e) => set({ budget: Number(e.target.value) })} aria-label="Budget" /></div>
-              <div className="lbl"><span>€10</span><span>Similar deals: {euros(band[0] * 100)} to {euros(band[1] * 100)}</span><span>€300</span></div></div><b>{verdict}</b></div>
-          <div className="breakdown card" style={{ padding: "16px 20px" }}><div><span className="muted">Your budget</span><span className="num">{euros(budget * 100)}</span></div><div><span className="muted">Service fee 10%</span><span className="num">€{(budget * 0.1).toFixed(2)}</span></div><div className="tot"><span>Secured when you accept an offer</span><span className="num">€{(budget * 1.1).toFixed(2)}</span></div></div></>)}
-
-        {step === "cover" && (<><h2>Choose your cover</h2><p className="lead">This is how your request looks on the board. Pick a mood photo, or stay fully neutral.</p>
-          <div className="covpick">{opts.map((o) => (
-            <button key={o} type="button" className={"cov" + (cover === o ? " is-on" : "")} onClick={() => set({ cover: o })} aria-pressed={cover === o}>
-              <div className="rq" style={{ pointerEvents: "none" }}><div className="media">{o === "neutral" ? <span className="neutralbg" /> : <><img className="cimg" src={`/img/${o}.webp`} alt="" /><span className="cscrim" /></>}
-                <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">Earn</span><b className="num">{euros(Math.round(budget * 100 * CREATOR_SHARE))}</b></div></div></div></div>
-              <span className="covl">{o === "neutral" ? "Neutral cover" : "Mood photo"}</span></button>))}</div>
-          <button type="button" className="btn btn-ghost btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => set({ shift: w.shift + 3, cover: "" })}><Ico n="swap" c="sm" />Show other photos</button></>)}
+        {step === "budget" && (<><h2>What is it worth to you?</h2><p className="lead">Creators see this amount. You only pay when you accept an offer.</p>
+          <div className="bd">
+            <div className="bd-main">
+              <div className="bd-amt"><button type="button" onClick={() => set({ budget: Math.max(10, budget - 5) })} aria-label="Lower"><Ico n="minus" /></button>
+                <span className="num" aria-live="polite">€{budget}</span>
+                <button type="button" onClick={() => set({ budget: Math.min(2000, budget + 5) })} aria-label="Higher"><Ico n="plus" /></button></div>
+              <p className={"bd-say " + zone}>{zone === "low" ? "A little low. Some creators may pass on this one." : zone === "high" ? "Generous. This one will stand out on the board." : `Nice. Most creators say yes between €${band[0]} and €${band[1]}.`}</p>
+              <div className="tape" aria-hidden="true">
+                <div className="tape-in" style={{ transform: `translateX(-${((Math.min(budget, 300) - 10) / 5) * 14}px)` }}>
+                  <span className="tape-band" style={{ left: ((band[0] - 10) / 5) * 14, width: ((band[1] - band[0]) / 5) * 14 }} />
+                  {Array.from({ length: 59 }, (_, k) => { const v = 10 + k * 5; return <i key={v} className={v % 50 === 0 ? "big" : v % 10 === 0 ? "mid" : ""} style={{ left: k * 14 }}>{v % 50 === 0 ? <em>€{v}</em> : null}</i>; })}
+                </div>
+                <span className="tape-needle" />
+              </div>
+              <input className="tape-range" type="range" min={10} max={300} step={5} value={Math.min(budget, 300)} onChange={(e) => set({ budget: Number(e.target.value) })} aria-label="Budget" />
+              <p className="bd-fine">You pay <b>€{(budget * 1.1).toFixed(2)}</b> when you accept, service fee included. The creator gets <b>€{Math.round(budget * CREATOR_SHARE)}</b>.</p>
+            </div>
+            <div className="bd-card" aria-label="Preview of your card">
+              <span className="bd-cap">On the board</span>
+              <div className="rq" style={{ pointerEvents: "none" }}><div className="media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" />
+                <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">Earn</span><b className="num">€{Math.round(budget * CREATOR_SHARE)}</b></div></div></div>
+                <div><div className="t">{w.title || "Your request"}</div><div className="m">{CAT_LABEL[w.category]} · {w.who} · {w.ageMax === 99 ? "18+" : `${w.ageMin} to ${w.ageMax}`}</div></div></div>
+            </div>
+          </div></>)}
 
         {step === "review" && (<><h2>Ready to post?</h2><p className="lead">Nothing is charged now. You only pay when you accept an offer.</p>
           <div className="card" style={{ padding: "4px 20px" }}><div className="list">
-            {[["Type", `${CAT_LABEL[w.category]} · ${amountLabel(w.category, w.amount)}`], ["Title", w.title], ["Looking for", `${w.who}, ${w.ageMax === 99 ? "any age 18+" : `${w.ageMin} to ${w.ageMax}`}`], ["Face", w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"], ["Deliver within", w.dueHours < 72 ? `${w.dueHours} hours` : `${w.dueHours / 24} days`], ["Vault at least", { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]], ["Budget", `${euros(budget * 100)} plus €${(budget * 0.1).toFixed(2)} fee`], ["Cover", cover === "neutral" ? "Neutral" : "Mood photo"]].map(([k, v]) => (
+            {[["Type", `${CAT_LABEL[w.category]} · ${amountLabel(w.category, w.amount)}`], ["Title", w.title], ["Looking for", `${w.who}, ${w.ageMax === 99 ? "any age 18+" : `${w.ageMin} to ${w.ageMax}`}`], ["Face", w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"], ["Deliver within", w.dueHours < 72 ? `${w.dueHours} hours` : `${w.dueHours / 24} days`], ["Vault at least", { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]], ["Budget", `${euros(budget * 100)} plus €${(budget * 0.1).toFixed(2)} fee`], ["Card", w.neutral ? "Neutral, number only" : "Mood photo, picked for you"]].map(([k, v]) => (
               <div key={k} className="lrow" style={{ gridTemplateColumns: "140px minmax(0,1fr)" }}><span className="muted">{k}</span><b>{v}</b></div>))}</div></div>
+          <div className="cardpick">
+            <button type="button" className={!w.neutral ? "on" : ""} onClick={() => set({ neutral: false })}><span className="cp-prev media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></span><b>Mood photo</b><span className="t-sm muted">We pick one that keeps the board varied. Covered by frosted glass.</span></button>
+            <button type="button" className={w.neutral ? "on" : ""} onClick={() => set({ neutral: true })}><span className="cp-prev neutralbg" /><b>Neutral</b><span className="t-sm muted">Just the number. The most discreet option.</span></button>
+          </div>
           <p className="t-sm muted">By posting you confirm the request follows the rules: adults only, no other people without their consent, nothing illegal.</p></>)}
       </div>
       <div className="wz-foot">

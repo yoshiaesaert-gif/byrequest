@@ -10,6 +10,7 @@ import * as deals from "@/server/deals";
 import * as albums from "@/server/albums";
 import * as onboarding from "@/server/onboarding";
 import * as participants from "@/server/participants";
+import { chooseCover } from "@/server/covers";
 import { RuleError, addHours, type VaultPeriod } from "@/domain/rules";
 
 export type Result = { ok: true; msg?: string; lines?: { ok: boolean; text: string }[] } | { ok: false; error: string; lines?: { ok: boolean; text: string }[] };
@@ -51,7 +52,7 @@ const Post = z.object({
   minVault: z.enum(["7d", "30d", "1y", "forever"]),
   dueHours: z.coerce.number().int().refine((h) => [24, 48, 72, 168].includes(h)),
   budget: z.coerce.number().int().min(10, "The minimum is €10.").max(2000),
-  cover: z.string().regex(/^c\d\d$/).or(z.literal("neutral")),
+  neutral: z.boolean().default(false),
   openHours: z.coerce.number().int().min(2).max(168).default(24),
 });
 
@@ -61,7 +62,9 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     const p = Post.safeParse(input);
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
-    const [r] = await db.insert(schema.requests).values({ ...p.data, buyerId: u.id, dealCents: p.data.budget * 100, cover: p.data.cover === "neutral" ? null : p.data.cover, closesAt: addHours(new Date(), p.data.openHours) }).returning();
+    const { neutral, ...data } = p.data;
+    const cover = neutral ? null : await chooseCover(data.category, data.title);   // picked for variety, not by the buyer
+    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, closesAt: addHours(new Date(), data.openHours) }).returning();
     redirect(`/requests/${r.id}/offers?posted=1`);
   });
 }
