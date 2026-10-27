@@ -1,0 +1,52 @@
+"use client";
+import { useState, useTransition } from "react";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal } from "./actions";
+import { toast } from "@/components/chrome";
+
+const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
+
+export function DeliveryReview({ id }: { id: string }) {
+  const [note, setNote] = useState(""); const [p, start] = useTransition();
+  return <div className="upbox"><input className="input" placeholder="Reviewer note (required to reject)" value={note} onChange={(e) => setNote(e.target.value)} />
+    <div className="optrow"><button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await reviewD(id, "approved", note), "Approved"))}>Approve content</button>
+      <button className="btn btn-secondary btn-sm" disabled={p || note.length < 5} onClick={() => start(async () => say(await reviewD(id, "rejected", note), "Rejected"))}>Reject</button></div></div>;
+}
+export function AlbumReview({ id }: { id: string }) {
+  const [p, start] = useTransition();
+  return <div className="optrow"><button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await reviewA(id, "approved"), "Approved"))}>Approve</button><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await reviewA(id, "rejected"), "Rejected"))}>Reject</button></div>;
+}
+export function DisputeDecide({ id }: { id: string }) {
+  const [p, start] = useTransition();
+  return <div className="optrow" style={{ marginTop: 10 }}><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "upheld"), "Buyer refunded, creator removed"))}>Buyer is right</button><button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await decide(id, "rejected"), "Creator paid, buyer removed"))}>Delivery matches</button></div>;
+}
+export function RemovalHandle({ id }: { id: string }) {
+  const [dl, setDl] = useState(""); const [p, start] = useTransition();
+  return <div className="optrow"><input className="input" style={{ maxWidth: 280 }} placeholder="Delivery id to hide (optional)" value={dl} onChange={(e) => setDl(e.target.value)} />
+    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await removal(id, "content_hidden", dl || undefined), "Hidden"))}>Hide content</button>
+    <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await removal(id, "resolved")))}>Resolved</button>
+    <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await removal(id, "rejected")))}>Not applicable</button></div>;
+}
+export function CreatorActions({ userId }: { userId: string }) {
+  const [area, setArea] = useState<"identity" | "payout" | "agreement">("identity");
+  const [msg, setMsg] = useState(""); const [level, setLevel] = useState<"none" | "restricted" | "suspended">("restricted"); const [why, setWhy] = useState(""); const [purpose, setPurpose] = useState("");
+  const [shown, setShown] = useState<string | null>(null); const [p, start] = useTransition();
+  return (<div className="upbox">
+    <b>Ask for more information</b>
+    <div className="optrow"><select className="select" style={{ width: "auto" }} value={area} onChange={(e) => setArea(e.target.value as "identity")}><option value="identity">Identity</option><option value="payout">Payout</option><option value="agreement">Agreement</option></select>
+      <input className="input" style={{ flex: 1, minWidth: 200 }} placeholder="Internal note (no sensitive data)" value={msg} onChange={(e) => setMsg(e.target.value)} />
+      <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await requestInfo(userId, area, msg), "Creator notified"))}>Request</button></div>
+    <p className="t-xs muted">Staff cannot mark identity or payouts as approved. Those change only through signed provider events.</p>
+    <b>Restriction</b>
+    <div className="optrow"><select className="select" style={{ width: "auto" }} value={level} onChange={(e) => setLevel(e.target.value as "none")}><option value="restricted">Restrict</option><option value="suspended">Suspend</option><option value="none">Lift</option></select>
+      <input className="input" style={{ flex: 1, minWidth: 200 }} placeholder="Reason" value={why} onChange={(e) => setWhy(e.target.value)} />
+      <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await restrict(userId, level, why), "Saved"))}>Apply</button></div>
+    <b>Confidential identity</b>
+    <div className="optrow"><input className="input" style={{ flex: 1, minWidth: 200 }} placeholder="Purpose of access (logged)" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+      <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => { const r = await reveal(userId, purpose); if (r.ok) setShown(JSON.stringify(r.data ?? "No record")); else say(r); })}>Reveal (admins)</button></div>
+    {shown ? <pre>{shown}</pre> : null}
+  </div>);
+}
+export function AppealAnswer({ id }: { id: string }) {
+  const [t, setT] = useState(""); const [p, start] = useTransition();
+  return <div className="optrow"><input className="input" style={{ flex: 1 }} value={t} onChange={(e) => setT(e.target.value)} placeholder="Reply to the creator" /><button className="btn btn-secondary btn-sm" disabled={p || t.length < 5} onClick={() => start(async () => say(await answer(id, t), "Sent"))}>Reply</button></div>;
+}

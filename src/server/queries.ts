@@ -1,0 +1,166 @@
+import "server-only";
+import { and, asc, desc, eq, gt, inArray, or, sql, count } from "drizzle-orm";
+import { db, schema } from "@/db";
+
+const { requests, offers, deals, users, creatorProfiles, messages, vaultItems, media, previewAlbums, notifications, saves, ledger } = schema;
+
+export type FeedItem = Awaited<ReturnType<typeof feed>>[number];
+
+export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | "ending"; limit?: number; category?: string } = {}) {
+  const now = new Date();
+  const conds = [eq(requests.status, "open"), gt(requests.closesAt, now)];
+  if (opts.category) conds.push(eq(requests.category, opts.category as "video"));
+  const order = opts.tab === "ending" ? [asc(requests.closesAt)] : opts.tab === "new" ? [desc(requests.createdAt)] : [desc(requests.dealCents), asc(requests.closesAt)];
+  const rows = await db.select({
+    r: requests,
+    offers: sql<number>`(select count(*)::int from offers o where o.request_id = "requests"."id")`,
+  }).from(requests).where(and(...conds)).orderBy(...order).limit(opts.limit ?? 40);
+  return rows.map(({ r, offers }) => ({ ...r, offers, mine: r.buyerId === opts.viewerId }));
+}
+
+export async function request(id: string) {
+  return db.query.requests.findFirst({ where: eq(requests.id, id) });
+}
+
+export async function offersFor(requestId: string) {
+  const rows = await db.select({ o: offers, u: users, p: creatorProfiles })
+    .from(offers).innerJoin(users, eq(users.id, offers.creatorId)).innerJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
+    .where(and(eq(offers.requestId, requestId), sql`${offers.status} <> 'withdrawn'`)).orderBy(desc(users.ratingSum));
+  return rows.map((r) => ({ o: r.o, ...publicProfile(r.u, r.p) }));
+}
+
+export async function myRequests(buyerId: string) {
+  return db.select({
+    r: requests,
+    offers: sql<number>`(select count(*)::int from offers o where o.request_id = "requests"."id" and o.status = 'pending')`,
+  }).from(requests).where(eq(requests.buyerId, buyerId)).orderBy(desc(requests.createdAt));
+}
+
+export async function myOffers(creatorId: string) {
+  return db.select({ o: offers, r: requests }).from(offers).innerJoin(requests, eq(requests.id, offers.requestId))
+    .where(eq(offers.creatorId, creatorId)).orderBy(desc(offers.createdAt));
+}
+
+export async function myDeals(userId: string) {
+  return db.select({ d: deals, r: requests, buyer: users }).from(deals)
+    .innerJoin(requests, eq(requests.id, deals.requestId)).innerJoin(users, eq(users.id, deals.buyerId))
+    .where(or(eq(deals.buyerId, userId), eq(deals.creatorId, userId))).orderBy(desc(deals.createdAt));
+}
+
+export async function deal(id: string, viewerId: string) {
+  const d = await db.query.deals.findFirst({ where: eq(deals.id, id) });
+  if (!d || (d.buyerId !== viewerId && d.creatorId !== viewerId)) return null;
+  const [r, o, buyer, creator, msgs, dispute] = await Promise.all([
+    db.query.requests.findFirst({ where: eq(requests.id, d.requestId) }),
+    db.query.offers.findFirst({ where: eq(offers.id, d.offerId) }),
+    db.query.users.findFirst({ where: eq(users.id, d.buyerId) }),
+    db.query.users.findFirst({ where: eq(users.id, d.creatorId) }),
+    db.select().from(messages).where(eq(messages.dealId, id)).orderBy(asc(messages.createdAt)),
+    db.query.disputes.findFirst({ where: eq(schema.disputes.dealId, id) }),
+  ]);
+  return { d, r: r!, o: o!, buyer: buyer!, creator: creator!, msgs, dispute };
+}
+
+export async function vault(buyerId: string) {
+  return db.select({ v: vaultItems, m: media, d: deals, r: requests, creator: users.handle })
+    .from(vaultItems).innerJoin(media, eq(media.id, vaultItems.mediaId)).innerJoin(deals, eq(deals.id, vaultItems.dealId))
+    .innerJoin(requests, eq(requests.id, deals.requestId)).innerJoin(users, eq(users.id, deals.creatorId))
+    .where(and(eq(vaultItems.buyerId, buyerId), or(sql`${vaultItems.availableUntil} is null`, gt(vaultItems.availableUntil, new Date()))))
+    .orderBy(desc(deals.deliveredAt), asc(vaultItems.position));
+}
+
+/* A creator profile is visible when it is public, when the viewer has an offer from this creator
+   on one of their requests, or when they already have a deal together. */
+export async function profileFor(handle: string, viewerId: string) {
+  const u = await db.query.users.findFirst({ where: eq(users.handle, handle) });
+  if (!u || !u.isCreator || u.bannedAt) return null;
+  const p = await db.query.creatorProfiles.findFirst({ where: eq(creatorProfiles.userId, u.id) });
+  if (!p) return null;
+  let reason: "public" | "self" | "offer" | "deal" | null = p.visibility === "public" ? "public" : u.id === viewerId ? "self" : null;
+  let offerId: string | null = null;
+  if (!reason) {
+    const [o] = await db.select({ id: offers.id }).from(offers).innerJoin(requests, eq(requests.id, offers.requestId))
+      .where(and(eq(offers.creatorId, u.id), eq(requests.buyerId, viewerId), eq(offers.status, "pending"))).limit(1);
+    if (o) { reason = "offer"; offerId = o.id; }
+  }
+  if (!reason) {
+    const [d] = await db.select({ id: deals.id }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.buyerId, viewerId))).limit(1);
+    if (d) reason = "deal";
+  }
+  if (!reason) return { hidden: true as const };
+  if (!offerId) {
+    const [o] = await db.select({ id: offers.id }).from(offers).innerJoin(requests, eq(requests.id, offers.requestId))
+      .where(and(eq(offers.creatorId, u.id), eq(requests.buyerId, viewerId), eq(offers.status, "pending"))).limit(1);
+    offerId = o?.id ?? null;
+  }
+  const album = offerId ? await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.offerId, offerId) }) : null;
+  const reviews = await db.select({ stars: deals.buyerRating, at: deals.settledAt, by: users.handle }).from(deals)
+    .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(desc(deals.settledAt)).limit(6);
+  const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
+  return { hidden: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
+}
+
+/* The only shape of a creator that leaves the server for other users. No email, no birth year,
+   no keys, no verification or payout data. Age is derived from the verified birth year. */
+export function publicProfile(u: typeof users.$inferSelect, p: typeof creatorProfiles.$inferSelect) {
+  return {
+    u: { id: u.id, handle: u.handle, avatar: u.avatar, ratingSum: u.ratingSum, ratingCount: u.ratingCount, age: new Date().getFullYear() - u.birthYear },
+    p: { visibility: p.visibility, bio: p.bio, heightCm: p.heightCm, build: p.build, sport: p.sport, work: p.work, languages: p.languages, hair: p.hair, eyes: p.eyes, body: p.body, tattoos: p.tattoos, makes: p.makes, never: p.never, showsFace: p.showsFace, defaultVault: p.defaultVault, fromCents: p.fromCents, replyMinutes: p.replyMinutes },
+  };
+}
+export type PublicProfile = ReturnType<typeof publicProfile>;
+
+export async function publicCreators(limit = 12) {
+  const rows = await db.select({ u: users, p: creatorProfiles }).from(users).innerJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
+    .where(and(eq(creatorProfiles.visibility, "public"), sql`${users.bannedAt} is null`)).orderBy(desc(users.ratingCount)).limit(limit);
+  return rows.map((r) => publicProfile(r.u, r.p));
+}
+
+export async function unread(userId: string) {
+  const [{ n }] = await db.select({ n: count() }).from(notifications).where(and(eq(notifications.userId, userId), sql`${notifications.readAt} is null`));
+  return n;
+}
+export async function inbox(userId: string) {
+  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(40);
+}
+
+export async function savedIds(userId: string) {
+  return new Set((await db.select({ id: saves.requestId }).from(saves).where(eq(saves.userId, userId))).map((r) => r.id));
+}
+
+/* Live, non identifying numbers for the home page. */
+export async function pulse() {
+  const since = new Date(Date.now() - 7 * 86400_000);
+  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, since)));
+  const [open] = await db.select({ n: count() }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
+  const [done] = await db.select({ n: count() }).from(deals).where(eq(deals.status, "released"));
+  const [avg] = await db.select({ h: sql<number>`coalesce(avg(extract(epoch from (${deals.deliveredAt} - ${deals.createdAt}))/3600),0)::float` }).from(deals).where(sql`${deals.deliveredAt} is not null`);
+  const recent = await db.select({ cat: requests.category, amount: requests.amount, hours: sql<number>`extract(epoch from (${deals.deliveredAt} - ${deals.createdAt}))/3600`, at: deals.deliveredAt })
+    .from(deals).innerJoin(requests, eq(requests.id, deals.requestId)).where(sql`${deals.deliveredAt} is not null`).orderBy(desc(deals.deliveredAt)).limit(8);
+  return { paidCents: paid.c, open: open.n, done: done.n, avgHours: avg.h, recent };
+}
+
+export async function albumsForCreator(creatorId: string) {
+  return db.select({ a: previewAlbums, buyer: users.handle }).from(previewAlbums).innerJoin(users, eq(users.id, previewAlbums.buyerId))
+    .where(and(eq(previewAlbums.creatorId, creatorId), eq(previewAlbums.status, "requested")));
+}
+
+export async function mediaMany(ids: string[]) {
+  return ids.length ? db.select().from(media).where(inArray(media.id, ids)) : [];
+}
+
+export async function categoryStats() {
+  const rows = await db.select({ c: requests.category, n: count(), med: sql<number>`percentile_cont(0.5) within group (order by ${requests.dealCents})::int`, lo: sql<number>`percentile_cont(0.25) within group (order by ${requests.dealCents})::int`, hi: sql<number>`percentile_cont(0.75) within group (order by ${requests.dealCents})::int` })
+    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()))).groupBy(requests.category);
+  return Object.fromEntries(rows.map((r) => [r.c, r]));
+}
+
+export async function creatorEarnings(creatorId: string) {
+  const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
+  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.userId, creatorId), eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, month)));
+  const [held] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.userId, creatorId), eq(ledger.entry, "payout_on_hold")));
+  const [pending] = await db.select({ c: sql<number>`coalesce(sum(${deals.creatorCents}),0)::int` }).from(deals).where(and(eq(deals.creatorId, creatorId), sql`${deals.status} in ('held','reviewing','delivered','disputed')`));
+  const weeks = await db.select({ w: sql<string>`to_char(date_trunc('week', ${ledger.createdAt}), 'YYYY-MM-DD')`, c: sql<number>`sum(${ledger.cents})::int` }).from(ledger)
+    .where(and(eq(ledger.userId, creatorId), eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, new Date(Date.now() - 84 * 86400_000)))).groupBy(sql`1`).orderBy(sql`1`);
+  return { monthCents: paid.c, heldCents: held.c, pendingCents: pending.c, weeks };
+}

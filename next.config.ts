@@ -1,9 +1,21 @@
 import type { NextConfig } from "next";
 
+/* Every screen is personal and depends on the session, so pages render per request.
+   Security headers apply to all routes. */
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  poweredByHeader: false,
+  experimental: { serverActions: { bodySizeLimit: "600mb" } },
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+      ],
+    }];
+  },
 };
 
 export default nextConfig;

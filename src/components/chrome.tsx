@@ -1,0 +1,115 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { setMode, setPublicKey, forceNewKey } from "@/app/(app)/actions";
+import { myKeys, pub } from "@/components/e2e";
+import { signOut } from "@/app/signin/actions";
+
+/* ---------- toasts: any client component can call toast("…") ---------- */
+export function toast(msg: string, kind: "ok" | "err" = "ok") { window.dispatchEvent(new CustomEvent("brq:toast", { detail: { msg, kind } })); }
+
+function useEsc(fn: () => void) { useEffect(() => { const h = (e: KeyboardEvent) => e.key === "Escape" && fn(); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [fn]); }
+
+export function MenuButton({ handle, avatar, big, mode, isCreator, verified, compact, staff }: { handle: string; avatar: React.ReactNode; big: React.ReactNode; mode: "buy" | "sell"; isCreator: boolean; verified: boolean; compact?: boolean; staff?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  useEffect(() => { if (!open) return; const h = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, [open]);
+  useEsc(() => setOpen(false));
+  const buy = mode === "buy";
+  return (
+    <div ref={ref} style={{ position: compact ? "static" : "relative" }}>
+      <button className={compact ? "icon-btn" : "avatar-btn"} onClick={() => setOpen((o) => !o)} aria-label="Account menu" aria-expanded={open}>
+        {compact ? null : <svg className="ico sm" aria-hidden="true"><use href="#i-menu" /></svg>}{avatar}
+      </button>
+      {open ? (
+        <div className="menu" role="menu" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
+          <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? "Buying" : "Creating"}{isCreator ? (verified ? " · Verified creator" : " · Setup not finished") : ""}</div></div></div>
+          {isCreator
+            ? <button className="mi switch" onClick={async () => { await setMode(buy ? "sell" : "buy"); setOpen(false); toast(buy ? "You are now creating" : "You are now buying"); router.push("/"); }}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? "Switch to creating" : "Switch to buying"}</button>
+            : <Link className="mi switch" href="/settings#creator"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>Start creating, earn money</Link>}
+          <hr />
+          <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>Profile and privacy</Link>
+          <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>Edit your avatar</Link>
+          <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>Inbox</Link>
+          {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>Vault</Link> : <Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>Studio and earnings</Link>}
+          {staff ? <Link className="mi" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>Trust and safety</Link> : null}
+          <hr />
+          <button className="mi" onClick={() => { setOpen(false); hide(); }}><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg>Quick hide <span className="muted t-sm" style={{ marginLeft: "auto" }}>Esc twice</span></button>
+          <form action={signOut}><button className="mi"><svg className="ico" aria-hidden="true"><use href="#i-logout" /></svg>Sign out</button></form>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* Quick hide covers the whole screen with a neutral shopping list. */
+function hide() { window.dispatchEvent(new Event("brq:hide")); }
+export function HideButton() {
+  return <button className="icon-btn" onClick={hide} aria-label="Quick hide"><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg></button>;
+}
+
+type Note = { id: string; title: string; body: string; href: string };
+
+export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boolean; neutralTab: boolean }) {
+  const [t, setT] = useState<{ msg: string; kind: string } | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
+  const [hidden, setHidden] = useState(false);
+  const router = useRouter();
+  const seen = useRef<string | null>(null);
+  const lastEsc = useRef(0);
+
+  useEffect(() => {
+    const onToast = (e: Event) => { setT((e as CustomEvent).detail); window.clearTimeout((onToast as unknown as { h: number }).h); (onToast as unknown as { h: number }).h = window.setTimeout(() => setT(null), 2800); };
+    const onHide = () => setHidden(true);
+    const onKey = (e: KeyboardEvent) => { if (e.key !== "Escape") return; const now = Date.now(); if (now - lastEsc.current < 500) setHidden(true); lastEsc.current = now; };
+    window.addEventListener("brq:toast", onToast); window.addEventListener("brq:hide", onHide); window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("brq:toast", onToast); window.removeEventListener("brq:hide", onHide); window.removeEventListener("keydown", onKey); };
+  }, []);
+
+  useEffect(() => { if (neutralTab) document.title = "Notes"; }, [neutralTab]);
+
+  /* Registers this device's chat public key. The secret key never leaves the browser. */
+  useEffect(() => { const k = pub(myKeys(uid)); setPublicKey(k).then((r) => { if (r.changed) forceNewKey(k); }).catch(() => {}); }, [uid]);
+
+  /* Hold to peek on touch: frosted covers clear while a finger rests on them. */
+  useEffect(() => {
+    const down = (e: PointerEvent) => { if (e.pointerType === "mouse") return; const m = (e.target as HTMLElement).closest(".media"); if (m) { const id = window.setTimeout(() => m.classList.add("revealed"), 220); (m as HTMLElement).dataset.pk = String(id); } };
+    const up = () => document.querySelectorAll<HTMLElement>(".media").forEach((m) => { if (m.dataset.pk) { clearTimeout(+m.dataset.pk); delete m.dataset.pk; } m.classList.remove("revealed"); });
+    document.addEventListener("pointerdown", down); document.addEventListener("pointerup", up); document.addEventListener("pointercancel", up);
+    return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up); };
+  }, []);
+
+  /* Polls for new notifications and shows an iOS style banner. Discreet mode hides the content. */
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      try {
+        const r = await fetch("/api/notifications", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = (await r.json()) as { latest: Note | null };
+        if (!alive || !j.latest) return;
+        if (seen.current && seen.current !== j.latest.id) { setNote(j.latest); router.refresh(); window.setTimeout(() => setNote(null), 5200); }
+        seen.current = j.latest.id;
+      } catch {}
+    };
+    tick(); const h = window.setInterval(tick, 8000);
+    return () => { alive = false; window.clearInterval(h); };
+  }, [router]);
+
+  return (<>
+    <Link href={note?.href ?? "/inbox"} className={"notif" + (note ? " show" : "")} role="status" aria-live="polite" onClick={() => setNote(null)} tabIndex={note ? 0 : -1}>
+      <img src="/icon.png" alt="" className="notif-ic" />
+      <span className="notif-t"><b>{discreet || !note ? "ByRequest" : note.title}</b><span>{discreet || !note ? "You have a new message" : note.body}</span></span>
+      <span className="notif-time">now</span>
+    </Link>
+    {t ? <div className={"toast" + (t.kind === "err" ? " err" : "")} role="status"><svg className="ico" aria-hidden="true"><use href={t.kind === "err" ? "#i-alert" : "#i-check"} /></svg><span>{t.msg}</span></div> : null}
+    {hidden ? (
+      <div className="cover-list" onClick={() => setHidden(false)} role="button" tabIndex={0} aria-label="Tap to return">
+        <div><h2>Groceries</h2><ul>{["Oat milk", "Bananas", "Coffee beans", "Pasta", "Tomatoes", "Basil", "Greek yoghurt", "Dish soap"].map((x) => <li key={x}><span />{x}</li>)}</ul><p>Tap anywhere to return</p></div>
+      </div>
+    ) : null}
+  </>);
+}
+
