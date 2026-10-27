@@ -25,7 +25,7 @@ export default async function Offers({ params, searchParams }: { params: Promise
     <Picker
       requestId={r.id} open={open} dealId={deal?.id ?? null}
       money={{ deal: m.dealCents, fee: m.feeCents, total: m.buyerPays }}
-      offers={list.map(({ o, u: c, p }) => ({ id: o.id, status: o.status, showsFace: o.showsFace, vault: o.vault, etaHours: o.etaHours, note: o.note, handle: c.handle, look: c.avatar?.kind === "3d" ? c.avatar.look : null, rating: c.ratingCount ? c.ratingSum / c.ratingCount : null, deals: c.ratingCount, visibility: p.visibility }))}
+      offers={list.map(({ o, u: c, p }) => ({ id: o.id, status: o.status, showsFace: o.showsFace, vault: o.vault, etaHours: o.etaHours, note: o.note, handle: c.handle, look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? `data:image/svg+xml;utf8,${encodeURIComponent(c.avatar.svg)}` : null, rating: c.ratingCount ? c.ratingSum / c.ratingCount : null, deals: c.ratingCount, visibility: p.visibility }))}
     />
   </div>);
 }

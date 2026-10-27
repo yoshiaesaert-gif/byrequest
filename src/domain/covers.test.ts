@@ -19,3 +19,13 @@ describe("cover selection", () => {
     expect(Object.values(usage)).toEqual([2, 2, 2, 2, 2]);
   });
 });
+
+import { chooseFor } from "./covers";
+describe("no repeats on the board", () => {
+  it("borrows from related moods before repeating a photo", () => {
+    const usage: Record<string, number> = {}; const recent: string[] = [];
+    for (let i = 0; i < 12; i++) { const c = chooseFor("video", "Shower video", usage, recent.slice(-3)); usage[c] = (usage[c] ?? 0) + 1; recent.push(c); }
+    expect(Math.max(...Object.values(usage))).toBe(1);
+    expect(Object.keys(usage)).toHaveLength(12);
+  });
+});

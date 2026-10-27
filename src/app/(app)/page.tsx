@@ -37,13 +37,17 @@ const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout 
 async function BuyerHome({ userId, handle, welcome, board }: { userId: string; handle: string; welcome: boolean; board?: string }) {
   const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
   const [mine, myDeals, pulse, top, boardItems, ending, creators, stats] = await Promise.all([
-    q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 14 }),
-    q.feed({ viewerId: userId, tab: "ending", limit: 10 }), q.publicCreators(10), q.categoryStats(),
+    q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }),
+    q.feed({ viewerId: userId, tab: "ending", limit: 16 }), q.publicCreators(18), q.categoryStats(),
   ]);
   const openMine = mine.find((m) => m.r.status === "open");
   const live = myDeals.find((d) => d.d.buyerId === userId && ["held", "reviewing", "delivered", "disputed"].includes(d.d.status));
+  // Every request shows once on the page: hero, board and closing soon never repeat each other.
   const fan = top.filter((r) => !r.mine).slice(0, 3);
-  const items = boardItems.filter((r) => !r.mine);
+  const shown = new Set(fan.map((r) => r.id));
+  const items = boardItems.filter((r) => !r.mine && !shown.has(r.id)).slice(0, 7);
+  items.forEach((r) => shown.add(r.id));
+  const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
   const [feat, ...rest] = items;
   const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
   const tabs: [string | undefined, string][] = [[undefined, "Everything"], ["video", "Video"], ["photos", "Photos"], ["voice", "Voice"], ["custom", "Custom"]];
@@ -59,7 +63,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         <p>Say what you want and what it is worth. Creators who fit make an offer. You choose.</p>
         <div className="h-ask"><Ask /></div>
         <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{e}</Link>)}</div>
-        <div className="h-live"><span className="dot" />{pulse.open} requests open now · {euros(pulse.paidCents)} paid to creators this week</div>
+        <div className="h-live"><span className="livedot" />{pulse.open} requests open now · {euros(pulse.paidCents)} paid to creators this week</div>
       </div>
       <div className="h-fan" aria-hidden="true">{fan.map((r, i) => (
         <Link key={r.id} href={`/requests/${r.id}`} className={`h-fc f${i}`} tabIndex={-1}><div className="media"><Cover cover={r.cover} frost /></div>
@@ -69,7 +73,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
 
     {openMine || live ? (
       <div className="h-mine">
-        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="dot" /><span className="tx"><b>{openMine.offers} offers</b> on “{openMine.r.title}”</span><span className="go">Review <I n="right" c="sm" /></span></Link> : null}
+        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="livedot" /><span className="tx"><b>{openMine.offers} offers</b> on “{openMine.r.title}”</span><span className="go">Review <I n="right" c="sm" /></span></Link> : null}
         {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{live.r.title}</b> · {live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review"}</span><span className="go">Open <I n="right" c="sm" /></span></Link> : null}
       </div>) : null}
 
@@ -87,7 +91,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
                 <div className="h-earn"><span>Earn</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
             </div>
           </Link>
-          {rest.slice(0, 8).map((r) => <RequestCard key={r.id} r={r} />)}
+          {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} />)}
         </div>) : <div className="card empty"><b className="t-h3">Nothing in this category right now</b><Link href="/post" className="btn btn-primary">Be the first</Link></div>}
       <div className="h-more"><Link href="/for-you" className="btn btn-primary btn-lg">Open the full board <I n="right" c="sm" /></Link><Link href="/post" className="btn btn-secondary btn-lg">Post your own</Link></div>
     </section>
@@ -106,7 +110,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">Last chance</span><h2>Closing soon</h2></div><Link href="/for-you?tab=ending" className="h-link">See all <I n="right" c="sm" /></Link></div>
-      <div className="rail">{ending.filter((r) => !r.mine).map((r) => <RequestCard key={r.id} r={r} />)}</div>
+      <div className="rail">{soon.map((r) => <RequestCard key={r.id} r={r} />)}</div>
     </section>
 
     <section className="h-sec h-split">

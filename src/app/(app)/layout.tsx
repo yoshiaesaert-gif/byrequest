@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { Av, I } from "@/components/ui";
 import { MenuButton, HideButton, Live } from "@/components/chrome";
 import NavLinks from "@/components/navlinks";
+import Footer from "@/components/footer";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const u = await requireUser();
@@ -39,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {inboxBtn}
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
       </header>
-      <main className="main" id="main">{children}</main>
+      <main className="main" id="main">{children}<Footer /></main>
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} />
     </div>
