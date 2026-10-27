@@ -10,10 +10,6 @@ import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
 
 const CAT_ICON: Record<string, string> = { video: "video", photos: "image", voice: "mic", custom: "spark", worn: "shirt" };
-function Fact({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
-  return <div className="rd-fact"><span className="rd-fi"><I n={icon} c="sm" /></span><span className="rd-fl">{label}</span><b>{value}{sub ? <small>{sub}</small> : null}</b></div>;
-}
-
 export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const u = await requireUser();
@@ -48,17 +44,13 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
           {r.details ? <blockquote className="rd-note"><span>From the buyer</span>{r.details}</blockquote> : null}
-          <div className="rd-facts">
-            <Fact icon="users" label="Looking for" value={r.who} sub={`${r.ageMin} to ${r.ageMax}`} />
-            <Fact icon="eye" label="Face" value={r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required"} />
-            <Fact icon="clock" label="Deliver within" value={r.dueHours < 72 ? `${r.dueHours} hours` : `${Math.round(r.dueHours / 24)} days`} />
-            <Fact icon="vault" label="Vault at least" value={VAULT_LABEL[r.minVault]} />
-          </div>
-          <div className="rd-steps">
-            <div><b>1</b><span><strong>Make an offer</strong>Say how you would do it. The buyer picks one creator.</span></div>
-            <div><b>2</b><span><strong>Create and deliver</strong>Payment is secured before you start. Upload in the private deal room.</span></div>
-            <div><b>3</b><span><strong>Get paid</strong>{euros(m.creatorCents)} is released after review and the 24 hour window.</span></div>
-          </div>
+          <dl className="rd-spec">
+            <div><dt>Looking for</dt><dd>{r.who}, {r.ageMin} to {r.ageMax}</dd></div>
+            <div><dt>Face</dt><dd>{r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required"}</dd></div>
+            <div><dt>Deliver within</dt><dd>{r.dueHours < 72 ? `${r.dueHours} hours` : `${Math.round(r.dueHours / 24)} days`}</dd></div>
+            <div><dt>Vault at least</dt><dd>{VAULT_LABEL[r.minVault]}</dd></div>
+          </dl>
+          <p className="rd-how">You make an offer and the buyer picks one creator. The payment is secured before you start, and {euros(m.creatorCents)} is released to you after review and the 24 hour window.</p>
         </div>
       </div>
       <aside className="sticky" id="offer">
