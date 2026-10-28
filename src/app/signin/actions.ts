@@ -1,4 +1,5 @@
 "use server";
+import { LOOKS } from "@/domain/looks";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -52,7 +53,7 @@ const Profile = z.object({
   sensitive: z.literal("on", { message: "We need your explicit consent to handle requests and chats about intimate content." }),
   country: z.enum(BUYER_COUNTRIES.map(([c]) => c) as [string, ...string[]], { message: "Choose your country." }),
   marketing: z.literal("on").optional(),
-  look: z.string().default("kai"),
+  look: z.string().refine((l) => LOOKS.includes(l), "Pick one of the avatars.").default("kai"),
   intent: z.enum(["buy", "earn"], { message: "Choose what you want to do on ByRequest." }),
 });
 

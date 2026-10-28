@@ -205,3 +205,9 @@ export async function themeCounts() {
   const open = await db.select({ title: requests.title, details: requests.details }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
   return Object.fromEntries(THEMES.map((x) => [x.k, open.filter((r) => x.match.test(`${r.title} ${r.details}`)).length])) as Record<string, number>;
 }
+
+/* The best paid open requests right now: real budgets, highest first. */
+export async function topBudgets(limit = 6) {
+  return db.select({ id: requests.id, title: requests.title, category: requests.category, amount: requests.amount, dealCents: requests.dealCents })
+    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()))).orderBy(desc(requests.dealCents)).limit(limit);
+}

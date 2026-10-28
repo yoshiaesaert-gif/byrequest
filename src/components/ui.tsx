@@ -1,3 +1,4 @@
+import { LOOKS as ALL_LOOKS } from "@/domain/looks";
 import Link from "next/link";
 import { CAT_LABEL, euros, CREATOR_SHARE, type Category } from "@/domain/rules";
 
@@ -5,7 +6,7 @@ export function I({ n, c }: { n: string; c?: "sm" | "lg" }) {
   return <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 }
 
-const LOOKS = new Set(["ava", "nour", "dre", "milo", "kai", "lina", "jens", "noah", "ruby", "sem"]);
+const LOOKS = new Set(ALL_LOOKS);
 type Avatar = { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean } | null | undefined;
 
 /** Data URL for a stored avatar SVG; adds the namespace an <img> needs to render it. */

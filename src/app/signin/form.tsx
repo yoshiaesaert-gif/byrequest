@@ -1,10 +1,11 @@
 "use client";
+import { LOOKS } from "@/domain/looks";
 import { useT } from "@/i18n/client";
 import { useActionState, useState } from "react";
 import { BUYER_COUNTRIES } from "@/config/compliance";
 import { sendCode, checkCode, createAccount, appealClosed, handleFree, type AuthState } from "./actions";
 
-const LOOKS = ["kai", "milo", "ava", "dre", "lina", "jens", "nour", "noah", "ruby", "sem"];
+
 
 export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
   const t = useT();
@@ -24,7 +25,7 @@ export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
   );
   const step = s2.step === "profile" ? "profile" : s1.step === "code" ? "code" : "email";
 
-  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} intent={intent} />;
+  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} />;   // the role is always an explicit first choice
 
   if (step === "code") return (
     <form action={check} className="authstack">

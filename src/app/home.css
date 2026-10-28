@@ -86,7 +86,7 @@
 .h-split{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:stretch}
 .h-most{padding:36px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
 .h-most ol{list-style:none;margin-top:22px}
-.h-most li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:12px;padding:18px 0;border-top:1px solid var(--line)}
+.h-most li{display:grid;grid-template-columns:64px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:18px 0;border-top:1px solid var(--line)}
 .h-most .ix{font-size:2.2rem;font-weight:900;letter-spacing:-.06em;color:var(--faint)}
 .h-most li b{display:block;font-size:1.2rem;letter-spacing:-.03em}
 .h-most li span{font-size:.875rem;color:var(--muted)}
@@ -287,3 +287,4 @@
 .hl-of img,.hl-av{width:34px;height:34px}
 @media (max-width:1100px){.hl-in{width:400px}.hl-card{width:190px;height:260px}.hl-in{height:260px}.hl-feed{left:160px}.hl-bot b{font-size:3rem}}
 @media (max-width:860px){.hl{padding:4px 20px 24px;justify-content:flex-start}.hl-in{margin:0 auto}}
+.h-most li .h-top-eur{font-size:1.05rem;font-weight:800;white-space:nowrap;margin-left:auto;padding-right:10px}

@@ -1,4 +1,5 @@
 "use client";
+import { LOOKS } from "@/domain/looks";
 import Script from "next/script";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { setAvatar } from "../actions";
@@ -6,7 +7,7 @@ import { toast } from "@/components/chrome";
 import { useT } from "@/i18n/client";
 
 type Engine = { studio: (root: HTMLElement, opts: Record<string, unknown>) => unknown; presets: Record<string, unknown> };
-const LOOKS = ["kai", "milo", "ava", "dre", "lina", "jens", "nour", "noah", "ruby", "sem"];
+
 
 /* Mounts the avatar engine from the prototype (public/avatar.js). 3D looks are saved as a look id;
    built avatars are saved as their part specification. */

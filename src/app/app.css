@@ -786,3 +786,9 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .earnsplit .tot{border-top:1px solid var(--line);padding-top:10px;font-size:1.05rem}.earnsplit .tot dt{color:var(--ink);font-weight:700}.earnsplit .tot dd{font-size:1.4rem;font-weight:800;color:var(--ok)}
 .wz-price{flex-direction:column;align-items:stretch;gap:4px}.wz-price span{display:flex;justify-content:space-between;align-items:baseline}.wz-price span b{font-size:1.25rem}.wz-pay-l{font-size:.84rem;color:var(--muted)}.wz-price .wz-pay-l b{font-size:1rem;color:var(--ink)}
 .pbk{padding-top:6px}.pbk dl{padding-top:8px}
+/* Tutorial labels under the image: tidy pills, one line each, centred under the visual. */
+.hw-no{flex-wrap:wrap;gap:8px;opacity:1;margin-top:4px}
+.hw-no span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);font-size:.78rem;font-weight:600;line-height:1}
+.hw-no span::before{content:"✕";font-weight:800}
+.hw-yes span::before{content:"✓";font-weight:800}
+.join .looks{max-height:228px;overflow-y:auto;padding:4px;margin:-4px;scrollbar-width:thin}

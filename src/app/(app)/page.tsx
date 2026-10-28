@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { THEMES } from "@/content/themes";
+import { THEMES, shuffled } from "@/content/themes";
 import HowItWorks from "@/components/how-it-works";
 import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
@@ -25,12 +25,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
   return sell ? <CreatorHome userId={u.id} handle={u.handle} board={sp.board} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} creator={u.isCreator} />;
 }
 
-const DROPS = [
-  { k: "Alpha Gods", t: "Straight, dominant, in charge.", d: "Let him take control. The most asked for theme on ByRequest.", cover: "c06", c: "custom", href: "/post?c=custom&amount=6&title=Alpha%20God%3A%20show%20me%20where%20I%20belong&budget=120" },
-  { k: "After dark", t: "Moan my name.", d: "Voice notes recorded tonight, close to the mic.", cover: "c16", c: "voice", href: "/post?c=voice&amount=3&title=Moan%20my%20name&budget=45" },
-  { k: "Strip tease", t: "One piece at a time.", d: "Slow, teasing, made just for you.", cover: "c11", c: "video", href: "/post?c=video&amount=5&title=Slow%20strip%20tease%2C%20just%20for%20me&budget=85" },
-  { k: "Underwear", t: "Try it on for me.", d: "Mirror sets in full resolution.", cover: "c21", c: "photos", href: "/post?c=photos&amount=6&title=Underwear%20try%20on%2C%206%20pics&budget=60" },
-];
 const PROMISES = [
   { i: "held", t: "Money held until it matches", d: "Our payment partner holds it. You pay only for what was agreed, checked and reviewed." },
   { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted on your device. Not even ByRequest can open them." },
@@ -79,8 +73,9 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     })),
   } : null;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const counts = await q.themeCounts();
-  const hot = THEMES.map((x) => ({ ...x, n: counts[x.k] ?? 0 })).sort((a, b) => (a.k === "alpha" ? -1 : b.k === "alpha" ? 1 : b.n - a.n));
+  const [counts, topPaid] = await Promise.all([q.themeCounts(), q.topBudgets(6)]);
+  const TL = await textsIn(topPaid.map((x) => x.title), locale);
+  const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
   return (<div className="wrap home">
     {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Your payment stays safely held until delivery.")}</div></div></div> : null}
@@ -116,10 +111,10 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
 
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("Ideas")}</span><h2>{t("Moods people are into this week")}</h2></div></div>
-      <div className="h-drops">{DROPS.map((x) => { const n = stats[x.c]?.n ?? 0; return (
-        <Link key={x.k} href={x.href} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{t(x.k)}</span><h3>{t(x.t)}</h3><p>{t(x.d)}</p><span className="h-drop-cta">{t("{n} open · start yours", { n })} <I n="right" c="sm" /></span></div></Link>); })}</div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into this week")}</h2></div></div>
+      <div className="h-drops">{hot.map((x) => (
+        <Link key={x.k} href={`/post?c=${x.cat}&amount=${x.amount}&budget=${x.budget}&title=${encodeURIComponent(t(x.example))}`} className="h-drop media"><Cover cover={x.cover} />
+          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · start yours", { n: x.n }) : t("Start yours")} <I n="right" c="sm" /></span></div></Link>))}</div>
     </section>
 
     <section className="h-promise">
@@ -129,9 +124,9 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
 
 
     <section className="h-sec h-split">
-      <div className="h-most"><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("What everyone is asking for")}</h2>
-        <ol>{hot.map((x, i) => (
-          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(x.title)}</b><span>{t(x.sub)}{x.n ? ` · ${t("{n} open", { n: x.n })}` : ""}</span></div><Link href={`/post?c=${x.cat}&amount=${x.amount}&budget=${x.budget}&title=${encodeURIComponent(t(x.example))}`} aria-label={t(x.title)}><I n="right" /></Link></li>))}</ol></div>
+      <div className="h-most"><span className="h-kick dark">{t("Top budgets")}</span><h2>{t("What others pay right now")}</h2>
+        <ol>{topPaid.map((x, i) => (
+          <li key={x.id}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{TL(x.title)}</b><span>{t(CAT_LABEL[x.category])} · {amountLabel(x.category, x.amount, t)}</span></div><b className="h-top-eur num">{euros(x.dealCents)}</b><Link href={`/requests/${x.id}`} aria-label={TL(x.title)}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
         <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Paid when posted, held until delivery.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare offers: face or not, vault time, rating.")}</p></div></div>
@@ -170,8 +165,9 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
   const [feat, ...rest] = items;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const counts = await q.themeCounts();
-  const hot = THEMES.map((x) => ({ ...x, n: counts[x.k] ?? 0 })).sort((a, b) => (a.k === "alpha" ? -1 : b.k === "alpha" ? 1 : b.n - a.n));
+  const [counts, topPaid] = await Promise.all([q.themeCounts(), q.topBudgets(6)]);
+  const TL = await textsIn(topPaid.map((x) => x.title), locale);
+  const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
   const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
   return (<div className="wrap">
     {a.status === "active"
@@ -222,10 +218,10 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
     </section>
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("This week")}</span><h2>{t("Moods people are into")}</h2></div></div>
-      <div className="h-drops">{DROPS.map((x) => { const n = stats[x.c]?.n ?? 0; return (
-        <Link key={x.k} href={`/for-you?c=${x.c}`} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{t(x.k)}</span><h3>{t(x.t)}</h3><p>{t(x.d)}</p><span className="h-drop-cta">{t("{n} open · see them", { n })} <I n="right" c="sm" /></span></div></Link>); })}</div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into")}</h2></div></div>
+      <div className="h-drops">{hot.map((x) => (
+        <Link key={x.k} href={`/for-you?theme=${x.k}`} className="h-drop media"><Cover cover={x.cover} />
+          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · see them", { n: x.n }) : t("See the board")} <I n="right" c="sm" /></span></div></Link>))}</div>
     </section>
 
     <section className="h-sec">
@@ -241,9 +237,9 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
     </section>
 
     <section className="h-sec h-split">
-      <div className="h-most"><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("What buyers want right now")}</h2>
-        <ol>{hot.map((x, i) => (
-          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(x.title)}</b><span>{t(x.sub)}{x.n ? ` · ${t("{n} open", { n: x.n })}` : ""}</span></div><Link href={`/for-you?theme=${x.k}`} aria-label={t(x.title)}><I n="right" /></Link></li>))}</ol></div>
+      <div className="h-most"><span className="h-kick dark">{t("Top budgets")}</span><h2>{t("Best paid requests right now")}</h2>
+        <ol>{topPaid.map((x, i) => (
+          <li key={x.id}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{TL(x.title)}</b><span>{t(CAT_LABEL[x.category])} · {amountLabel(x.category, x.amount, t)} · {t("You get {amount}", { amount: euros(Math.round(x.dealCents * CREATOR_SHARE)) })}</span></div><b className="h-top-eur num">{euros(x.dealCents)}</b><Link href={`/requests/${x.id}#offer`} aria-label={TL(x.title)}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
         <div className="h-step"><span className="num">1</span><div><b>{t("Pick")}</b><p>{t("Only requests you like. The amount is on it.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Make")}</b><p>{t("In your own time, face or not.")}</p></div></div>

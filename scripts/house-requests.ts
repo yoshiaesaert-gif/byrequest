@@ -82,7 +82,9 @@ async function main() {
       }).returning();
       people++;
     }
-    const has = await db.query.requests.findFirst({ where: and(eq(S.requests.buyerId, u.id), inArray(S.requests.status, ["open", "matched"])) });
+    // The open request first: an older matched one must not hide it from the update below.
+    const has = await db.query.requests.findFirst({ where: and(eq(S.requests.buyerId, u.id), eq(S.requests.status, "open")) })
+      ?? await db.query.requests.findFirst({ where: and(eq(S.requests.buyerId, u.id), inArray(S.requests.status, ["matched"])) });
     if (has) {
       // Team requests are not paid by a buyer, so their wording, who, length and budget follow this list.
       const want = { title, details, who, amount, dealCents: eur * 100 };
