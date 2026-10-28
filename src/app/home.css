@@ -309,3 +309,19 @@
 @media (max-width:720px){.h-most li{grid-template-columns:28px minmax(0,1fr) auto}.h-most li a{display:none}.h-most{padding:22px}}
 .h-most ol{padding:0}
 @media (max-width:720px){.h-most li{gap:10px}.h-most li b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.h-most li span{white-space:normal}}
+
+/* Mood cards: one fixed size, and every text line on the same height on every card. The kicker,
+   the two line title, the two line description and the link each get a fixed row, so nothing
+   shifts up or down between cards. A deeper shade keeps the text readable on any photo. */
+.h-drops{grid-auto-columns:272px;gap:14px;padding-bottom:6px}
+.h-drop{height:380px;min-height:0;border-radius:24px}
+.h-drop-in{padding:22px;display:grid;grid-template-rows:1fr auto auto auto auto;row-gap:6px;align-content:end;background:linear-gradient(180deg,rgba(8,8,12,0) 22%,rgba(8,8,12,.55) 52%,rgba(8,8,12,.94) 100%)}
+.h-drop-in > *{text-shadow:0 1px 14px rgba(0,0,0,.45)}
+.h-drop-in .h-kick{grid-row:2;font-size:.7rem;letter-spacing:.12em;color:#F6CF7A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-drop h3{grid-row:3;font-size:1.45rem;line-height:1.08;letter-spacing:-.035em;height:2.16em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.h-drop p{grid-row:4;font-size:.84rem;line-height:1.4;height:2.8em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:#E4E2EC}
+.h-drop-cta{grid-row:5;margin-top:6px;height:34px;align-self:start;justify-self:start;padding:0 14px;border-radius:999px;background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.h-drop:hover .h-drop-cta{background:rgba(255,255,255,.24)}
+@media (max-width:600px){.h-drops{grid-auto-columns:74%}.h-drop{height:340px}.h-drop h3{font-size:1.3rem}}
+.h-drops{grid-auto-columns:292px}.h-drop h3{font-size:1.38rem}
+@media (max-width:600px){.h-drops{grid-auto-columns:78%}}

@@ -51,6 +51,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
           <div><dt>{t("Face")}</dt><dd>{x.o.showsFace ? t("Face shown") : t("No face")}</dd></div>
           <div><dt>{t("Vault access")}</dt><dd>{t(VAULT_LABEL[x.o.vault])}</dd></div>
           <div><dt>{t("Deliver by")}</dt><dd>{when(x.d.dueAt)}</dd></div>
+          {x.r.callMe ? <div className="dsum-call"><dt>{buyer ? t("You are called") : t("Call them")}</dt><dd>“{x.r.callMe}”</dd></div> : null}
         </dl>
         <dl className="dsum-dl dsum-money">
           {buyer ? (<>

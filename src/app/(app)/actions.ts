@@ -56,6 +56,7 @@ const Post = z.object({
   minVault: z.enum(["7d", "30d", "1y", "forever"]),
   dueHours: z.coerce.number().int().refine((h) => [24, 48, 72, 168].includes(h)),
   budget: z.coerce.number().int().min(15, "The minimum is €15.").max(2000),   // what creators see; service fee and VAT come on top
+  callMe: z.string().trim().max(40, "Keep the name or title short.").refine((v) => !/[@\d]|https?:|www\./i.test(v), "Only a name or a title, no numbers or contact details.").default(""),
   neutral: z.boolean().default(false),
   tint: z.enum(["ink", "violet", "ember", "ocean", "rose", "gold"]).default("ink"),
   openHours: z.coerce.number().int().refine((h) => [24, 72, 96].includes(h)).default(24),
@@ -68,10 +69,10 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     const p = Post.safeParse(input);
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
-    const { neutral, tint, waiver, budget, openHours, ...data } = p.data;
+    const { neutral, tint, waiver, budget, openHours, callMe, ...data } = p.data;
     const cover = neutral ? `g-${tint}` : await chooseCover(data.category, data.title);   // a colour the buyer picked, or a mood photo picked for variety
     // Paid when posted: the payment partner holds it during review and while the request is open.
-    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver });
+    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, callMe: callMe || null, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver });
     await queueNew(r.id);   // automatic check, then a person approves it (or it goes live by itself when staff allow that)
     redirect(`/requests/${r.id}/offers?posted=1`);
   });

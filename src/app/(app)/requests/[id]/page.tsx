@@ -63,6 +63,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
           <dl className="rd-spec">
             <div><dt>{t("Looking for")}</dt><dd>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</dd></div>
             <div><dt>{t("Face")}</dt><dd>{t(r.face === "not_needed" ? "Not needed" : r.face === "optional" ? "Optional" : "Required")}</dd></div>
+            {r.callMe ? <div><dt>{t("Personal")}</dt><dd>{t("Wants to be addressed by a name or title. You see it once chosen.")}</dd></div> : null}
             <div><dt>{t("Deliver within")}</dt><dd>{r.dueHours < 72 ? t("{n} hours", { n: r.dueHours }) : t("{n} days", { n: Math.round(r.dueHours / 24) })}</dd></div>
             <div><dt>{t("Vault at least")}</dt><dd>{t(VAULT_LABEL[r.minVault])}</dd></div>
           </dl>

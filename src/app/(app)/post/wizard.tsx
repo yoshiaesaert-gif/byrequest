@@ -17,6 +17,7 @@ const CATS: { k: Cat; ic: string; img: string; sub: string }[] = [
 /* Length per type: video starts at 5 minutes and goes up to 10. */
 const RANGE: Record<Cat, { min: number; max: number; def: number }> = { video: { min: 1, max: 10, def: 5 }, voice: { min: 1, max: 10, def: 2 }, photos: { min: 1, max: 30, def: 6 }, custom: { min: 1, max: 30, def: 5 } };
 const SUGGEST: Record<Cat, string[]> = { video: ["Jerk off video, all the way", "Shower video, slow and steamy", "Slow strip tease, just for me"], photos: ["Underwear try on, 6 pics", "Locker room after the pump", "Socks off after training"], voice: ["Moan my name", "Dirty talk before I sleep", "Whisper what you would do to me"], custom: ["Alpha God: show me where I belong", "Alpha God: you're the boss", "Your own idea, be bold"] };
+const CALL = ["My first name", "Master", "Sir", "Daddy", "Slut", "Boy", "Good girl"];
 const AGES: [number, number][] = [[18, 25], [25, 35], [35, 45], [45, 99]];
 const TINTS = ["ink", "violet", "ember", "ocean", "rose", "gold"] as const;
 const TITLE_MIN = 10, DETAILS_MIN = 40;
@@ -32,14 +33,14 @@ const euros2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const DRAFT = "brq_post_draft";
 
-type Draft = { category: Cat; amount: number; title: string; details: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
+type Draft = { category: Cat; amount: number; title: string; details: string; callMe: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
 export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string }) {
   const t = useT();
   const [waived, setWaived] = useState(false);
   const [i, setI] = useState(initial.title ? 1 : 0);
   const [w, setW] = useState<Draft>({
-    category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: initial.details ?? "",
+    category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: initial.details ?? "", callMe: "",
     who: "Anyone", ages: [0, 1], face: "not_needed", dueHours: 72, minVault: "30d", openHours: 24, price: initial.budget || null, neutral: false, tint: "violet",
   });
   const [pending, start] = useTransition();
@@ -76,7 +77,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
   const opt = <K extends keyof Draft>(k: K, v: Draft[K], l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<Draft>)}>{t(l)}</button>;
   const submit = () => start(async () => {
     try {
-      const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
+      const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, callMe: w.callMe, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
       if (r && !r.ok) toast(t(r.error), "err"); else sessionStorage.removeItem(DRAFT);
     } catch (e) {
       if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) { sessionStorage.removeItem(DRAFT); throw e; }
@@ -117,7 +118,11 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
               <span className={"wz-count" + (left(w.title.trim().length, TITLE_MIN) ? "" : " ok")}>{left(w.title.trim().length, TITLE_MIN) ? t("{n} more characters", { n: left(w.title.trim().length, TITLE_MIN) }) : <><Ico n="check" c="sm" />{t("Good title")}</>}</span></div>
             <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: t(s) })}>{t(s)}</button>)}</div>
             <div className="field"><label htmlFor="wd">{t("Describe what you want")}</label><textarea className="input" id="wd" rows={5} maxLength={800} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("For example: dim light, just a towel, take your time and look into the camera. Say my name at the end.")} />
-              <span className={"wz-count" + (left(w.details.trim().length, DETAILS_MIN) ? "" : " ok")}>{left(w.details.trim().length, DETAILS_MIN) ? t("{n} more characters", { n: left(w.details.trim().length, DETAILS_MIN) }) : <><Ico n="check" c="sm" />{t("Clear enough to apply")}</>}<em>{w.details.length}/800</em></span></div></>)}
+              <span className={"wz-count" + (left(w.details.trim().length, DETAILS_MIN) ? "" : " ok")}>{left(w.details.trim().length, DETAILS_MIN) ? t("{n} more characters", { n: left(w.details.trim().length, DETAILS_MIN) }) : <><Ico n="check" c="sm" />{t("Clear enough to apply")}</>}<em>{w.details.length}/800</em></span></div>
+            <div className="field"><label htmlFor="wc">{t("How should the creator address you?")} <span className="muted">{t("optional")}</span></label>
+              <input className="input" id="wc" maxLength={40} value={w.callMe} onChange={(e) => set({ callMe: e.target.value })} placeholder={t("A first name or a title")} autoComplete="off" />
+              <div className="suggest">{CALL.map((c) => <button key={c} type="button" className={"chip" + (w.callMe === t(c) ? " is-on" : "")} onClick={() => { if (c === "My first name") { set({ callMe: "" }); document.getElementById("wc")?.focus(); } else set({ callMe: t(c) }); }}>{t(c)}</button>)}</div>
+              <span className="t-sm muted">{t("Only the creator you choose sees it, inside the deal. On the board it just says you want to be addressed personally.")}</span></div></>)}
 
           {step === "who" && (<><h2>{t("Who are you looking for?")}</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>
             <div className="field"><label>{t("Creator")}</label><div className="optrow">{opt("who", "Man", "Man")}{opt("who", "Woman", "Woman")}{opt("who", "Anyone", "Anyone")}</div></div>
@@ -156,7 +161,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
 
           {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("You pay now. The payment partner holds the money until delivery. Not approved, or nobody applies? You get everything back.")}</p>
             <div className="card wz-sum"><div className="list">
-              {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`, 1], ["Title", w.title, 1], ["Description", w.details, 1], ["Looking for", `${t(w.who)}, ${ageLabel}`, 2], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"), 2], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 }), 3], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]), 3]].map(([k, v, s]) => (
+              {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`, 1], ["Title", w.title, 1], ["Description", w.details, 1], ...(w.callMe.trim() ? [["Call me", w.callMe.trim(), 1]] : []), ["Looking for", `${t(w.who)}, ${ageLabel}`, 2], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"), 2], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 }), 3], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]), 3]].map(([k, v, s]) => (
                 <div key={k as string} className="lrow"><span className="muted">{t(k as string)}</span><b className={k === "Description" ? "wz-desc" : ""}>{v}</b><button type="button" className="wz-edit" onClick={() => setI(s as number)}>{t("Edit")}</button></div>))}</div></div>
             <div className="field"><label>{t("Your card on the board")}</label>
               <div className="cardpick">

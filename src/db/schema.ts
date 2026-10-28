@@ -89,6 +89,7 @@ export const requests = pgTable("requests", {
   buyerId: uuid("buyer_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   details: text("details").notNull().default(""),
+  callMe: text("call_me"),                                   // how the creator should address the buyer; shown only inside the deal
   category: category("category").notNull(),
   amount: integer("amount").notNull(),            // minutes for video/voice/custom, count for photos/worn
   dealCents: integer("deal_cents").notNull(),

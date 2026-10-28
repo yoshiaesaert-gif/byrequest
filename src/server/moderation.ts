@@ -24,7 +24,8 @@ export async function screenRequest(id: string) {
     db.select({ n: count() }).from(S.requests).where(and(eq(S.requests.buyerId, r.buyerId), eq(S.requests.status, "rejected"))),
     db.select({ n: count() }).from(S.deals).where(and(eq(S.deals.buyerId, r.buyerId), eq(S.deals.status, "released"))),
   ]);
-  const out = screen(r, { recentTitles: recent.map((x) => x.title), buyerAgeVerified: !!buyer?.ageVerifiedAt, buyerRejected: rej.n, buyerDeals: done.n });
+  // The way the buyer wants to be addressed is checked together with the description.
+  const out = screen({ ...r, details: r.callMe ? `${r.details}\n${r.callMe}` : r.details }, { recentTitles: recent.map((x) => x.title), buyerAgeVerified: !!buyer?.ageVerifiedAt, buyerRejected: rej.n, buyerDeals: done.n });
   await db.update(S.requests).set({ checkVerdict: out.verdict, checkFlags: out.flags }).where(eq(S.requests.id, id));
   return out;
 }
