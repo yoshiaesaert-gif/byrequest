@@ -34,12 +34,12 @@ const DRAFT = "brq_post_draft";
 
 type Draft = { category: Cat; amount: number; title: string; details: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
-export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string }) {
+export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string }) {
   const t = useT();
   const [waived, setWaived] = useState(false);
   const [i, setI] = useState(initial.title ? 1 : 0);
   const [w, setW] = useState<Draft>({
-    category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: "",
+    category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: initial.details ?? "",
     who: "Anyone", ages: [0, 1], face: "not_needed", dueHours: 72, minVault: "30d", openHours: 24, price: initial.budget || null, neutral: false, tint: "violet",
   });
   const [pending, start] = useTransition();

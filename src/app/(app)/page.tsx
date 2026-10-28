@@ -113,7 +113,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into this week")}</h2></div></div>
       <div className="h-drops">{hot.map((x) => (
-        <Link key={x.k} href={`/post?c=${x.cat}&amount=${x.amount}&budget=${x.budget}&title=${encodeURIComponent(t(x.example))}`} className="h-drop media"><Cover cover={x.cover} />
+        <Link key={x.k} href={`/post?c=${x.cat}&amount=${x.amount}&budget=${x.budget}&title=${encodeURIComponent(t(x.example))}&d=${encodeURIComponent(t(x.details))}`} className="h-drop media"><Cover cover={x.cover} />
           <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · start yours", { n: x.n }) : t("Start yours")} <I n="right" c="sm" /></span></div></Link>))}</div>
     </section>
 
