@@ -217,3 +217,9 @@ export async function boardTotals() {
   const [r] = await db.select({ n: count(), cents: sql<number>`coalesce(sum(${requests.dealCents}),0)::int` }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
   return { open: r.n, cents: r.cents };
 }
+
+/* Creators whose identity and age check passed. */
+export async function verifiedCreators() {
+  const [r] = await db.select({ n: count() }).from(schema.onboarding).where(eq(schema.onboarding.identity, "approved"));
+  return r.n;
+}

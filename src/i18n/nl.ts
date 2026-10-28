@@ -1580,5 +1580,11 @@ const nl: Record<string, string> = {
   "Call them": "Spreek aan als",
   "Keep the name or title short.": "Hou de naam of titel kort.",
   "Only a name or a title, no numbers or contact details.": "Alleen een naam of titel, geen cijfers of contactgegevens.",
+  "verified creators": "geverifieerde creators",
+  "Real people": "Echte mensen",
+  "Every taste.": "Voor elke smaak.",
+  "One request away.": "Eén request verwijderd.",
+  "Every creator is checked on age and identity. You only see who applies for your request, and you choose. Face or no face, your call.": "Elke creator is gecontroleerd op leeftijd en identiteit. Je ziet alleen wie reageert op je request, en jij kiest. Met of zonder gezicht, jij beslist.",
+  "and more every day": "en elke dag meer",
 };
 export default nl;

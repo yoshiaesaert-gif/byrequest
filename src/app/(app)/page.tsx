@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { THEMES, shuffled } from "@/content/themes";
+import ScrollRow from "@/components/scroll-row";
+import Orbit from "@/components/orbit";
 import HowItWorks from "@/components/how-it-works";
 import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
@@ -73,7 +75,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     })),
   } : null;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
+  const [counts, topPaid, totals, verified] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals(), q.verifiedCreators()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
@@ -112,10 +114,12 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into this week")}</h2></div></div>
-      <div className="h-drops">{hot.map((x) => (
+      <ScrollRow className="h-drops">{hot.map((x) => (
         <Link key={x.k} href={`/post?c=${x.cat}&amount=${x.amount}&budget=${x.budget}&title=${encodeURIComponent(t(x.example))}&d=${encodeURIComponent(t(x.details))}`} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · start yours", { n: x.n }) : t("Start yours")} <I n="right" c="sm" /></span></div></Link>))}</div>
+          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · start yours", { n: x.n }) : t("Start yours")} <I n="right" c="sm" /></span></div></Link>))}</ScrollRow>
     </section>
+
+    <Orbit count={verified} t={t} />
 
     <section className="h-promise">
       <div className="h-promise-head"><span className="h-kick">{t("Our promises")}</span><h2>{t("Private by design.")}<br />{t("Safe by default.")}</h2><p>{t("Everything that matters happens inside ByRequest, so everyone is protected from the first offer to the last view.")}</p></div>
@@ -137,7 +141,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
 
     {creators.length ? (
       <section className="h-sec"><div className="h-head"><div><span className="h-kick dark">{t("Open profiles")}</span><h2>{t("Creators you can ask directly")}</h2></div><span className="t-sm muted">{t("Others only show when they make you an offer")}</span></div>
-        <div className="creators">{creators.map(({ u: c, p }) => (
+        <div className="creators">{shuffled(creators).map(({ u: c, p }) => (
           <Link key={c.id} href={`/c/${c.handle}`} className="cr"><div className="media avfill"><Av a={c.avatar} name={c.handle} size={300} square /><div className="top"><span className="badge glass">{p.showsFace ? t("Face shown") : t("No face")}</span></div></div>
             <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} t={t} /></span></div><div className="m">{c.ratingCount ? `${t("{n} deals", { n: c.ratingCount })} · ` : ""}{t("from {amount}", { amount: euros(p.fromCents) })}</div></div></Link>))}</div>
       </section>) : null}
@@ -220,9 +224,9 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into")}</h2></div></div>
-      <div className="h-drops">{hot.map((x) => (
+      <ScrollRow className="h-drops">{hot.map((x) => (
         <Link key={x.k} href={`/for-you?theme=${x.k}`} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · see them", { n: x.n }) : t("See the board")} <I n="right" c="sm" /></span></div></Link>))}</div>
+          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · see them", { n: x.n }) : t("See the board")} <I n="right" c="sm" /></span></div></Link>))}</ScrollRow>
     </section>
 
     <section className="h-sec">

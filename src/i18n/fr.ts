@@ -1580,5 +1580,11 @@ const fr: Record<string, string> = {
   "Call them": "Appelle le",
   "Keep the name or title short.": "Garde le prénom ou le titre court.",
   "Only a name or a title, no numbers or contact details.": "Seulement un prénom ou un titre, pas de chiffres ni de coordonnées.",
+  "verified creators": "créateurs vérifiés",
+  "Real people": "De vraies personnes",
+  "Every taste.": "Pour tous les goûts.",
+  "One request away.": "À une demande près.",
+  "Every creator is checked on age and identity. You only see who applies for your request, and you choose. Face or no face, your call.": "Chaque créateur est vérifié (âge et identité). Tu ne vois que ceux qui postulent à ta demande, et c'est toi qui choisis. Avec ou sans visage, à toi de voir.",
+  "and more every day": "et chaque jour plus",
 };
 export default fr;

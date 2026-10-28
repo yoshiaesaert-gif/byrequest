@@ -793,3 +793,7 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .hw-yes span::before{content:"✓";font-weight:800}
 .join .looks{max-height:228px;overflow-y:auto;padding:4px;margin:-4px;scrollbar-width:thin}
 .dsum-call dd{font-weight:800;color:var(--brand-text)}
+/* Money steps in the tutorial: always one line per pill; two by two on a phone. */
+.hw-track{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:6px}
+.hw-track span{white-space:nowrap;text-align:center;line-height:1.2}
+@media (max-width:560px){.hw-track{grid-template-columns:repeat(2,minmax(0,1fr));max-width:300px;margin-left:auto;margin-right:auto;gap:8px}.hw-track span{padding:9px 10px;font-size:.8rem}}
