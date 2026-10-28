@@ -38,34 +38,76 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
   });
 }
 
-export async function acceptOffer(buyerId: string, offerId: string, opts: { withdrawalWaiver: boolean }) {
+/* ---------- paying at posting ----------
+   The buyer pays when posting. The payment partner holds the money while the request is reviewed and
+   open. Not approved, taken offline or nobody applied: a full refund. A creator chosen: the deal runs
+   on the money already held. */
+type NewRequest = Omit<typeof requests.$inferInsert, "buyerId" | "status" | "payRef" | "payTotalCents" | "payFeeCents" | "payVatCents" | "payVatRate" | "paidAt" | "refundedAt">;
+
+export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean }) {
+  if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
+  if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start once chosen and that you lose the 14 day withdrawal right once it is delivered.");
+  const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true } });
+  const m = quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
+  const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
+  return db.transaction(async (tx) => {
+    const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, paidAt: new Date() }).returning();
+    await tx.insert(ledger).values([{ requestId: r.id, userId: buyerId, entry: "buyer_charge", cents: m.total }, { requestId: r.id, entry: "escrow_hold", cents: m.total }]);
+    await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { request: r.id, text: WAIVER_TEXT });
+    return r;
+  });
+}
+
+/* Full refund of a paid request that did not become a deal. Safe to call twice. */
+export async function refundRequest(requestId: string, why: string) {
+  return db.transaction(async (tx) => {
+    const [r] = await tx.select().from(requests).where(eq(requests.id, requestId)).for("update");
+    if (!r?.payRef || r.refundedAt || !r.payTotalCents) return false;
+    const deal = await tx.query.deals.findFirst({ where: eq(deals.requestId, requestId), columns: { id: true } });
+    if (deal) return false;
+    await payments.refund({ ref: r.payRef, cents: r.payTotalCents });
+    await tx.update(requests).set({ refundedAt: new Date() }).where(eq(requests.id, requestId));
+    await tx.insert(ledger).values({ requestId, userId: r.buyerId, entry: "buyer_refund", cents: r.payTotalCents });
+    await log(tx, "system", "payment.request_refunded", r.buyerId, { request: requestId, why });
+    await notify(tx, r.buyerId, "Refund on its way", "You were refunded in full.", `/requests/${requestId}/offers`);
+    return true;
+  });
+}
+
+export async function acceptOffer(buyerId: string, offerId: string, opts: { withdrawalWaiver: boolean; auto?: boolean }) {
   const o = await db.query.offers.findFirst({ where: eq(offers.id, offerId) });
   if (!o || o.status !== "pending") throw new RuleError("This offer is no longer available.");
   const r = await db.query.requests.findFirst({ where: eq(requests.id, o.requestId) });
   if (!r || r.buyerId !== buyerId) throw new RuleError("Not your request.");
   if (r.status !== "open") throw new RuleError("You already accepted an offer for this request.");
   if (!(await access(o.creatorId)).caps.offer) throw new RuleError("This creator cannot take new deals right now. Choose another offer.");
-  if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
-  if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start now and that you lose the 14 day withdrawal right once it is delivered.");
+  const paid = !!r.payRef && !r.refundedAt;
+  if (!paid && BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
+  if (!paid && !opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start now and that you lose the 14 day withdrawal right once it is delivered.");
+  // Paid at posting: the deal runs on the money already held. Older requests are charged now.
   const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true } });
-  const m = quote(r.dealCents, vatRate(buyer?.country ?? "BE"));
-  const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
+  const fresh = quote(r.dealCents, vatRate(buyer?.country ?? "BE"));
+  const m = paid ? { ...quote(r.dealCents, r.payVatRate ?? fresh.vatRate), total: r.payTotalCents!, feeCents: r.payFeeCents!, vatCents: r.payVatCents!, vatRate: r.payVatRate! } : fresh;
+  const charge = paid ? { ref: r.payRef! } : await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
     const [d] = await tx.insert(deals).values({
       requestId: r.id, offerId: o.id, buyerId, creatorId: o.creatorId,
       dealCents: m.dealCents, feeCents: m.feeCents, creatorCents: m.creatorCents,
-      vatCents: m.vatCents, vatRate: m.vatRate, withdrawalWaivedAt: new Date(),
+      vatCents: m.vatCents, vatRate: m.vatRate, withdrawalWaivedAt: paid ? r.paidAt! : new Date(),
       paymentRef: charge.ref, dueAt: addHours(new Date(), o.etaHours),
     }).returning();
     await tx.update(offers).set({ status: "accepted" }).where(eq(offers.id, o.id));
     await tx.update(offers).set({ status: "declined" }).where(and(eq(offers.requestId, r.id), ne(offers.id, o.id)));
     await tx.update(requests).set({ status: "matched" }).where(eq(requests.id, r.id));
-    await tx.insert(ledger).values([
-      { dealId: d.id, userId: buyerId, entry: "buyer_charge", cents: m.total },
-      { dealId: d.id, entry: "escrow_hold", cents: m.total },
-    ]);
-    await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { dealId: d.id, text: WAIVER_TEXT });
+    if (!paid) {
+      await tx.insert(ledger).values([
+        { dealId: d.id, userId: buyerId, entry: "buyer_charge", cents: m.total },
+        { dealId: d.id, entry: "escrow_hold", cents: m.total },
+      ]);
+      await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { dealId: d.id, text: WAIVER_TEXT });
+    }
     await system(tx, d.id, `Offer accepted. €${(m.total / 100).toFixed(2)}, VAT included, is held by the payment partner until delivery.`);
+    if (opts.auto) await notify(tx, buyerId, "We chose a creator for you", "Your request closed without a choice, so the best candidate was chosen. Your deal has started.", `/deals/${d.id}`);
     await notify(tx, o.creatorId, "You were chosen", "You have a new deal.", `/deals/${d.id}`);
     return d;
   });
@@ -215,7 +257,29 @@ export async function resolveDispute(disputeId: string, outcome: "upheld" | "rej
 }
 
 /* Worker: releases deals whose objection window passed and refunds deals that missed the deadline. */
+/* A paid request that closes without a choice: the best candidate is chosen, so the buyer still gets
+   what they paid for. Nobody applied: a full refund. */
+async function closeRequests(now: Date) {
+  const closing = await db.select().from(requests).where(and(eq(requests.status, "open"), lte(requests.closesAt, now), sql`${requests.payRef} is not null`, sql`${requests.refundedAt} is null`)).limit(50);
+  let chosen = 0, refunded = 0;
+  for (const r of closing) {
+    const cands = await db.select({ o: offers, sum: users.ratingSum, n: users.ratingCount }).from(offers).innerJoin(users, eq(users.id, offers.creatorId))
+      .where(and(eq(offers.requestId, r.id), eq(offers.status, "pending"))).orderBy(offers.createdAt);
+    const ranked = cands.sort((a, b) => (b.n ? b.sum / b.n : 0) - (a.n ? a.sum / a.n : 0));
+    let done = false;
+    for (const c of ranked) {
+      try { await acceptOffer(r.buyerId, c.o.id, { withdrawalWaiver: true, auto: true }); done = true; chosen++; break; } catch { /* next candidate */ }
+    }
+    if (!done) {
+      await db.update(requests).set({ status: "expired" }).where(eq(requests.id, r.id));
+      if (await refundRequest(r.id, "closed without candidates")) refunded++;
+    }
+  }
+  return { chosen, refunded };
+}
+
 export async function runDue(now = new Date()) {
+  const closed = await closeRequests(now);
   const due = await db.select({ id: deals.id }).from(deals).where(and(eq(deals.status, "delivered"), lte(deals.objectUntil, now)));
   const late = await db.select({ id: deals.id }).from(deals).where(and(eq(deals.status, "held"), lte(deals.dueAt, now)));
   for (const d of due) await apply(d.id, { type: "window_passed", at: now }, null).catch(() => {});
@@ -223,7 +287,7 @@ export async function runDue(now = new Date()) {
     await system(tx, deal.id, "No delivery before the deadline. The buyer is refunded in full.");
   }).catch(() => {});
   await expireVault(now);
-  return { released: due.length, refunded: late.length };
+  return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded };
 }
 
 async function expireVault(now: Date) {

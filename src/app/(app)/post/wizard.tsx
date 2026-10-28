@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { postRequest } from "../actions";
 import { toast } from "@/components/chrome";
-import { CAT_LABEL, euros, CREATOR_SHARE, amountLabel } from "@/domain/rules";
+import { CAT_LABEL, euros, CREATOR_SHARE, amountLabel, quote } from "@/domain/rules";
 
 type Cat = "video" | "photos" | "voice" | "custom";
 const STEPS = ["type", "details", "who", "access", "budget", "review"] as const;
@@ -14,10 +14,12 @@ const CATS: { k: Cat; ic: string; img: string; sub: string }[] = [
   { k: "voice", ic: "mic", img: "c17", sub: "Good night, good morning, your name" }, { k: "custom", ic: "spark", img: "c28", sub: "Your own idea" },
 ];
 const SUGGEST: Record<Cat, string[]> = { video: ["Shower video, calm and natural", "After the gym", "Morning routine"], photos: ["Post workout photo set", "Fit check", "Fresh sneakers"], voice: ["Good night voice note", "Good morning message", "Say my name"], custom: ["Your own idea, surprise me", "Birthday clip", "Ring light shoot"] };
+const euros2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const DEF_BAND: Record<Cat, [number, number]> = { video: [60, 110], photos: [25, 45], voice: [15, 40], custom: [45, 120] };
 
-export default function Wizard({ initial, bands }: { initial: { category: Cat; amount: number; title: string; budget: number }; bands: Record<string, [number, number]> }) {
+export default function Wizard({ initial, bands, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; budget: number }; bands: Record<string, [number, number]>; vatBp: number; ageOk: boolean; waiver: string }) {
+  const [waived, setWaived] = useState(false);
   const t = useT();
   const [i, setI] = useState(initial.title ? 1 : 0);
   const [w, setW] = useState({
@@ -38,13 +40,13 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
 
   const opt = (k: keyof typeof w, v: string | number, l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<typeof w>)}>{l}</button>;
   const submit = () => start(async () => {
-    const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin: w.ageMin, ageMax: w.ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget, neutral: w.neutral, openHours: w.openHours });
+    const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin: w.ageMin, ageMax: w.ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget, neutral: w.neutral, openHours: w.openHours, waiver: waived });
     if (r && !r.ok) toast(t(r.error), "err");
   });
 
   return (
     <div className="wizard wrap" style={{ maxWidth: 760 }}>
-      <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{i + 1} of {STEPS.length}</span></div>
+      <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{t("Step {n} of {m}", { n: i + 1, m: STEPS.length })}</span></div>
       <div className="wz-body">
         {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
           <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
@@ -69,7 +71,7 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
           <div className="field"><label>{t("Minimum time in your vault")}</label><div className="optrow">{opt("minVault", "7d", "7 days")}{opt("minVault", "30d", "30 days")}{opt("minVault", "1y", "1 year")}{opt("minVault", "forever", "Forever")}</div><span className="t-sm muted">{t("Creators with a shorter access period cannot make an offer.")}</span></div>
           <div className="field"><label>{t("Keep the request open for")}</label><div className="optrow">{opt("openHours", 6, "6 hours")}{opt("openHours", 24, "24 hours")}{opt("openHours", 72, "3 days")}</div></div></>)}
 
-        {step === "budget" && (<><h2>{t("What is it worth to you?")}</h2><p className="lead">{t("Creators see this amount. You only pay when you accept an offer.")}</p>
+        {step === "budget" && (<><h2>{t("What is it worth to you?")}</h2><p className="lead">{t("Creators see this amount. You pay it when you post, and get it all back if the request is not approved or nobody applies.")}</p>
           <div className="bd">
             <div className="bd-main">
               <div className="bd-amt"><button type="button" onClick={() => set({ budget: Math.max(10, budget - 5) })} aria-label={t("Lower")}><Ico n="minus" /></button>
@@ -94,19 +96,26 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
             </div>
           </div></>)}
 
-        {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("Nothing is charged now. You only pay when you accept an offer.")}</p>
+        {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("You pay now. The payment partner holds the money until delivery. Not approved, or nobody applies? You get everything back.")}</p>
           <div className="card" style={{ padding: "4px 20px" }}><div className="list">
-            {[["Type", `${CAT_LABEL[w.category]} · ${amountLabel(w.category, w.amount)}`], ["Title", w.title], ["Looking for", `${w.who}, ${w.ageMax === 99 ? "any age 18+" : `${w.ageMin} to ${w.ageMax}`}`], ["Face", w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"], ["Deliver within", w.dueHours < 72 ? `${w.dueHours} hours` : `${w.dueHours / 24} days`], ["Vault at least", { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]], ["Budget", `${euros(budget * 100)} plus €${(budget * 0.1).toFixed(2)} fee`], ["Card", w.neutral ? "Neutral, number only" : "Mood photo, picked for you"]].map(([k, v]) => (
-              <div key={k} className="lrow" style={{ gridTemplateColumns: "140px minmax(0,1fr)" }}><span className="muted">{k}</span><b>{v}</b></div>))}</div></div>
+            {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`], ["Title", w.title], ["Looking for", `${t(w.who)}, ${w.ageMax === 99 ? t("Any age 18+") : t("{a} to {b}", { a: w.ageMin, b: w.ageMax })}`], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required")], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 })], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault])], ["Card", t(w.neutral ? "Neutral, number only" : "Mood photo, picked for you")]].map(([k, v]) => (
+              <div key={k} className="lrow" style={{ gridTemplateColumns: "140px minmax(0,1fr)" }}><span className="muted">{t(k)}</span><b>{v}</b></div>))}</div></div>
           <div className="cardpick">
             <button type="button" className={!w.neutral ? "on" : ""} onClick={() => set({ neutral: false })}><span className="cp-prev media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></span><b>{t("Mood photo")}</b><span className="t-sm muted">{t("We pick one that keeps the board varied. Covered by frosted glass.")}</span></button>
             <button type="button" className={w.neutral ? "on" : ""} onClick={() => set({ neutral: true })}><span className="cp-prev neutralbg" /><b>{t("Neutral")}</b><span className="t-sm muted">{t("Just the number. The most discreet option.")}</span></button>
           </div>
+          {(() => { const q = quote(Math.max(1, budget) * 100, vatBp); return (
+            <div className="card wz-pay">
+              <div className="breakdown"><div><span className="muted">{t("Budget")}</span><span className="num">{euros2(q.dealCents)}</span></div><div><span className="muted">{t("Service fee")}</span><span className="num">{euros2(q.feeCents)}</span></div><div><span className="muted">{t("VAT")} {q.vatRate / 100}%</span><span className="num">{euros2(q.vatCents)}</span></div><div className="tot"><span>{t("Total, VAT included")}</span><span className="num">{euros2(q.total)}</span></div></div>
+              {ageOk ? <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{t(waiver)}</span></label>
+                : <><p className="t-sm">{t("Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.")}</p>
+                  <a className="btn btn-secondary" href={`/verify-age?next=${encodeURIComponent(`/post?c=${w.category}&amount=${w.amount}&budget=${budget}&title=${encodeURIComponent(w.title)}`)}`}>{t("Confirm my age")}</a></>}
+            </div>); })()}
           <p className="t-sm muted">{t("By posting you confirm the request follows the rules: adults only, no other people without their consent, nothing illegal.")}</p></>)}
       </div>
       <div className="wz-foot">
         <button className="btn btn-secondary" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>{t("Back")}</button>
-        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending}>{pending ? "Posting…" : "Post request"}</button>
+        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending || !ageOk || !waived}>{pending ? t("Securing payment…") : t("Pay {amount} and post", { amount: euros2(quote(Math.max(1, budget) * 100, vatBp).total) })}</button>
           : <button className="btn btn-primary" onClick={() => setI(i + 1)} disabled={!canNext}>{t("Continue")}</button>}
       </div>
     </div>

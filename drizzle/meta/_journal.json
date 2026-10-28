@@ -43,6 +43,13 @@
       "when": 1793218387578,
       "tag": "0005_request_review",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793221625112,
+      "tag": "0006_pay_at_posting",
+      "breakpoints": true
     }
   ]
 }

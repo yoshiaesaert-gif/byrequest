@@ -6,7 +6,7 @@ import { screen } from "@/domain/screening";
 import { RuleError } from "@/domain/rules";
 import { log } from "./onboarding";
 import { issueDecision } from "./decisions";
-import { notify } from "./deals";
+import { notify, refundRequest } from "./deals";
 
 /* Request moderation. A new request waits in review, the automatic check adds a suggestion, staff
    approve or reject it, and staff can edit every request afterwards. Every step is in the audit log. */
@@ -68,6 +68,7 @@ export async function reject(staffId: string, id: string, reason: string) {
     await log(tx, `staff:${staffId}`, "staff.request_rejected", r.buyerId, { request: id, reason: reason.slice(0, 300) });
     await issueDecision(tx, { userId: r.buyerId, action: "request_rejected", ground: "terms", facts: reason, scope: `Your request "${r.title.slice(0, 80)}" was not published. Your account is not affected. You can post a new request that follows the rules.`, decidedBy: "staff" });
   });
+  await refundRequest(id, "rejected in review");
 }
 
 /* ---------- lists ---------- */
@@ -153,6 +154,7 @@ export async function edit(staffId: string, id: string, input: EditInput) {
   const after: Record<string, unknown> = { ...before, ...Object.fromEntries(Object.entries(v).filter(([k]) => k in before)) };
   // The terms of an accepted deal are fixed; only the wording and the cover can still change.
   if (deal) for (const k of LOCKED_AFTER_DEAL) if (after[k] !== before[k]) throw new RuleError(`This request has a deal, so ${k} can no longer change.`);
+  if (r.payRef && !r.refundedAt && after.budget !== before.budget) throw new RuleError("The buyer already paid this budget, so it can no longer change.");
   if (after.status !== before.status) {
     const ok: Record<string, string[]> = { open: ["closed"], closed: ["open"], expired: ["open", "closed"], in_review: [], rejected: [], matched: [] };
     if (!ok[r.status]?.includes(after.status as string)) throw new RuleError(`Status cannot go from ${r.status} to ${after.status} here. Use approve or reject for requests in review.`);
@@ -175,6 +177,7 @@ export async function edit(staffId: string, id: string, input: EditInput) {
     const buyer = await tx.query.users.findFirst({ where: eq(S.users.id, r.buyerId), columns: { house: true } });
     if (!buyer?.house && changed.some((k) => k !== "cover")) await notify(tx, r.buyerId, "The ByRequest team edited your request", "Open it to see the current version.", `/requests/${id}/offers`);
   });
+  if (after.status === "closed" && before.status === "open" && !deal) await refundRequest(id, "closed by staff");
   if (changed.includes("title") || changed.includes("details")) await screenRequest(id);
   return { changed };
 }
@@ -188,6 +191,7 @@ export async function bulk(staffId: string, ids: string[], action: "approve" | "
       await db.update(S.requests).set({ status: "closed", staffEditedAt: new Date() }).where(eq(S.requests.id, r.id));
       await db.update(S.offers).set({ status: "declined" }).where(and(eq(S.offers.requestId, r.id), eq(S.offers.status, "pending")));
       await log(db, `staff:${staffId}`, "staff.request_closed", null, { request: r.id }); n++;
+      await refundRequest(r.id, "closed by staff");
     }
   }
   return n;

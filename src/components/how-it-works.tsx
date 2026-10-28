@@ -7,9 +7,9 @@ import { useT } from "@/i18n/client";
 /* "How it works": a slim ribbon on the home page that opens a four step tutorial over a glass wall.
    Two tours: one for people who ask (buyers), one for people who earn (creators). */
 const BUY = [
-  { k: "want", title: "Say what you want", text: "Type, length, who you have in mind and what it is worth to you. Posting is free, and nobody ever sees your name or email." },
+  { k: "want", title: "Say what you want", text: "Type, length, who you have in mind and what it is worth to you. You pay when you post, and nobody ever sees your name or email." },
   { k: "offers", title: "Creators make you an offer", text: "Creators who fit offer to make it: face or not, how long it stays in your vault, when they deliver. You see their stars and how many deals they did." },
-  { k: "choose", title: "You choose, the money waits", text: "You only pay when you accept one offer. Our payment partner holds the money until the delivery matches what you agreed." },
+  { k: "choose", title: "You choose, the money waits", text: "From the moment you post, our payment partner holds your money. You choose one creator. Not approved, or nobody applies? You get it all back." },
   { k: "vault", title: "Enjoy it in your private vault", text: "Checked before you see it, with your name as a watermark. Not what you agreed? You have 24 hours to object and a person decides." },
 ] as const;
 const EARN = [
@@ -41,7 +41,7 @@ function Stage({ k }: { k: K }) {
     <b className="hw-title">{t("long shower, no rush")}</b>
     <div className="hw-row"><span className="hw-pill">{t("Woman")}, {t("{a} to {b}", { a: 25, b: 40 })}</span><span className="hw-pill">{t("Face optional")}</span></div>
     <div className="hw-earn"><span style={{ color: "#4434E6" }}>{t("Your budget")}</span><b className="num">€120</b></div>
-    <div className="hw-free">{t("Free to post")}</div>
+    <div className="hw-free">{t("Held until delivery")}</div>
   </div>);
   if (k === "offers") return (<div className="hw-mock hw-offers">
     {[["ava", "ava.r", "4.9", 58, "Face shown"], ["lina", "lina.m", "4.8", 22, "No face"], ["jens", "jens", "4.7", 12, "No face"]].map(([img, h, st, n, f], i) => (

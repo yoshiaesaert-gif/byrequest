@@ -109,6 +109,14 @@ export const requests = pgTable("requests", {
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   reviewNote: text("review_note"),
   staffEditedAt: timestamp("staff_edited_at", { withTimezone: true }),   // set when staff edit a request; scripts then leave it alone
+  // Paid when posted: the payment partner holds the money from posting until delivery, or refunds it.
+  payRef: text("pay_ref"),
+  payTotalCents: integer("pay_total_cents"),
+  payFeeCents: integer("pay_fee_cents"),
+  payVatCents: integer("pay_vat_cents"),
+  payVatRate: integer("pay_vat_rate"),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  refundedAt: timestamp("refunded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("requests_status").on(t.status, t.closesAt)]);
 
@@ -227,6 +235,7 @@ export const saves = pgTable("saves", {
 export const ledger = pgTable("ledger", {
   id: uuid("id").primaryKey().defaultRandom(),
   dealId: uuid("deal_id").references(() => deals.id),
+  requestId: uuid("request_id"),                  // set for money moved before a deal exists (paid at posting, refunded)
   userId: uuid("user_id").references(() => users.id),
   entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable">().notNull(),
   cents: integer("cents").notNull(),

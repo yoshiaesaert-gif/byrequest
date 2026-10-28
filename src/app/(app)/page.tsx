@@ -80,7 +80,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
   const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
 
   return (<div className="wrap home">
-    {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Nothing is charged until you accept an offer.")}</div></div></div> : null}
+    {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Your payment stays safely held until delivery.")}</div></div></div> : null}
 
     <section className="h-hero">
       <div className="h-hero-bg"><Cover cover="c20" /></div>
@@ -90,7 +90,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
         <p>{t("Say what you want and what it is worth. Creators who fit make an offer. You choose.")}</p>
         <div className="h-ask"><Ask /></div>
         <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{t(e)}</Link>)}</div>
-        <div className="h-cta"><Link href="/post" className="btn btn-brand btn-lg"><I n="plus" c="sm" />{t("Post a request")}</Link><span>{t("Free to post. You only pay when you choose an offer.")}</span></div>
+        <div className="h-cta"><Link href="/post" className="btn btn-brand btn-lg"><I n="plus" c="sm" />{t("Post a request")}</Link><span>{t("You pay when you post. Not approved, or nobody applies? Full refund.")}</span></div>
         <div className="h-live"><span className="livedot" />{t("{n} requests open now", { n: pulse.open })}{pulse.paidCents ? ` · ${t("{amount} paid to creators this week", { amount: euros(pulse.paidCents) })}` : ""}</div>
       </div>
       {hero ? <HeroLive req={hero.req} offers={hero.offers} /> : null}
@@ -130,7 +130,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
         <ol>{most.map((x, i) => (
           <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(CAT_LABEL[x.k])}</b><span>{t("{n} open · typically {lo} to {hi}", { n: x.s!.n, lo: euros(x.s!.lo), hi: euros(x.s!.hi) })}</span></div><Link href={`/post?c=${x.k}`} aria-label={t(CAT_LABEL[x.k])}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
-        <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Free to post.")}</p></div></div>
+        <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Paid when posted, held until delivery.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare offers: face or not, vault time, rating.")}</p></div></div>
         <div className="h-step"><span className="num">3</span><div><b>{t("Enjoy")}</b><p>{t("Checked, reviewed, in your private vault.")}</p></div></div>
         <Link href="/post" className="btn btn-white btn-lg">{t("Post a request")}</Link></div>

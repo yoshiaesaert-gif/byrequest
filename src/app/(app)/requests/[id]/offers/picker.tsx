@@ -11,7 +11,7 @@ const eur2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eta = (h: number, t: ReturnType<typeof useT>) => (h < 72 ? t("Within {n} hours", { n: h }) : t("Within {n} days", { n: Math.round(h / 24) }));
 
-export default function Picker({ requestId, open, dealId, money, offers, ageOk, waiver }: { requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; vat: number; vatPct: number; total: number }; offers: O[]; ageOk: boolean; waiver: string }) {
+export default function Picker({ requestId, open, dealId, money, offers, ageOk, waiver, paid }: { paid: boolean; requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; vat: number; vatPct: number; total: number }; offers: O[]; ageOk: boolean; waiver: string }) {
   const [waived, setWaived] = useState(false);
   const t = useT();
   const SORTS = ["Best match", "Top rated", "No face", "Longest access", "Fastest"];
@@ -55,8 +55,11 @@ export default function Picker({ requestId, open, dealId, money, offers, ageOk, 
           <Link href={`/deals/${dealId}`} className="btn btn-primary btn-block">{t("Open deal")}</Link></>)
           : o ? (<>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>{o.look ? <img src={o.look} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} /> : null}<div><b>{o.handle}</b><div className="t-sm muted">{o.showsFace ? t("Face shown") : t("No face")} · {t("Vault")} {t(VAULT_LABEL[o.vault])} · {eta(o.etaHours, t).toLowerCase()}</div></div></div>
-            <div className="breakdown"><div><span className="muted">{t("Offer")}</span><span className="num">{eur2(money.deal)}</span></div><div><span className="muted">{t("Service fee")}</span><span className="num">{eur2(money.fee)}</span></div><div><span className="muted">{t("VAT")} {money.vatPct}%</span><span className="num">{eur2(money.vat)}</span></div><div className="tot"><span>{t("Total, VAT included")}</span><span className="num">{eur2(money.total)}</span></div></div>
-            {ageOk ? (<>
+            <div className="breakdown"><div><span className="muted">{t("Budget")}</span><span className="num">{eur2(money.deal)}</span></div><div><span className="muted">{t("Service fee")}</span><span className="num">{eur2(money.fee)}</span></div><div><span className="muted">{t("VAT")} {money.vatPct}%</span><span className="num">{eur2(money.vat)}</span></div><div className="tot"><span>{paid ? t("Paid, VAT included") : t("Total, VAT included")}</span><span className="num">{eur2(money.total)}</span></div></div>
+            {paid ? (<>
+              <p className="t-sm muted">{t("Already paid when you posted. Choosing starts the deal on the money that is held.")}</p>
+              <button className="btn btn-brand btn-lg btn-block" disabled={pending || !open} onClick={() => start(async () => { const r = await acceptOffer(o.id, true); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? t("Starting the deal…") : t("Choose {name}", { name: o.handle })}</button>
+            </>) : ageOk ? (<>
               <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{t(waiver)}</span></label>
               <button className="btn btn-brand btn-lg btn-block" disabled={pending || !open || !waived} onClick={() => start(async () => { const r = await acceptOffer(o.id, waived); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? t("Securing payment…") : t("Accept and secure {amount}", { amount: eur2(money.total) })}</button>
             </>) : (<>

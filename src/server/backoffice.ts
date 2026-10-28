@@ -4,6 +4,7 @@ import { db, schema } from "@/db";
 import { log } from "./onboarding";
 import { issueDecision } from "./decisions";
 import { RuleError } from "@/domain/rules";
+import { refundRequest } from "./deals";
 
 /* Read models and staff actions for the back office. Money figures mirror what the payment
    partner reports through signed events: ByRequest holds no funds and runs no wallet. */
@@ -94,6 +95,7 @@ export async function removeRequest(staffId: string, requestId: string, reason: 
     await log(tx, `staff:${staffId}`, "staff.request_removed", r.buyerId, { request: requestId, reason: reason.slice(0, 300) });
     await issueDecision(tx, { userId: r.buyerId, action: "request_removed", ground: "terms", facts: reason, scope: `Your request "${r.title.slice(0, 80)}" was taken offline. Your account is not affected.`, decidedBy: "staff" });
   });
+  await refundRequest(requestId, "taken offline by staff");
 }
 
 /* ---------- money ---------- */

@@ -58,6 +58,7 @@ const Post = z.object({
   budget: z.coerce.number().int().min(10, "The minimum is €10.").max(2000),
   neutral: z.boolean().default(false),
   openHours: z.coerce.number().int().min(2).max(168).default(24),
+  waiver: z.boolean().default(false),
 });
 
 export async function postRequest(input: z.input<typeof Post>): Promise<Result> {
@@ -66,9 +67,10 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     const p = Post.safeParse(input);
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
-    const { neutral, ...data } = p.data;
+    const { neutral, waiver, budget, openHours, ...data } = p.data;
     const cover = neutral ? null : await chooseCover(data.category, data.title);   // picked for variety, not by the buyer
-    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, lang: await getLocale(), status: "in_review", closesAt: addHours(new Date(), data.openHours) }).returning();
+    // Paid when posted: the payment partner holds it during review and while the request is open.
+    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver });
     await queueNew(r.id);   // automatic check, then a person approves it (or it goes live by itself when staff allow that)
     redirect(`/requests/${r.id}/offers?posted=1`);
   });

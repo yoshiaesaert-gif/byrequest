@@ -34,7 +34,7 @@ export default async function Offers({ params, searchParams }: { params: Promise
     <div className="page-h"><div><span className="eyebrow">{t("Your request")} · {r.status === "in_review" ? t("in review") : r.status === "rejected" ? t("not published") : open ? t("open") : t("closed")}</span><h1 className="t-h1" style={{ marginTop: 6 }}>{L(r.title)}</h1>
       <p className="muted t-sm" style={{ marginTop: 6 }}>{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {t(r.face === "not_needed" ? "No face needed" : r.face === "optional" ? "Face optional" : "Face required")} · {t("Vault at least")} {t(VAULT_LABEL[r.minVault]).toLowerCase()}</p></div></div>
     <Picker
-      requestId={r.id} open={open} dealId={deal?.id ?? null}
+      requestId={r.id} open={open} paid={!!r.payRef && !r.refundedAt} dealId={deal?.id ?? null}
       money={{ deal: m.dealCents, fee: m.feeCents, vat: m.vatCents, vatPct: m.vatRate / 100, total: m.total }} ageOk={ageOk} waiver={WAIVER_TEXT}
       offers={list.map(({ o, u: c, p }) => ({ id: o.id, status: o.status, showsFace: o.showsFace, vault: o.vault, etaHours: o.etaHours, note: notes.get(o.note) ?? o.note, handle: c.handle, look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? svgSrc(c.avatar.svg) : null, rating: c.ratingCount ? c.ratingSum / c.ratingCount : null, deals: c.ratingCount, visibility: p.visibility }))}
     />
