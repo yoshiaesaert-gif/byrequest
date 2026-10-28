@@ -1344,5 +1344,7 @@ const nl: Record<string, string> = {
   "ByRequest and the ByRequest logo are trademarks of ByRequest LLC.": "ByRequest en het ByRequest logo zijn merken van ByRequest LLC.",
   "Sign in by mail is not available yet. Try again later.": "Inloggen per mail is nog niet beschikbaar. Probeer het later opnieuw.",
   "Consent to appear": "Toestemming om te verschijnen",
+  "Describe what you want and set your budget. Verified creators apply, you choose.": "Beschrijf wat je wil en kies je budget. Geverifieerde creators stellen zich kandidaat, jij kiest.",
+  "No followers needed. Pick the requests you like, make them in your own time, get paid.": "Geen volgers nodig. Kies de requests die je liggen, maak ze wanneer het jou past en cash.",
 };
 export default nl;

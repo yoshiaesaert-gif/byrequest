@@ -1344,5 +1344,7 @@ const fr: Record<string, string> = {
   "ByRequest and the ByRequest logo are trademarks of ByRequest LLC.": "ByRequest et le logo ByRequest sont des marques de ByRequest LLC.",
   "Sign in by mail is not available yet. Try again later.": "La connexion par e-mail n'est pas encore disponible. Réessaie plus tard.",
   "Consent to appear": "Consentement à apparaître",
+  "Describe what you want and set your budget. Verified creators apply, you choose.": "Décris ce que tu veux et fixe ton budget. Des créateurs vérifiés postulent, tu choisis.",
+  "No followers needed. Pick the requests you like, make them in your own time, get paid.": "Pas besoin d'abonnés. Choisis les demandes qui te plaisent, réalise les à ton rythme, encaisse.",
 };
 export default fr;

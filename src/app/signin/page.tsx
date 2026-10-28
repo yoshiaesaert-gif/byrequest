@@ -31,7 +31,7 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <div className="ld-door-tx">
             <span className="ld-kick">{t("For buyers")}</span>
             <h1>{t("Ask for it.")}<br />{t("Someone makes it.")}</h1>
-            <p>{t("Describe what you want and set your budget. Verified creators apply, you choose who makes it.")}</p>
+            <p>{t("Describe what you want and set your budget. Verified creators apply, you choose.")}</p>
             <span className="ld-cta">{t("Post a request")} <I n="right" c="sm" /></span>
           </div>
         </a>
@@ -45,10 +45,16 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <div className="ld-door-tx">
             <span className="ld-kick">{t("For creators")}</span>
             <h1>{t("Pick it.")}<br />{t("Make it.")} <em>{t("Get paid.")}</em></h1>
-            <p>{t("No followers, no profile to keep up. Choose the requests you like, make them in your own time and the money lands in your account.")}</p>
+            <p>{t("No followers needed. Pick the requests you like, make them in your own time, get paid.")}</p>
             <span className="ld-cta">{t("Start earning")} <I n="right" c="sm" /></span>
           </div>
         </a>
+      </section>
+
+      <section className="ld-start" id="start">
+        <div className="ld-card"><SignInForm intent={intent} />
+          <ul className="ld-trust">{([["shield", "Adults only, ID checked"], ["lock", "Encrypted chat"], ["eyeoff", "No nudity in feeds"], ["vault", "Private vault"]] as const).map(([i, l]) => <li key={l}><span><I n={i} c="sm" /></span>{t(l)}</li>)}</ul>
+        </div>
       </section>
 
       <section className="ld-how" aria-label={t("How it works")}>
@@ -60,12 +66,6 @@ export default async function Landing({ searchParams }: { searchParams: Promise<
           <li><b>{t("Verify once")}</b><span>{t("ID and age, about 5 minutes. Your real name is never shown.")}</span></li>
           <li><b>{t("Apply for what you like")}</b><span>{t("You see the budget before you start. Face or not, you decide.")}</span></li>
           <li><b>{t("Deliver and get paid")}</b><span>{t("After the 24 hour check the money is yours. Payouts every Friday.")}</span></li></ol></div>
-      </section>
-
-      <section className="ld-start" id="start">
-        <div className="ld-card"><SignInForm intent={intent} />
-          <ul className="ld-trust">{([["shield", "Adults only, ID checked"], ["lock", "Encrypted chat"], ["eyeoff", "No nudity in feeds"], ["vault", "Private vault"]] as const).map(([i, l]) => <li key={l}><span><I n={i} c="sm" /></span>{t(l)}</li>)}</ul>
-        </div>
       </section>
 
       <footer className="ld-ft">
