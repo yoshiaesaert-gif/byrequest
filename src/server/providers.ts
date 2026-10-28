@@ -125,8 +125,10 @@ const diditIdentity: IdentityAdapter = {
     const body = JSON.parse(raw) as Record<string, unknown> & { session_id: string; status: string; created_at?: number; timestamp?: number; decision?: Record<string, unknown> };
     const ts = Number(headers.get("x-timestamp") ?? body.timestamp ?? body.created_at);
     if (!secret || !Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) throw new SignatureError("stale or unsigned");
-    const v2 = headers.get("x-signature-v2"), v1 = headers.get("x-signature");
-    const ok = (v2 && hexEq(createHmac("sha256", secret).update(sortedJson(body), "utf8").digest("hex"), v2)) || (v1 && hexEq(createHmac("sha256", secret).update(raw).digest("hex"), v1));
+    const v2 = headers.get("x-signature-v2"), v1 = headers.get("x-signature"), vs = headers.get("x-signature-simple");
+    const mac = (x: string) => createHmac("sha256", secret).update(x, "utf8").digest("hex");
+    const ok = (v2 && hexEq(mac(sortedJson(body)), v2)) || (v1 && hexEq(mac(raw), v1))
+      || (vs && hexEq(mac(`${headers.get("x-timestamp") ?? body.timestamp ?? body.created_at}:${body.session_id}:${body.status}:${body.webhook_type}`), vs));
     if (!ok) throw new SignatureError("bad signature");
     const st = String(body.status);
     const decision = st === "Approved" ? "approved" : st === "Declined" ? "declined" : st === "Expired" || st === "Abandoned" ? "expired" : st === "Resubmitted" ? "resubmit" : null;

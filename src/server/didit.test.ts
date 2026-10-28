@@ -32,3 +32,15 @@ describe("didit webhook", () => {
     await expect(async () => send({ session_id: "s4", status: "In Progress", created_at: now() })).rejects.toThrow(IgnoredEvent);
   });
 });
+
+describe("didit simple signature", () => {
+  it("accepts X-Signature-Simple", async () => {
+    process.env.DIDIT_WEBHOOK_SECRET = "s3cret"; process.env.BRQ_IDENTITY_PROVIDER = "didit";
+    const a = adapterById("identity", "didit") as IdentityAdapter;
+    const ts = Math.floor(Date.now() / 1000);
+    const body = { session_id: "s9", status: "Declined", webhook_type: "status.updated", timestamp: ts };
+    const sig = createHmac("sha256", "s3cret").update(`${ts}:s9:Declined:status.updated`).digest("hex");
+    const e = await a.verifyWebhook(JSON.stringify(body), new Headers({ "x-signature-simple": sig, "x-timestamp": String(ts) }));
+    expect(e.decision).toBe("declined");
+  });
+});
