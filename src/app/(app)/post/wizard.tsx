@@ -84,6 +84,14 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
     }
   });
 
+  const breakdown = (
+    <details className="pbk"><summary>{t("How is the price built up?")}<Ico n="down" c="sm" /></summary>
+      <dl><div><dt>{t("Work for the creator")}</dt><dd className="num">{euros2(q.dealCents)}</dd></div>
+        <div><dt>{t("Service fee")}</dt><dd className="num">{euros2(q.feeCents)}</dd></div>
+        <div><dt>{t("VAT {rate}%", { rate: q.vatRate / 100 })}</dt><dd className="num">{euros2(q.vatCents)}</dd></div>
+        <div className="tot"><dt>{t("Total")}</dt><dd className="num">{euros2(q.total)}</dd></div></dl>
+      <p>{t("The service fee covers payment protection, the review of every request and delivery, and support.")}</p>
+    </details>);
   const card = (
     <div className="rq wz-card" style={{ pointerEvents: "none" }}>
       <div className="media">{w.neutral ? <span className={"neutralbg g-" + w.tint} /> : <><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></>}
@@ -131,6 +139,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
                   <span className="num" aria-live="polite">€{price}</span>
                   <button type="button" onClick={() => set({ price: Math.min(2000, price + 5) })} aria-label={t("Higher")}><Ico n="plus" /></button></div>
                 <p className="bd-all">{t("All in. Service fee and VAT included, nothing is added.")}</p>
+                {breakdown}
                 <div className="tape" aria-hidden="true">
                   <div className="tape-in" style={{ transform: `translateX(-${((Math.min(price, 300) - 10) / 5) * 14}px)` }}>
                     <span className="tape-band" style={{ left: ((suggested * 0.85 - 10) / 5) * 14, width: ((suggested * 0.35) / 5) * 14 }} />
@@ -158,7 +167,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
               </div></div>
             <div className="card wz-pay">
               <div className="wz-total"><span>{t("Total")}</span><b className="num">{euros2(q.total)}</b></div>
-              <p className="t-sm muted">{t("Service fee and VAT included. Of which VAT {rate}%: {vat}.", { rate: q.vatRate / 100, vat: euros2(q.vatCents) })}</p>
+              {breakdown}
               {ageOk ? <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{t(waiver)}</span></label>
                 : <><p className="t-sm">{t("Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.")}</p>
                   <a className="btn btn-secondary" href={`/verify-age?next=${encodeURIComponent("/post")}`}>{t("Confirm my age")}</a></>}

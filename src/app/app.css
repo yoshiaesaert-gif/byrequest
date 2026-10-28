@@ -770,3 +770,13 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .wz-pay .waiver{margin-top:6px;padding-top:14px;border-top:1px solid var(--line);font-size:.86rem;line-height:1.5;color:var(--ink-2)}
 .wz2 .wz-foot{max-width:none}
 @media (max-width:960px){.wz-grid{grid-template-columns:1fr;gap:0}.wz-aside{display:none}}
+.stepperx .unit{letter-spacing:0;margin-left:6px}
+.pbk{width:100%;max-width:420px;margin:8px auto 0;text-align:left;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.wz-pay .pbk{max-width:none;margin:0;background:var(--sunk);box-shadow:none}
+.pbk summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;font-size:.88rem;font-weight:600;color:var(--ink-2);cursor:pointer}
+.pbk summary::-webkit-details-marker{display:none}
+.pbk[open] summary .ico{transform:rotate(180deg)}
+.pbk dl{margin:0;padding:0 16px;display:grid;gap:8px}
+.pbk dl div{display:flex;justify-content:space-between;gap:12px;font-size:.9rem}.pbk dt{color:var(--muted)}.pbk dd{margin:0;font-weight:600}
+.pbk dl .tot{border-top:1px solid var(--line);padding-top:8px;font-weight:800}.pbk dl .tot dt{color:var(--ink)}
+.pbk p{margin:0;padding:10px 16px 14px;font-size:.78rem;color:var(--muted);line-height:1.45}

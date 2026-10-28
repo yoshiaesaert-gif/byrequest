@@ -1433,5 +1433,9 @@ const nl: Record<string, string> = {
   "Paid, all in": "Betaald, alles inbegrepen",
   "Total, all in": "Totaal, alles inbegrepen",
   "Of which VAT {rate}%": "Waarvan btw {rate}%",
+  "How is the price built up?": "Hoe is de prijs opgebouwd?",
+  "Work for the creator": "Werk voor de creator",
+  "VAT {rate}%": "Btw {rate}%",
+  "The service fee covers payment protection, the review of every request and delivery, and support.": "De servicekost dekt de betaalbescherming, de controle van elke request en levering, en support.",
 };
 export default nl;

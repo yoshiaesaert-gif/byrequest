@@ -1433,5 +1433,9 @@ const fr: Record<string, string> = {
   "Paid, all in": "Payé, tout compris",
   "Total, all in": "Total, tout compris",
   "Of which VAT {rate}%": "Dont TVA {rate} %",
+  "How is the price built up?": "Comment le prix est il calculé ?",
+  "Work for the creator": "Travail du créateur",
+  "VAT {rate}%": "TVA {rate} %",
+  "The service fee covers payment protection, the review of every request and delivery, and support.": "Les frais de service couvrent la protection du paiement, la vérification de chaque demande et livraison, et le support.",
 };
 export default fr;
