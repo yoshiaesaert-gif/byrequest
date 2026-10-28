@@ -83,6 +83,15 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   redirect("/?welcome=1");
 }
 
+/* Step 2 of the sign up wizard: is this username valid and still free? Only after the email code. */
+export async function handleFree(raw: string): Promise<{ ok: boolean; error?: string }> {
+  if (!(await verifiedEmail())) return { ok: false, error: "Your code expired. Start again." };
+  const h = Profile.shape.handle.safeParse(raw);
+  if (!h.success) return { ok: false, error: h.error.issues[0].message };
+  const taken = await db.query.users.findFirst({ where: eq(schema.users.handle, h.data), columns: { id: true } });
+  return taken ? { ok: false, error: "That username is taken." } : { ok: true };
+}
+
 /* Development shortcut: sign in as a seeded demo account without email. Disabled in production. */
 export async function demoSignIn(handle: string) {
   if (process.env.DEV_SHOW_CODE !== "1") throw new Error("Not available.");

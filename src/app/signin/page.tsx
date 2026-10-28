@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/server/auth";
 import { Cover, I } from "@/components/ui";
 import SignInForm from "./form";
+import LangSwitch from "@/components/lang-switch";
 
 export default async function SignIn() {
   const { t } = await getT();
@@ -18,9 +19,14 @@ export default async function SignIn() {
             <div key={k} className={`fc ${k} media`}><Cover cover={c} /><span className="badge glass">{b.split(" · ").map((x) => t(x)).join(" · ")}</span><div><div className="t">{t(title)}</div><div className="p num">{p}</div></div></div>
           ))}
         </div>
-        <div><h1>{t("Someone asks. You choose. Deal.")}</h1><p>{t("Personal content made to order, between adults. Payment, chat and delivery in one private place.")}</p></div>
+        <div><h1>{t("Ask for it.")}<br />{t("Someone makes it.")}</h1><p>{t("Personal content made to order, between verified adults. Payment, chat and delivery in one private place.")}</p>
+          <div className="auth-two">
+            <div><span>{t("Want something?")}</span><b>{t("Post a request with your budget. Creators make you an offer, you choose.")}</b></div>
+            <div><span>{t("Creator?")}</span><b>{t("Pick the requests you like, make them and get paid. No followers needed.")}</b></div>
+          </div></div>
       </section>
       <section className="auth-form">
+        <LangSwitch className="auth-lang" />
         <SignInForm demo={demo} />
         <div className="trustrow"><span><I n="shield" c="sm" />{t("Adults only, ID checked")}</span><span><I n="lock" c="sm" />{t("Encrypted chat")}</span><span><I n="eyeoff" c="sm" />{t("No nudity in feeds")}</span><span><I n="lock" c="sm" />{t("Private vault")}</span></div>
       </section>
