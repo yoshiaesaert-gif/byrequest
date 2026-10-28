@@ -16,7 +16,6 @@ export default async function Consent({ params }: { params: Promise<{ token: str
   const [rows, doc] = await Promise.all([P.pendingFor(p.id), currentDoc("participant_consent")]);
   return (<div className="sbx" style={{ background: "var(--paper)" }}><div className="card" style={{ width: "min(560px,100%)" }}>
     <img src="/logo.png" alt="byrequest" style={{ height: 40, alignSelf: "flex-start" }} />
-    {PROVIDER_ENV === "test" ? <span className="tag">{t("Test environment")}</span> : null}
     <h1 className="t-h2">{t("You were added to a creator’s content")}</h1>
     <p className="t-sm muted">{t("Before anything with you in it is shared, ByRequest needs to confirm you are an adult and that you agree. Nothing is shared without that. You can decline or withdraw at any time.")}</p>
     <div className="checklist">

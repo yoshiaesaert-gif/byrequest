@@ -42,7 +42,6 @@ export default async function VerifyAge({ searchParams }: { searchParams: Promis
         <li><I n="lock" c="sm" />{t("Creators and other buyers never see that you did this.")}</li>
       </ul>
       <form action={go}><button className="btn btn-primary btn-lg">{t("Start the check")}</button></form>
-      {PROVIDER_ENV === "test" ? <p className="t-xs muted">{t("Test environment: the check is simulated and is not a real age verification.")}</p> : null}
     </>)}
   </div></div>);
 }

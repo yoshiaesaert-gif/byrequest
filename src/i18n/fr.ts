@@ -1,5 +1,7 @@
 /* FR translations of the UI, written by hand. Keys are the English strings. */
 const fr: Record<string, string> = {
+  "Quick sign in": "Connexion rapide",
+  "Your code:": "Ton code :",
   "Applications": "Candidatures",
   "Fixed price, no bidding": "Prix fixe, pas d'enchères",
   "Apply": "Postuler",

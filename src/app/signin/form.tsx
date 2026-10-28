@@ -30,7 +30,7 @@ export default function SignInForm({ demo }: { demo: boolean }) {
     <form action={check} className="authstack">
       <input type="hidden" name="email" value={s1.email} />
       <div><h2 className="t-h1">{t("Check your inbox")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("We sent a six digit code to")} {s1.email}. {t("The email comes from a neutral sender.")}</p></div>
-      {s1.devCode ? <p className="devcode">{t("Development code:")} <b className="num">{s1.devCode}</b></p> : null}
+      {s1.devCode ? <p className="devcode">{t("Your code:")} <b className="num">{s1.devCode}</b></p> : null}
       <div className="field"><label htmlFor="code">{t("Code")}</label><input className="input codeinput" id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} defaultValue={s1.devCode ?? ""} autoFocus required /></div>
       {s2.error ? <p className="formerr" role="alert">{t(s2.error)}</p> : null}
       <button className="btn btn-primary btn-lg btn-block" disabled={p2}>{p2 ? t("Checking…") : t("Continue")}</button>
@@ -44,7 +44,7 @@ export default function SignInForm({ demo }: { demo: boolean }) {
       {s1.error ? <p className="formerr" role="alert">{t(s1.error)}</p> : null}
       <button className="btn btn-primary btn-lg btn-block" disabled={p1}>{p1 ? t("Sending…") : t("Continue with email")}</button>
       {demo ? (<div className="demo">
-        <div className="divider">{t("or try a demo account")}</div>
+        <div className="divider">{t("Quick sign in")}</div>
         <div className="demorow">
           <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("nightowl")}><span className="mini mini-l" aria-hidden="true">N</span>{t("Buyer, nightowl")}</button>
           <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("milo")}><img src="/av/milo.webp" alt="" className="mini" />{t("Creator, milo")}</button>

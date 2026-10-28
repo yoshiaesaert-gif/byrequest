@@ -170,7 +170,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
   return (<div className="wrap">
     {a.status === "active"
-      ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{a.payout?.env === "test" ? t("Identity, agreement and payouts are approved in the test environment.") : t("Identity, agreement and payouts are approved.")}</div></div>{a.payout?.env === "test" ? <span className="envtag">Test</span> : null}</div>
+      ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{t("Identity, agreement and payouts are approved.")}</div></div></div>
       : a.status === "suspended" ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{t("Your creator account is suspended.")}</b><div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div></div>
       : <section className="cs">
           <div className="cs-tx"><span className="h-kick">{t("Your setup")}</span><h2>{a.status === "pending_verification" ? t("Almost there: we are checking your details.") : t("Three steps to your first earnings")}</h2>

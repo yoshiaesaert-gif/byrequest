@@ -10,7 +10,7 @@ const NL_DRAFT = "Ontwerp, nog na te kijken door juristen en de betaalpartner.";
 const FR_DRAFT = "Projet en attente de relecture juridique et du partenaire de paiement.";
 
 export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
-  "nl|2026-11-draft-4": { creator_agreement: {
+  "nl|2026-11-draft-5": { creator_agreement: {
       "title": "Creatorovereenkomst",
       "summary": [
         "Je werkt zelfstandig en kiest elke request zelf. Geen targets, geen exclusiviteit.",
@@ -36,7 +36,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
         "12. Belastingen en btw. Je bent zelf verantwoordelijk voor je inkomstenbelasting en sociale zekerheid. ByRequest rekent de koper btw aan en draagt die af aan het juiste land. Of jouw levering aan ByRequest btw draagt, hangt af van je eigen btw-situatie; je geeft ons juiste gegevens. Europese regels (DAC7) verplichten ByRequest om je gegevens en inkomsten één keer per jaar aan de belastingdienst te melden. Uitbetalingen wachten tot je je fiscale gegevens hebt ingevuld.",
         "13. Controle en moderatie. Elke levering doorloopt een automatische bestandscheck en een inhoudelijke controle voor ze beschikbaar wordt. Een technische goedkeuring is geen inhoudelijke goedkeuring. We mogen content die deze regels breekt weigeren of verwijderen en illegale content melden aan de overheid.",
         "14. Beperking, schorsing en sluiting. We mogen je account beperken, schorsen of sluiten bij een inbreuk op deze overeenkomst of de Voorwaarden, bij illegale content, om iemands veiligheid te beschermen, of wanneer de wet het vereist. Je krijgt de redenen schriftelijk, voor of op het moment dat de maatregel ingaat. Voor we je volledige account sluiten, geven we 30 dagen opzeg, tenzij de wet iets anders vereist, of bij een ernstige of herhaalde inbreuk, illegale content of een veiligheidsrisico. Je kan altijd reageren en in beroep gaan.",
-        "15. Klachten en beroep. Je kan gratis klagen of in beroep gaan in de app. Iemand die de eerste beslissing niet nam, bekijkt het opnieuw en je krijgt een gemotiveerd antwoord. Je kan ook terecht bij een onafhankelijke bemiddelaar, een erkende buitengerechtelijke geschillenbeslechting of de rechter.",
+        "15. Klachten en beroep. Je kan gratis klagen of in beroep gaan in de app. Iemand die de eerste beslissing niet nam, bekijkt het opnieuw en je krijgt een gemotiveerd antwoord. Je kan ook terecht bij een van de onafhankelijke bemiddelaars die we hiervoor aanwijzen, Pieter Santy en David Devree, bij een erkende buitengerechtelijke geschillenbeslechting of bij de rechter. Bemiddeling is vrijwillig en we dragen een redelijk deel van de kosten.",
         "16. Einde van de overeenkomst. Je kan je account op elk moment sluiten. Lopende deals worden geleverd of terugbetaald. Verdiensten uit afgeronde deals worden uitbetaald, min wettige verrekeningen. Licenties die al gegeven zijn voor afgeronde deals blijven gelden voor hun afgesproken periode.",
         "17. Privacy en vertrouwelijkheid. We behandelen je gegevens zoals beschreven in de Privacyverklaring. Je wettelijke naam en identiteitsbewijs worden nooit op je profiel getoond. Je probeert niet te achterhalen wie een koper is en je deelt nooit iets uit een chat buiten ByRequest.",
         "18. Grenzen van kopieerbeveiliging. Downloaden en doorsturen zijn uitgeschakeld en elke weergave draagt een zichtbaar en een onzichtbaar watermerk. Dat verkleint het risico en helpt lekken op te sporen, maar kan kopiëren met een ander toestel niet voorkomen. We treden op tegen lekken die we vinden en helpen bij verwijderverzoeken, maar kunnen de verwijdering niet garanderen.",
@@ -46,7 +46,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
         "22. Overige. Is een bepaling ongeldig, dan blijft de rest geldig. ByRequest mag deze overeenkomst overdragen aan een vennootschap die de dienst voortzet, mits het je te melden."
       ]
     } },
-  "fr|2026-11-draft-4": { creator_agreement: {
+  "fr|2026-11-draft-5": { creator_agreement: {
       "title": "Contrat créateur",
       "summary": [
         "Tu travailles en indépendant et choisis chaque demande toi même. Pas d'objectifs, pas d'exclusivité.",
@@ -72,7 +72,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
         "12. Impôts et TVA. Tu es responsable de ton impôt sur le revenu et de ta sécurité sociale. ByRequest facture la TVA à l'acheteur et la reverse au bon pays. Que ta fourniture à ByRequest soit soumise à la TVA dépend de ta propre situation TVA ; tu nous donnes des informations exactes. Les règles européennes (DAC7) obligent ByRequest à déclarer une fois par an tes données et revenus à l'administration fiscale. Les versements attendent que tu aies fourni tes données fiscales.",
         "13. Contrôle et modération. Chaque livraison passe une vérification automatique du fichier et un contrôle du contenu avant sa mise à disposition. Une validation technique n'est pas une validation du contenu. Nous pouvons refuser ou retirer un contenu qui enfreint ces règles et signaler un contenu illégal aux autorités.",
         "14. Restriction, suspension et fermeture. Nous pouvons restreindre, suspendre ou fermer ton compte en cas de manquement à ce contrat ou aux Conditions, de contenu illégal, pour protéger la sécurité de quelqu'un, ou lorsque la loi l'exige. Tu reçois les raisons par écrit, avant ou au moment où la mesure prend effet. Avant de fermer ton compte entier, nous donnons un préavis de 30 jours, sauf si la loi l'exige autrement, ou en cas de manquement grave ou répété, de contenu illégal ou de risque pour la sécurité. Tu peux toujours répondre et faire appel.",
-        "15. Plaintes et recours. Tu peux te plaindre ou faire appel gratuitement dans l'app. Une personne qui n'a pas pris la première décision la réexamine et tu reçois une réponse motivée. Tu peux aussi t'adresser à un médiateur indépendant, à un organe agréé de règlement extrajudiciaire des litiges ou au tribunal.",
+        "15. Plaintes et recours. Tu peux te plaindre ou faire appel gratuitement dans l'app. Une personne qui n'a pas pris la première décision la réexamine et tu reçois une réponse motivée. Tu peux aussi t'adresser à l'un des médiateurs indépendants que nous désignons à cet effet, Pieter Santy et David Devree, à un organe agréé de règlement extrajudiciaire des litiges ou au tribunal. La médiation est volontaire et nous prenons en charge une part raisonnable de son coût.",
         "16. Fin du contrat. Tu peux fermer ton compte à tout moment. Les deals en cours sont livrés ou remboursés. Les gains des deals terminés sont versés, déduction faite des compensations légales. Les licences déjà accordées pour des deals terminés restent valables pendant leur période convenue.",
         "17. Vie privée et confidentialité. Nous traitons tes données comme décrit dans la Déclaration de confidentialité. Ton nom légal et ta pièce d'identité ne sont jamais affichés sur ton profil. Tu n'essaies pas de découvrir qui est un acheteur et tu ne partages jamais rien d'un chat en dehors de ByRequest.",
         "18. Limites de la protection contre la copie. Le téléchargement et le transfert sont désactivés et chaque affichage porte un filigrane visible et un filigrane invisible. Cela réduit le risque et aide à retrouver les fuites, mais ne peut pas empêcher la copie avec un autre appareil. Nous agissons contre les fuites que nous trouvons et aidons pour les demandes de retrait, sans pouvoir garantir la suppression.",
@@ -144,6 +144,44 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
         "12. Alleen online, niemand onder druk. Kopers in het echt ontmoeten, seksuele diensten in het echt aanbieden, buiten ByRequest betalen of praten is niet toegestaan. Erkende hulporganisaties voor creators en sekswerkers kunnen je via ByRequest contacteren; hun berichten dragen hun naam. Zet iemand je onder druk of controleert iemand je, meld het via /report of bel 112.",
         "13. Maatregelen en beroep. Als we je account beperken of een levering weigeren, krijg je de redenen en kan je in beroep gaan.",
         "14. Beëindiging. Je kan je account op elk moment sluiten. Licenties die al gegeven zijn voor afgeronde deals blijven gelden voor hun afgesproken periode.",
+      ],
+    },
+  },
+  "nl|2026-11-draft-3": {
+    terms: {
+      title: "Gebruiksvoorwaarden",
+      summary: ["ByRequest is alleen voor volwassenen, en kopers bevestigen hun leeftijd één keer voor ze betalen.", "Creators beslissen vrij of ze reageren. Niemand mag iemand onder druk zetten.", "Chat, betaling en levering blijven op ByRequest. Geen afspraken in het echt.", "Elke maatregel die we nemen komt met een reden waartegen je in beroep kan gaan."],
+      body: [
+        "1. Wie ByRequest mag gebruiken. Je moet 18 jaar of ouder zijn en waar je woont diensten voor volwassenen mogen gebruiken. Kopers bevestigen hun leeftijd één keer bij onze verificatiepartner voor ze betalen of hun vault openen. Creators verifiëren hun identiteit en leeftijd voor hun eerste offer.",
+        "2. Wie we zijn en wat ByRequest is. ByRequest wordt uitgebaat door ByRequest LLC, een vennootschap met beperkte aansprakelijkheid naar het recht van Delaware, Verenigde Staten. Het is een marktplaats waar een koper een request met een budget plaatst en creators die daarvoor kiezen een offer doen. Niemand is verplicht te reageren of te accepteren. ByRequest is voor de btw de verkoper van de dienst en het aanspreekpunt voor kopers.",
+        "3. Alleen online. ByRequest is voor content die online geleverd wordt. Afspreken in het echt, seksuele diensten in het echt aanbieden of vragen, buiten ByRequest betalen en contactgegevens delen zijn niet toegestaan. Wie dat doet, verliest de bescherming van controle, terugbetaling en support.",
+        "4. Prijzen en betaling. Prijzen worden getoond inclusief btw. De koper betaalt via onze betaalpartner, die het geld vasthoudt tot de levering. De creator wordt betaald nadat de levering de controle en de bezwaartermijn doorstaan heeft, of eerder als de koper de betaling vrijgeeft. De afschrijving verschijnt als BRQ DIGITAL.",
+        "5. Herroepingsrecht. Content wordt op bestelling gemaakt en digitaal geleverd. Wanneer je een offer accepteert, vraag je de creator meteen te beginnen en erken je dat je het herroepingsrecht van 14 dagen verliest zodra de content in je vault staat. Je rechten als een levering niet overeenkomt met het offer blijven behouden.",
+        "6. Verboden. Content met minderjarigen of iemand die als minderjarige wordt voorgesteld, met iemand die geen toestemming gaf, niet consensuele of illegale handelingen, echt of gesimuleerd geweld, incest, bestialiteit, bedwelming, of alles wat de wet of de regels van kaartnetwerken overtreedt. Iemand anders onder druk zetten, uitbuiten of controleren is verboden en wordt gemeld aan de politie.",
+        "7. Bezwaar. Een koper kan binnen 24 uur nadat de content beschikbaar is bezwaar maken. Een mens vergelijkt het bestand met het geaccepteerde offer. Klopt het niet, dan wordt de koper volledig terugbetaald. Klopt het wel, dan wordt de creator betaald. Eén bezwaar sluit nooit een account af; herhaald misbruik wel.",
+        "8. Meldingen. Iedereen kan een profiel, request, chat of content melden via /report, met of zonder account. Een vermoeden van uitbuiting, mensenhandel of een minderjarige wordt zonder uitstel aan de politie doorgegeven. Wie in content voorkomt, kan verwijdering vragen via /removal.",
+        "9. Maatregelen en beroep. Als we content of een account beperken, krijg je een motivering: wat we beslisten, waarom, hoe ver het reikt en of het automatisch gebeurde. Je kan in de app in beroep gaan; iemand die de eerste beslissing niet nam, bekijkt het opnieuw. Je kan ook naar een erkende buitengerechtelijke geschillenbeslechting of naar de rechter.",
+        "10. Grenzen van de bescherming. Downloaden en doorsturen zijn uitgeschakeld en elke weergave draagt een zichtbaar en een onzichtbaar watermerk, maar geen enkele technologie kan kopiëren volledig voorkomen, bijvoorbeeld door een scherm te filmen.",
+        "11. Contact. Overheden, gebruikers en organisaties bereiken ons contactpunt via /legal/contact.",
+        "12. Wijzigingen. We kondigen wijzigingen vooraf aan. Voor belangrijke wijzigingen vragen we opnieuw je akkoord.",
+      ],
+    },
+    privacy: {
+      title: "Privacyverklaring",
+      summary: ["Alleen je gebruikersnaam en avatar worden ooit getoond.", "We vragen je uitdrukkelijke toestemming, omdat requests en content iets over je seksleven kunnen zeggen.", "De leeftijdscheck geeft ons een ja of nee, nooit je identiteitskaart.", "In Instellingen kan je je gegevens downloaden of je account verwijderen."],
+      body: [
+        "1. Wie we zijn. ByRequest LLC, een vennootschap met beperkte aansprakelijkheid naar het recht van Delaware, Verenigde Staten, is verantwoordelijke voor de gegevens die hier beschreven staan. Contact: privacy@byrequest.app. Onze functionaris voor gegevensbescherming is op hetzelfde adres bereikbaar.",
+        "2. Wat anderen zien. Je gebruikersnaam, je avatar, en bij creators de profielgegevens die ze zelf willen tonen. Nooit je naam, e-mail of locatie.",
+        "3. Gevoelige gegevens. Requests, deals, chats en content kunnen iets zeggen over je seksleven. We verwerken dit alleen met je uitdrukkelijke toestemming (AVG art. 9(2)(a)), gegeven bij het aanmelden, en alleen om de dienst te leveren. Je trekt ze in door je account te verwijderen.",
+        "4. Leeftijdscheck voor kopers. Onze verificatiepartner controleert dat je 18 jaar of ouder bent. We ontvangen alleen het resultaat en de datum. We ontvangen of bewaren geen identiteitsbewijs, naam of geboortedatum uit deze check.",
+        "5. Identiteitsverificatie van creators. Een gespecialiseerde aanbieder controleert het identiteitsbewijs, dat het bij de persoon hoort (bijvoorbeeld met een live selfie) en de minimumleeftijd. We bewaren het resultaat, een referentie, en de wettelijke naam, geboortedatum en land in versleutelde vorm. Zelf bewaren we geen scans van identiteitsbewijzen of biometrische gegevens.",
+        "6. Fiscale gegevens van creators. Europese regels (DAC7) verplichten ons om gegevens en inkomsten van verkopers één keer per jaar te melden aan de belastingdienst van hun land. We bewaren deze gegevens versleuteld en gebruiken ze alleen voor die melding.",
+        "7. Betalingen. Kaart- en bankgegevens gaan naar de betaalpartner. Wij bewaren referenties, bedragen en statussen voor de boekhouding.",
+        "8. Berichten. Chats zijn end to end versleuteld. ByRequest kan ze niet lezen. Een waarschuwing over contactgegevens draait alleen op je eigen toestel. Meld je een chat, dan kies je zelf wat je deelt.",
+        "9. Watermerken. Elke weergave in de vault draagt zichtbaar je gebruikersnaam en een onzichtbaar merkteken, om lekken naar een account te herleiden. Dat is in het belang van creators en van iedereen die in beeld komt.",
+        "10. Bewaartermijnen. Versleutelde chats worden 12 maanden na het einde van een deal verwijderd, meldingen na 12 maanden, contactgegevens van een afgesloten melding na 12 maanden. Betalings-, fiscale en verificatiegegevens bewaren we zo lang als de wet vereist. Meldingen en beslissingen bewaren we zo lang als nodig voor de veiligheid en voor juridische claims.",
+        "11. Je rechten. Inzage, een kopie van je gegevens (Instellingen, Download je gegevens), correctie, verwijdering (Instellingen, Verwijder je account), beperking en bezwaar. Je kan klacht indienen bij de toezichthouder: in België de Gegevensbeschermingsautoriteit, in Nederland de Autoriteit Persoonsgegevens.",
+        "12. Geen verkoop van gegevens. We verkopen geen persoonsgegevens. Marketingberichten alleen met aparte, vrijwillige toestemming, die je op elk moment kan uitzetten.",
       ],
     },
   },
@@ -222,6 +260,44 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
         "12. Uniquement en ligne, sans pression. Rencontrer des acheteurs en personne, proposer des services sexuels en personne, payer ou discuter en dehors de ByRequest est interdit. Les organisations d'aide reconnues pour les créateurs et les travailleurs du sexe peuvent te contacter via ByRequest ; leurs messages portent leur nom. Si quelqu'un fait pression sur toi ou te contrôle, signale le via /report ou appelle le 112.",
         "13. Mesures et recours. Si nous restreignons ton compte ou refusons une livraison, tu reçois les raisons et tu peux faire appel.",
         "14. Résiliation. Tu peux fermer ton compte à tout moment. Les licences déjà accordées pour des deals terminés restent valables pendant leur période convenue.",
+      ],
+    },
+  },
+  "fr|2026-11-draft-3": {
+    terms: {
+      title: "Conditions d'utilisation",
+      summary: ["ByRequest est réservé aux adultes, et les acheteurs confirment leur âge une fois avant de payer.", "Les créateurs décident librement de répondre. Personne ne peut faire pression sur personne.", "Chat, paiement et livraison restent sur ByRequest. Pas de rencontre en personne.", "Chaque mesure que nous prenons est motivée et peut faire l'objet d'un recours."],
+      body: [
+        "1. Qui peut utiliser ByRequest. Tu dois avoir 18 ans ou plus et être autorisé à utiliser des services pour adultes là où tu vis. Les acheteurs confirment leur âge une fois auprès de notre partenaire de vérification avant de payer ou d'ouvrir leur coffre. Les créateurs vérifient leur identité et leur âge avant leur première offre.",
+        "2. Qui nous sommes et ce qu'est ByRequest. ByRequest est exploité par ByRequest LLC, société à responsabilité limitée de droit du Delaware, États Unis. C'est une place de marché où un acheteur publie une demande avec un budget et où les créateurs qui le souhaitent font une offre. Personne n'est obligé de répondre ni d'accepter. Pour la TVA, ByRequest est le vendeur du service et le point de contact des acheteurs.",
+        "3. Uniquement en ligne. ByRequest est destiné à du contenu livré en ligne. Se rencontrer en personne, proposer ou demander des services sexuels en personne, payer en dehors de ByRequest et partager ses coordonnées est interdit. Le faire met fin à la protection du contrôle, du remboursement et du support.",
+        "4. Prix et paiement. Les prix sont affichés TVA comprise. L'acheteur paie via notre partenaire de paiement, qui conserve l'argent jusqu'à la livraison. Le créateur est payé une fois que la livraison a passé le contrôle et le délai d'objection, ou plus tôt si l'acheteur libère le paiement. Le débit apparaît sous le nom BRQ DIGITAL.",
+        "5. Droit de rétractation. Le contenu est réalisé sur commande et livré numériquement. En acceptant une offre, tu demandes au créateur de commencer immédiatement et tu reconnais perdre le droit de rétractation de 14 jours dès que le contenu est livré dans ton coffre. Tes droits si une livraison ne correspond pas à l'offre restent intacts.",
+        "6. Interdit. Tout contenu impliquant des mineurs ou une personne présentée comme mineure, une personne qui n'a pas consenti, des actes non consentis ou illégaux, de la violence réelle ou simulée, l'inceste, la zoophilie, l'intoxication, ou tout ce qui enfreint la loi ou les règles des réseaux de cartes. Faire pression sur une autre personne, l'exploiter ou la contrôler est interdit et signalé à la police.",
+        "7. Objections. Un acheteur peut contester dans les 24 heures après la mise à disposition du contenu. Une personne compare le fichier à l'offre acceptée. S'il ne correspond pas, l'acheteur est remboursé intégralement. S'il correspond, le créateur est payé. Une seule objection ne ferme jamais un compte ; une mauvaise foi répétée, si.",
+        "8. Signalements. Tout le monde peut signaler un profil, une demande, un chat ou un contenu via /report, avec ou sans compte. Toute suspicion d'exploitation, de traite des êtres humains ou de mineur est transmise sans délai à la police. Toute personne qui apparaît dans un contenu peut en demander le retrait via /removal.",
+        "9. Mesures et recours. Si nous restreignons un contenu ou un compte, tu reçois une motivation : ce que nous avons décidé, pourquoi, sa portée et si la décision était automatisée. Tu peux faire appel dans l'app ; une personne qui n'a pas pris la première décision la réexamine. Tu peux aussi t'adresser à un organe agréé de règlement extrajudiciaire des litiges ou au tribunal.",
+        "10. Limites de la protection. Le téléchargement et le transfert sont désactivés et chaque affichage porte un filigrane visible et un filigrane invisible, mais aucune technologie ne peut empêcher totalement la copie, par exemple en filmant un écran.",
+        "11. Contact. Les autorités, les utilisateurs et les organisations peuvent joindre notre point de contact via /legal/contact.",
+        "12. Modifications. Nous annonçons les modifications à l'avance. Les modifications importantes nécessitent ton nouvel accord.",
+      ],
+    },
+    privacy: {
+      title: "Déclaration de confidentialité",
+      summary: ["Seuls ton nom d'utilisateur et ton avatar sont affichés.", "Nous demandons ton consentement explicite, car les demandes et les contenus peuvent révéler quelque chose de ta vie sexuelle.", "La vérification d'âge nous donne un oui ou un non, jamais ta pièce d'identité.", "Tu peux télécharger tes données ou supprimer ton compte dans Réglages."],
+      body: [
+        "1. Qui nous sommes. ByRequest LLC, société à responsabilité limitée de droit du Delaware, États Unis, est responsable du traitement des données décrites ici. Contact : privacy@byrequest.app. Notre délégué à la protection des données est joignable à la même adresse.",
+        "2. Ce que les autres voient. Ton nom d'utilisateur, ton avatar et, pour les créateurs, les informations de profil qu'ils choisissent d'afficher. Jamais ton nom, ton e-mail ou ta localisation.",
+        "3. Données sensibles. Les demandes, deals, chats et contenus peuvent révéler quelque chose de ta vie sexuelle. Nous ne les traitons qu'avec ton consentement explicite (RGPD art. 9(2)(a)), donné à l'inscription, et uniquement pour faire fonctionner le service. Tu le retires en supprimant ton compte.",
+        "4. Vérification d'âge des acheteurs. Notre partenaire de vérification contrôle que tu as 18 ans ou plus. Nous ne recevons que le résultat et la date. Nous ne recevons ni ne conservons ta pièce d'identité, ton nom ou ta date de naissance issus de ce contrôle.",
+        "5. Vérification d'identité des créateurs. Un prestataire spécialisé contrôle la pièce d'identité, qu'elle appartient bien à la personne (par exemple avec un selfie en direct) et l'âge minimum. Nous conservons le résultat, une référence, ainsi que le nom légal, la date de naissance et le pays sous forme chiffrée. Nous ne stockons nous mêmes ni copies de pièces d'identité ni données biométriques.",
+        "6. Données fiscales des créateurs. Les règles européennes (DAC7) nous obligent à déclarer une fois par an les données et revenus des vendeurs à l'administration fiscale de leur pays. Nous conservons ces données chiffrées et ne les utilisons que pour cette déclaration.",
+        "7. Paiements. Les données de carte et bancaires vont au partenaire de paiement. Nous conservons les références, montants et statuts pour la comptabilité.",
+        "8. Messages. Les chats sont chiffrés de bout en bout. ByRequest ne peut pas les lire. Un avertissement sur les coordonnées fonctionne uniquement sur ton appareil. Si tu signales un chat, tu choisis ce que tu partages.",
+        "9. Filigranes. Chaque affichage dans le coffre porte visiblement ton nom d'utilisateur et une marque invisible, pour remonter jusqu'au compte en cas de fuite. C'est dans l'intérêt des créateurs et de toutes les personnes qui apparaissent.",
+        "10. Conservation. Les chats chiffrés sont supprimés 12 mois après la fin d'un deal, les notifications après 12 mois, les coordonnées d'un signalement clôturé après 12 mois. Les données de paiement, fiscales et de vérification sont conservées pendant la durée exigée par la loi. Les signalements et décisions sont conservés aussi longtemps que nécessaire pour la sécurité et les recours juridiques.",
+        "11. Tes droits. Accès, copie de tes données (Réglages, Télécharger tes données), rectification, suppression (Réglages, Supprimer ton compte), limitation et opposition. Tu peux porter plainte auprès de l'autorité de protection des données : en Belgique l'Autorité de protection des données, aux Pays Bas l'Autoriteit Persoonsgegevens.",
+        "12. Pas de vente de données. Nous ne vendons pas de données personnelles. Messages marketing uniquement avec un consentement distinct et facultatif, que tu peux désactiver à tout moment.",
       ],
     },
   },

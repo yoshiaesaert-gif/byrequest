@@ -22,7 +22,7 @@ const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c
 const SAY: Record<Check, string> = { not_started: "Not started", pending: "Being reviewed", action_required: "Action needed", approved: "Approved", rejected: "Not approved", expired: "Expired" };
 function Status({ s, env }: { s: Check; env?: string | null }) {
   const t = useT();
-  return <span className={`status st-${s}`}>{t(SAY[s])}{s === "approved" && env === "test" ? <span className="envtag">{t("Test")}</span> : null}</span>;
+  return <span className={`status st-${s}`}>{t(SAY[s])}</span>;
 }
 
 export default function Steps(p: Props) {
@@ -82,7 +82,7 @@ function Identity({ p, next }: { p: Props; next: () => void }) {
       <li><Ico n="check" c="sm" />{t("A quick live selfie, to confirm the document is yours")}</li>
       <li><Ico n="check" c="sm" />{t("Your legal name, date of birth and country come from the check itself. You do not type them twice.")}</li>
     </ul>
-    {s === "approved" ? <><p className="t-sm">{p.identity.env === "test" ? t("Your identity is verified in the test environment.") : t("Your identity is verified.")}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
+    {s === "approved" ? <><p className="t-sm">{t("Your identity is verified.")}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
       : s === "pending" ? <><b>{t("Your verification is being reviewed.")}</b><p className="t-sm muted">{t("This can take from a few minutes to a day. You get a notification when it is done. You can leave this page.")}</p><button className="btn btn-secondary" onClick={() => location.reload()}>{t("Check again")}</button></>
       : !p.identity.provider ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Identity verification is not available yet. We will notify you.")}</span></div>
       : (<>
@@ -166,7 +166,7 @@ function Overview({ p }: { p: Props }) {
   const active = p.overview.status === "active";
   const rows: [string, string][] = [["Email", p.overview.areas.email], ["Identity", p.overview.areas.identity], ["Payouts", p.overview.areas.payout], ["Creator agreement", p.overview.areas.agreement]];
   return (<div className="card ob-card">
-    {active ? <div className="ready"><span className="big"><Ico n="check" c="lg" /></span><h2>{t("You’re ready to earn.")}</h2><p className="muted">{p.overview.testOnly ? t("Everything is approved in the test environment.") : t("Everything is approved.")} {t("Make offers, deliver and get paid.")}</p><Link href="/for-you" className="btn btn-primary btn-lg">{t("Browse requests")}</Link></div>
+    {active ? <div className="ready"><span className="big"><Ico n="check" c="lg" /></span><h2>{t("You’re ready to earn.")}</h2><p className="muted">{t("Everything is approved.")} {t("Make offers, deliver and get paid.")}</p><Link href="/for-you" className="btn btn-primary btn-lg">{t("Browse requests")}</Link></div>
       : <div><span className="eyebrow">{t("Overview")}</span><h2>{p.overview.status === "pending_verification" ? "Your verification is being reviewed." : p.overview.status === "suspended" ? "Your creator account is suspended." : "Almost there"}</h2><p className="muted" style={{ marginTop: 6 }}>{t("You can prepare your profile already. Offers, uploads and payouts open when everything below is approved.")}</p></div>}
     <div className="checklist">{rows.map(([k, v]) => <div key={k} className="row"><b>{k}</b><Status s={v as Check} /></div>)}
       {p.overview.areas.restriction !== "none" ? <div className="row"><b>{t("Account")}</b><span className="status st-rejected">{p.overview.areas.restriction === "suspended" ? "Suspended" : "Restricted"}</span></div> : null}</div>

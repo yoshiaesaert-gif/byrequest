@@ -27,8 +27,6 @@ export default async function Footer() {
         <span>© {year} ByRequest</span>
         <span>{t("Payments appear as BRQ DIGITAL")}</span>
         <span>{t("Press Esc twice to quick hide")}</span>
-        {/* Fictional demo content needs a label only when the demo is open to the public. Behind the demo password it is a private test. */}
-        {DEMO_MODE && !process.env.DEMO_PASSWORD ? <span className="ft-demo">{t("Demo environment: profiles, deals and reviews are fictional")}</span> : null}
       </div>
     </footer>
   );

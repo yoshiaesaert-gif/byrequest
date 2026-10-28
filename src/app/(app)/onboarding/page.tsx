@@ -34,7 +34,6 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
     {(await searchParams).welcome ? <><div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: u.handle })}</b><div className="t-sm">{t("Three short steps and you can make your first offer. Your progress is saved after every step.")}</div></div></div><HowItWorks hidden variant="earn" autoOpen /></> : null}
     <h1 className="t-h1">{t("Become a creator")}</h1>
     <p className="muted" style={{ marginTop: 6 }}>{t("Verify once. Keep your profile private. Your progress is saved after every step.")}</p>
-    {PROVIDER_ENV === "test" ? <div className="banner test" style={{ marginTop: 16, marginBottom: 0 }}><I n="alert" /><div className="grow"><b>{t("Test environment")}</b><div className="t-sm">{t("Verification and payouts run against a simulated provider. Approvals here are not production checks.")}</div></div></div> : null}
     <Steps
       step={step}
       handle={u.handle}

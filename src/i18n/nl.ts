@@ -1,5 +1,7 @@
 /* NL translations of the UI, written by hand. Keys are the English strings. */
 const nl: Record<string, string> = {
+  "Quick sign in": "Snel inloggen",
+  "Your code:": "Je code:",
   "Applications": "Kandidaturen",
   "Fixed price, no bidding": "Vaste prijs, geen opbod",
   "Apply": "Stel je kandidaat",
