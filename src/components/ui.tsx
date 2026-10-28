@@ -66,17 +66,18 @@ export function Chips({ r, t = same }: { r: CardReq; t?: Tr }) {
   </div>);
 }
 export function BigNum({ r, t = same }: { r: CardReq; t?: Tr }) { return <div className="bn num">{r.amount}<small>{t(UNIT[r.category])}</small></div>; }
-export function Earn({ cents, t = same }: { cents: number; t?: Tr }) {
-  return <div className="pr"><span className="lbl">{t("Earn")}</span><b className="num">{euros(Math.round(cents * CREATOR_SHARE))}</b></div>;
+export function Earn({ cents, t = same, budget }: { cents: number; t?: Tr; budget?: boolean }) {
+  // Creators see what they earn; buyers looking for inspiration see the budget that was offered.
+  return <div className="pr"><span className="lbl">{budget ? t("Budget") : t("Earn")}</span><b className="num">{euros(budget ? cents : Math.round(cents * CREATOR_SHARE))}</b></div>;
 }
 export const who = (w: string, t: Tr = same) => t(w);
 
-export function RequestCard({ r, frost = true, t = same }: { r: CardReq; frost?: boolean; t?: Tr }) {
+export function RequestCard({ r, frost = true, t = same, budget }: { r: CardReq; frost?: boolean; t?: Tr; budget?: boolean }) {
   return (
     <Link href={`/requests/${r.id}`} className="rq">
       <div className="media">
         <Cover cover={r.cover} frost={frost} />
-        <div className="ov"><div><Chips r={r} t={t} /><BigNum r={r} t={t} /></div><Earn cents={r.dealCents} t={t} /></div>
+        <div className="ov"><div><Chips r={r} t={t} /><BigNum r={r} t={t} /></div><Earn cents={r.dealCents} t={t} budget={budget} /></div>
       </div>
       <div><div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)} · {t("{n} offers", { n: r.offers })}</div><BuyerLine b={r.buyer} t={t} />{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
     </Link>

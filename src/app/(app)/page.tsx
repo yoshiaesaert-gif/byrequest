@@ -11,6 +11,8 @@ import { localize, textsIn } from "@/server/translate";
 import Ask from "@/components/ask";
 import { parseAsk as parseAskHref } from "@/components/ask-parse";
 import { PromiseIcon } from "@/components/promise-icons";
+import Tips from "@/components/tips";
+import { tipsFor } from "@/content/tips";
 import { CAT_LABEL, CREATOR_SHARE, euros, amountLabel, type Category } from "@/domain/rules";
 
 const greet = () => { const h = new Date().getHours(); return h < 5 ? "Late night" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
@@ -19,7 +21,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
   const u = await requireUser();
   const sell = u.isCreator && (await cookies()).get("brq_mode")?.value === "sell";
   const sp = await searchParams;
-  return sell ? <CreatorHome userId={u.id} handle={u.handle} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} board={sp.board} creator={u.isCreator} />;
+  return sell ? <CreatorHome userId={u.id} handle={u.handle} board={sp.board} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} creator={u.isCreator} />;
 }
 
 const DROPS = [
@@ -36,27 +38,31 @@ const PROMISES = [
   { i: "billing", t: "Discreet everywhere", d: "BRQ DIGITAL on your statement, neutral alerts, quick hide on every screen." },
   { i: "fair", t: "Fair when it goes wrong", d: "24 hours to object. A person decides. Cheating costs more than it earns." },
 ] as const;
+const PROMISES_CREATOR = [
+  { i: "held", t: "The money is there before you start", d: "The buyer pays when choosing you. The payment partner holds it and pays you after the check." },
+  { i: "billing", t: "Your name stays yours", d: "Buyers only see your username and avatar. Your legal name and ID are never shown." },
+  { i: "adults", t: "Verified buyers", d: "Every buyer confirms their age. You see their stars and deals, never who they are." },
+  { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted. Contact details never need to be shared." },
+  { i: "vault", t: "Your work is protected", d: "No download, no forwarding, the buyer's name as watermark on every view." },
+  { i: "fair", t: "Fair when it goes wrong", d: "A person decides on objections. If your delivery matches the offer, you are paid." },
+] as const;
 const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout photo set", "Fit check, 5 photos"];
 
-async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: string; handle: string; welcome: boolean; board?: string; creator: boolean }) {
+async function BuyerHome({ userId, handle, welcome, creator }: { userId: string; handle: string; welcome: boolean; creator: boolean }) {
   const hideHow = (await cookies()).get("brq_hwb")?.value === "hide";
-  const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
-  const [mine, myDeals, pulse, rawTop, rawBoard, rawEnding, creators, stats] = await Promise.all([
-    q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }),
-    q.feed({ viewerId: userId, tab: "ending", limit: 16 }), q.publicCreators(18), q.categoryStats(),
+  const [mine, myDeals, pulse, rawTop, rawBoard, creators, stats] = await Promise.all([
+    q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", limit: 20 }),
+    q.publicCreators(18), q.categoryStats(),
   ]);
   const { t, locale } = await getT();
-  const [top, boardItems, ending] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale), localize(rawEnding, locale)]);
+  const [top, boardItems] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale)]);
   const openMine = mine.find((m) => m.r.status === "open");
   const L = await textsIn([...mine.map((m) => m.r.title), ...myDeals.map((d) => d.r.title)], locale);
   const live = myDeals.find((d) => d.d.buyerId === userId && ["held", "reviewing", "delivered", "disputed"].includes(d.d.status));
   // Every request shows once on the page: hero, board and closing soon never repeat each other.
   const fan = top.filter((r) => !r.mine).slice(0, 3);
   const shown = new Set(fan.map((r) => r.id));
-  const items = boardItems.filter((r) => !r.mine && !shown.has(r.id)).slice(0, 7);
-  items.forEach((r) => shown.add(r.id));
-  const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
-  const [feat, ...rest] = items;
+  const items = boardItems.filter((r) => !r.mine && !shown.has(r.id)).slice(0, 6);
   // Hero: the open request with the most offers from creators with an open profile. Offer only
   // creators stay hidden, because they only show to the buyer they made an offer to.
   const cands = await Promise.all(fan.map(async (r) => ({ r, o: (await q.offersFor(r.id)).filter((x) => x.p.visibility === "public") })));
@@ -72,7 +78,6 @@ async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: 
     })),
   } : null;
   const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
-  const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
 
   return (<div className="wrap home">
     {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Nothing is charged until you accept an offer.")}</div></div></div> : null}
@@ -100,26 +105,15 @@ async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: 
     <HowItWorks hidden={hideHow && !welcome} variant="buy" autoOpen={welcome} />
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
-        <nav className="h-tabs">{tabs.map(([k, l]) => <Link key={l} href={k ? `/?board=${k}` : "/"} scroll={false} className={cat === k ? "on" : ""}>{l}</Link>)}</nav></div>
-      {feat ? (
-        <div className="h-board">
-          <Link href={`/requests/${feat.id}`} className="h-feat media">
-            <Cover cover={feat.cover} frost />
-            <div className="h-feat-in">
-              <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
-              <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
-              <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span><h3>{feat.title}</h3><BuyerLine b={feat.buyer} t={t} light />{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
-                <div className="h-earn"><span>{t("Earn")}</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
-            </div>
-          </Link>
-          {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} t={t} />)}
-        </div>) : <div className="card empty"><b className="t-h3">{t("Nothing in this category right now")}</b><Link href="/post" className="btn btn-primary">{t("Be the first")}</Link></div>}
-      <div className="h-more"><Link href="/for-you" className="btn btn-primary btn-lg">{t("Open the full board")} <I n="right" c="sm" /></Link><Link href="/post" className="btn btn-secondary btn-lg">{t("Post your own")}</Link></div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Inspiration")}</span><h2>{t("What others are asking for")}</h2></div><span className="t-sm muted">{t("Open one and post a similar request in one tap.")}</span></div>
+      <div className="h-inspo">{items.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} t={t} budget />)}</div>
     </section>
 
+    <Tips tips={tipsFor("buy", locale)} kick={t("Tips and tricks")} title={t("Get the most out of your request")} />
+
+
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("This week")}</span><h2>{t("Moods people are into")}</h2></div></div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Ideas")}</span><h2>{t("Moods people are into this week")}</h2></div></div>
       <div className="h-drops">{DROPS.map((x) => { const n = stats[x.c]?.n ?? 0; return (
         <Link key={x.k} href={x.href} className="h-drop media"><Cover cover={x.cover} />
           <div className="h-drop-in"><span className="h-kick">{t(x.k)}</span><h3>{t(x.t)}</h3><p>{t(x.d)}</p><span className="h-drop-cta">{t("{n} open · start yours", { n })} <I n="right" c="sm" /></span></div></Link>); })}</div>
@@ -130,15 +124,11 @@ async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: 
       <div className="h-promise-grid">{PROMISES.map((x) => <div key={x.t} className="h-pr"><PromiseIcon name={x.i} /><b>{t(x.t)}</b><p>{t(x.d)}</p></div>)}</div>
     </section>
 
-    <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("Last chance")}</span><h2>{t("Closing soon")}</h2></div><Link href="/for-you?tab=ending" className="h-link">{t("See all")} <I n="right" c="sm" /></Link></div>
-      <div className="rail">{soon.map((r) => <RequestCard key={r.id} r={r} t={t} />)}</div>
-    </section>
 
     <section className="h-sec h-split">
       <div className="h-most"><span className="h-kick dark">{t("Most wanted")}</span><h2>{t("What sells right now")}</h2>
         <ol>{most.map((x, i) => (
-          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(CAT_LABEL[x.k])}</b><span>{t("{n} open · typically {lo} to {hi}", { n: x.s!.n, lo: euros(x.s!.lo), hi: euros(x.s!.hi) })}</span></div><Link href={`/?board=${x.k}`} scroll={false} aria-label={t(CAT_LABEL[x.k])}><I n="right" /></Link></li>))}</ol></div>
+          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(CAT_LABEL[x.k])}</b><span>{t("{n} open · typically {lo} to {hi}", { n: x.s!.n, lo: euros(x.s!.lo), hi: euros(x.s!.hi) })}</span></div><Link href={`/post?c=${x.k}`} aria-label={t(CAT_LABEL[x.k])}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
         <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Free to post.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare offers: face or not, vault time, rating.")}</p></div></div>
@@ -153,22 +143,31 @@ async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: 
             <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} t={t} /></span></div><div className="m">{c.ratingCount ? `${t("{n} deals", { n: c.ratingCount })} · ` : ""}{t("from {amount}", { amount: euros(p.fromCents) })}</div></div></Link>))}</div>
       </section>) : null}
 
-    {!creator ? <section className="h-earn">
+    {!creator ? <section className="h-cross">
       <div><span className="h-kick">{t("The other side")}</span><h2>{t("Rather earn yourself?")}</h2><p>{t("Pick requests you like, make them in your own time and get paid. No followers, no profile to keep up, your name never shown.")}</p></div>
       <Link href="/earn" className="btn btn-white btn-lg">{t("See how earning works")}</Link>
     </section> : null}
   </div>);
 }
 
-async function CreatorHome({ userId, handle }: { userId: string; handle: string }) {
+async function CreatorHome({ userId, handle, board }: { userId: string; handle: string; board?: string }) {
   const hideHow = (await cookies()).get("brq_hw")?.value === "hide";
-  const [a, earn, fit, albums, offers] = await Promise.all([access(userId), q.creatorEarnings(userId), q.feed({ viewerId: userId, limit: 6 }), q.albumsForCreator(userId), q.myOffers(userId)]);
+  const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
+  const [a, earn, fit, albums, offers, rawBoard, rawEnding, stats] = await Promise.all([access(userId), q.creatorEarnings(userId), q.feed({ viewerId: userId, limit: 6 }), q.albumsForCreator(userId), q.myOffers(userId),
+    q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }), q.feed({ viewerId: userId, tab: "ending", limit: 16 }), q.categoryStats()]);
   const pts = earn.weeks.length ? earn.weeks.map((w) => w.c) : [0];
   const mx = Math.max(...pts, 1), W = 600, H = 80;
   const d = pts.map((v, i) => `${i ? "L" : "M"}${((i * W) / Math.max(pts.length - 1, 1)).toFixed(1)} ${(H - 6 - (v / mx) * (H - 16)).toFixed(1)}`).join(" ");
   const pendingOffers = offers.filter((o) => o.o.status === "pending").length;
   const { t, locale } = await getT();
-  const fitL = await localize(fit, locale);
+  const [boardItems, ending] = await Promise.all([localize(rawBoard, locale), localize(rawEnding, locale)]);
+  // Every request shows once: board first, then closing soon without repeats.
+  const items = boardItems.filter((r) => !r.mine).slice(0, 7);
+  const shown = new Set(items.map((r) => r.id));
+  const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
+  const [feat, ...rest] = items;
+  const most = (["video", "photos", "voice", "custom"] as Category[]).map((k) => ({ k, s: stats[k] })).filter((x) => x.s).sort((a, b) => b.s!.n - a.s!.n);
+  const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
   return (<div className="wrap">
     {a.status === "active"
       ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{a.payout?.env === "test" ? t("Identity, agreement and payouts are approved in the test environment.") : t("Identity, agreement and payouts are approved.")}</div></div>{a.payout?.env === "test" ? <span className="envtag">Test</span> : null}</div>
@@ -198,10 +197,53 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
 
     <HowItWorks hidden={hideHow} variant="earn" />
 
-    <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
-      <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (
-        <Link key={r.id} href={`/requests/${r.id}`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{r.title}</b><div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {leftLabel(r.closesAt, t)}</div></div>
-          <div className="r"><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b><span className="t-xs muted">{t("you earn")}</span></div></Link>))}</div></div>
+    <section className="h-sec">
+      <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
+        <nav className="h-tabs">{tabs.map(([k, l]) => <Link key={l} href={k ? `/?board=${k}` : "/"} scroll={false} className={cat === k ? "on" : ""}>{l}</Link>)}</nav></div>
+      {feat ? (
+        <div className="h-board">
+          <Link href={`/requests/${feat.id}`} className="h-feat media">
+            <Cover cover={feat.cover} frost />
+            <div className="h-feat-in">
+              <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
+              <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
+              <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span><h3>{feat.title}</h3><BuyerLine b={feat.buyer} t={t} light />{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
+                <div className="h-earn"><span>{t("Earn")}</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
+            </div>
+          </Link>
+          {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} t={t} />)}
+        </div>) : <div className="card empty"><b className="t-h3">{t("Nothing in this category right now")}</b><Link href="/post" className="btn btn-primary">{t("Be the first")}</Link></div>}
+      <div className="h-more"><Link href="/for-you" className="btn btn-primary btn-lg">{t("Open the full board")} <I n="right" c="sm" /></Link><Link href="/post" className="btn btn-secondary btn-lg">{t("Post your own")}</Link></div>
+    </section>
+
+    <section className="h-sec">
+      <div className="h-head"><div><span className="h-kick dark">{t("This week")}</span><h2>{t("Moods people are into")}</h2></div></div>
+      <div className="h-drops">{DROPS.map((x) => { const n = stats[x.c]?.n ?? 0; return (
+        <Link key={x.k} href={`/for-you?c=${x.c}`} className="h-drop media"><Cover cover={x.cover} />
+          <div className="h-drop-in"><span className="h-kick">{t(x.k)}</span><h3>{t(x.t)}</h3><p>{t(x.d)}</p><span className="h-drop-cta">{t("{n} open · see them", { n })} <I n="right" c="sm" /></span></div></Link>); })}</div>
+    </section>
+
+    <section className="h-sec">
+      <div className="h-head"><div><span className="h-kick dark">{t("Last chance")}</span><h2>{t("Closing soon")}</h2></div><Link href="/for-you?tab=ending" className="h-link">{t("See all")} <I n="right" c="sm" /></Link></div>
+      <div className="rail">{soon.map((r) => <RequestCard key={r.id} r={r} t={t} />)}</div>
+    </section>
+
+    <Tips tips={tipsFor("earn", locale)} kick={t("Tips and tricks")} title={t("Deliver work buyers love")} />
+
+    <section className="h-promise">
+      <div className="h-promise-head"><span className="h-kick">{t("Our promises")}</span><h2>{t("Paid for sure.")}<br />{t("Private by default.")}</h2><p>{t("You choose what you make. We make sure you get paid and stay anonymous.")}</p></div>
+      <div className="h-promise-grid">{PROMISES_CREATOR.map((x) => <div key={x.t} className="h-pr"><PromiseIcon name={x.i} /><b>{t(x.t)}</b><p>{t(x.d)}</p></div>)}</div>
+    </section>
+
+    <section className="h-sec h-split">
+      <div className="h-most"><span className="h-kick dark">{t("Most wanted")}</span><h2>{t("What buyers want right now")}</h2>
+        <ol>{most.map((x, i) => (
+          <li key={x.k}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{t(CAT_LABEL[x.k])}</b><span>{t("{n} open · typically {lo} to {hi}", { n: x.s!.n, lo: euros(x.s!.lo), hi: euros(x.s!.hi) })}</span></div><Link href={`/for-you?c=${x.k}`} aria-label={t(CAT_LABEL[x.k])}><I n="right" /></Link></li>))}</ol></div>
+      <div className="h-how"><span className="h-kick">{t("How it works")}</span>
+        <div className="h-step"><span className="num">1</span><div><b>{t("Pick")}</b><p>{t("Only requests you like. The amount is on it.")}</p></div></div>
+        <div className="h-step"><span className="num">2</span><div><b>{t("Make")}</b><p>{t("In your own time, face or not.")}</p></div></div>
+        <div className="h-step"><span className="num">3</span><div><b>{t("Get paid")}</b><p>{t("After the check, straight to your account.")}</p></div></div>
+        <Link href="/for-you" className="btn btn-white btn-lg">{t("Open the board")}</Link></div>
     </section>
   </div>);
 }

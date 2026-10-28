@@ -53,7 +53,7 @@ export default async function Earn() {
       {FAQ.map(([q, a]) => <details key={q}><summary>{t(q)}<I n="right" c="sm" /></summary><p>{t(a)}</p></details>)}
     </section>
 
-    <section className="h-earn">
+    <section className="h-cross">
       <div><span className="h-kick">{t("Ready?")}</span><h2>{t("Your first offer is closer than you think.")}</h2><p>{t("Verify once. Then every request is one tap away.")}</p></div>
       <EarnStart creator={u.isCreator} white />
     </section>
