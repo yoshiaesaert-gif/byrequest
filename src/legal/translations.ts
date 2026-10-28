@@ -105,7 +105,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
       title: "Privacyverklaring",
       summary: ["Alleen je gebruikersnaam en avatar worden ooit getoond.", "We vragen je uitdrukkelijke toestemming, omdat requests en content iets over je seksleven kunnen zeggen.", "De leeftijdscheck geeft ons een ja of nee, nooit je identiteitskaart.", "In Instellingen kan je je gegevens downloaden of je account verwijderen."],
       body: [
-        "1. Wie we zijn. ByRequest is verantwoordelijke voor de gegevens die hier beschreven staan. Contact: privacy@byrequest.app. Onze functionaris voor gegevensbescherming is op hetzelfde adres bereikbaar.",
+        "1. Wie we zijn. ByRequest is verantwoordelijke voor de gegevens die hier beschreven staan. Contact: privacy@byrequest.me. Onze functionaris voor gegevensbescherming is op hetzelfde adres bereikbaar.",
         "2. Wat anderen zien. Je gebruikersnaam, je avatar, en bij creators de profielgegevens die ze zelf willen tonen. Nooit je naam, e-mail of locatie.",
         "3. Gevoelige gegevens. Requests, deals, chats en content kunnen iets zeggen over je seksleven. We verwerken dit alleen met je uitdrukkelijke toestemming (AVG art. 9(2)(a)), gegeven bij het aanmelden, en alleen om de dienst te leveren. Je trekt ze in door je account te verwijderen.",
         "4. Leeftijdscheck voor kopers. Onze verificatiepartner controleert dat je 18 jaar of ouder bent. We ontvangen alleen het resultaat en de datum. We ontvangen of bewaren geen identiteitsbewijs, naam of geboortedatum uit deze check.",
@@ -170,7 +170,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
       title: "Privacyverklaring",
       summary: ["Alleen je gebruikersnaam en avatar worden ooit getoond.", "We vragen je uitdrukkelijke toestemming, omdat requests en content iets over je seksleven kunnen zeggen.", "De leeftijdscheck geeft ons een ja of nee, nooit je identiteitskaart.", "In Instellingen kan je je gegevens downloaden of je account verwijderen."],
       body: [
-        "1. Wie we zijn. ByRequest LLC, een vennootschap met beperkte aansprakelijkheid naar het recht van Delaware, Verenigde Staten, is verantwoordelijke voor de gegevens die hier beschreven staan. Contact: privacy@byrequest.app. Onze functionaris voor gegevensbescherming is op hetzelfde adres bereikbaar.",
+        "1. Wie we zijn. ByRequest LLC, een vennootschap met beperkte aansprakelijkheid naar het recht van Delaware, Verenigde Staten, is verantwoordelijke voor de gegevens die hier beschreven staan. Contact: privacy@byrequest.me. Onze functionaris voor gegevensbescherming is op hetzelfde adres bereikbaar.",
         "2. Wat anderen zien. Je gebruikersnaam, je avatar, en bij creators de profielgegevens die ze zelf willen tonen. Nooit je naam, e-mail of locatie.",
         "3. Gevoelige gegevens. Requests, deals, chats en content kunnen iets zeggen over je seksleven. We verwerken dit alleen met je uitdrukkelijke toestemming (AVG art. 9(2)(a)), gegeven bij het aanmelden, en alleen om de dienst te leveren. Je trekt ze in door je account te verwijderen.",
         "4. Leeftijdscheck voor kopers. Onze verificatiepartner controleert dat je 18 jaar of ouder bent. We ontvangen alleen het resultaat en de datum. We ontvangen of bewaren geen identiteitsbewijs, naam of geboortedatum uit deze check.",
@@ -221,7 +221,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
       title: "Déclaration de confidentialité",
       summary: ["Seuls ton nom d'utilisateur et ton avatar sont affichés.", "Nous demandons ton consentement explicite, car les demandes et les contenus peuvent révéler quelque chose de ta vie sexuelle.", "La vérification d'âge nous donne un oui ou un non, jamais ta pièce d'identité.", "Tu peux télécharger tes données ou supprimer ton compte dans Réglages."],
       body: [
-        "1. Qui nous sommes. ByRequest est responsable du traitement des données décrites ici. Contact : privacy@byrequest.app. Notre délégué à la protection des données est joignable à la même adresse.",
+        "1. Qui nous sommes. ByRequest est responsable du traitement des données décrites ici. Contact : privacy@byrequest.me. Notre délégué à la protection des données est joignable à la même adresse.",
         "2. Ce que les autres voient. Ton nom d'utilisateur, ton avatar et, pour les créateurs, les informations de profil qu'ils choisissent d'afficher. Jamais ton nom, ton e-mail ou ta localisation.",
         "3. Données sensibles. Les demandes, deals, chats et contenus peuvent révéler quelque chose de ta vie sexuelle. Nous ne les traitons qu'avec ton consentement explicite (RGPD art. 9(2)(a)), donné à l'inscription, et uniquement pour faire fonctionner le service. Tu le retires en supprimant ton compte.",
         "4. Vérification d'âge des acheteurs. Notre partenaire de vérification contrôle que tu as 18 ans ou plus. Nous ne recevons que le résultat et la date. Nous ne recevons ni ne conservons ta pièce d'identité, ton nom ou ta date de naissance issus de ce contrôle.",
@@ -286,7 +286,7 @@ export const LEGAL_TR: Record<string, Partial<Record<Kind, Tr>>> = {
       title: "Déclaration de confidentialité",
       summary: ["Seuls ton nom d'utilisateur et ton avatar sont affichés.", "Nous demandons ton consentement explicite, car les demandes et les contenus peuvent révéler quelque chose de ta vie sexuelle.", "La vérification d'âge nous donne un oui ou un non, jamais ta pièce d'identité.", "Tu peux télécharger tes données ou supprimer ton compte dans Réglages."],
       body: [
-        "1. Qui nous sommes. ByRequest LLC, société à responsabilité limitée de droit du Delaware, États Unis, est responsable du traitement des données décrites ici. Contact : privacy@byrequest.app. Notre délégué à la protection des données est joignable à la même adresse.",
+        "1. Qui nous sommes. ByRequest LLC, société à responsabilité limitée de droit du Delaware, États Unis, est responsable du traitement des données décrites ici. Contact : privacy@byrequest.me. Notre délégué à la protection des données est joignable à la même adresse.",
         "2. Ce que les autres voient. Ton nom d'utilisateur, ton avatar et, pour les créateurs, les informations de profil qu'ils choisissent d'afficher. Jamais ton nom, ton e-mail ou ta localisation.",
         "3. Données sensibles. Les demandes, deals, chats et contenus peuvent révéler quelque chose de ta vie sexuelle. Nous ne les traitons qu'avec ton consentement explicite (RGPD art. 9(2)(a)), donné à l'inscription, et uniquement pour faire fonctionner le service. Tu le retires en supprimant ton compte.",
         "4. Vérification d'âge des acheteurs. Notre partenaire de vérification contrôle que tu as 18 ans ou plus. Nous ne recevons que le résultat et la date. Nous ne recevons ni ne conservons ta pièce d'identité, ton nom ou ta date de naissance issus de ce contrôle.",
@@ -320,6 +320,9 @@ export const DRAFT_NOTE = { nl: NL_DRAFT, fr: FR_DRAFT } as const;
 
 /* The translation for a stored document, or null when the reader's language is English or no
    translation exists for that exact version. */
+/* Versions whose wording only changed in English details (such as a contact address already updated
+   in the translations above) reuse the translation of the version before. */
+const SAME_AS: Record<string, string> = { "privacy|2026-11-draft-4": "2026-11-draft-3" };
 export function legalIn(locale: string, kind: Kind, version: string): Tr | null {
-  return LEGAL_TR[`${locale}|${version}`]?.[kind] ?? null;
+  return LEGAL_TR[`${locale}|${SAME_AS[`${kind}|${version}`] ?? version}`]?.[kind] ?? null;
 }

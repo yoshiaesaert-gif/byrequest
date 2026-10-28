@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
-import { mailReady, sendLoginCode } from "./mail";
+import { mailReady, sendLoginCode, staffMailReady } from "./mail";
 import { RuleError } from "@/domain/rules";
 import { redirect } from "next/navigation";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
@@ -41,6 +41,13 @@ export async function issueCode(emailRaw: string, locale = "en") {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const row = { email, codeHash: hmac(email + ":" + code), attempts: 0, expiresAt: new Date(Date.now() + 10 * 60_000) };
   await db.insert(schema.loginCodes).values(row).onConflictDoUpdate({ target: schema.loginCodes.email, set: row });
+  // Staff accounts have full control: their code only ever travels by mail, never on screen.
+  const u = await db.query.users.findFirst({ where: eq(schema.users.email, email), columns: { id: true } });
+  if (u && (await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) }))) {
+    if (!staffMailReady()) throw new RuleError("Sign in by mail is not available yet. Try again later.");
+    await sendLoginCode(email, code, locale);
+    return { email, code: null };
+  }
   if (mailReady()) await sendLoginCode(email, code, locale);
   else if (!showCodeOnScreen()) console.warn("[mail] no mail provider configured: set RESEND_API_KEY so people can sign in");
   return { email, code: showCodeOnScreen() ? code : null };

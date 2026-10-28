@@ -37,6 +37,6 @@ export default async function Consent({ params }: { params: Promise<{ token: str
                 <form action={async () => { "use server"; await decline(token, dl.id); }}><button className="btn btn-secondary btn-sm">{t("Decline")}</button></form></div></>)}
         </div>))}
     </div>
-    <p className="t-xs muted">{t("Appear in something without being asked? Use")} <a href="/removal" style={{ fontWeight: 600 }}>{t("byrequest.app/removal")}</a>.</p>
+    <p className="t-xs muted">{t("Appear in something without being asked? Use")} <a href="/removal" style={{ fontWeight: 600 }}>{t("byrequest.me/removal")}</a>.</p>
   </div></div>);
 }

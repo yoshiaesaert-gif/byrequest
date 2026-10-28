@@ -6,7 +6,7 @@ import { DICTS } from "./dicts";
 export async function getLocale(): Promise<Locale> {
   const c = (await cookies()).get("brq_lang")?.value;
   if (isLocale(c)) return c;
-  return fromAcceptLanguage((await headers()).get("accept-language"));
+  return "en";   // English unless the visitor picks another language
 }
 export async function getT() {
   const l = await getLocale();

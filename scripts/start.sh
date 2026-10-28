@@ -5,6 +5,7 @@ npx drizzle-kit migrate
 npx tsx scripts/move-db.ts
 if [ "${SEED_DEMO:-1}" = "1" ]; then npx tsx scripts/seed.ts --if-empty; fi
 npx tsx scripts/sync-legal.ts || true
+npx tsx scripts/owner.ts || true
 npx tsx scripts/extra-creators.ts || true
 npx tsx scripts/house-requests.ts || true
 npx tsx scripts/demo-life.ts || true

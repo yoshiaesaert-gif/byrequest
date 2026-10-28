@@ -2,11 +2,11 @@
 import { useT } from "@/i18n/client";
 import { useActionState, useState } from "react";
 import { BUYER_COUNTRIES } from "@/config/compliance";
-import { sendCode, checkCode, createAccount, demoSignIn, appealClosed, handleFree, type AuthState } from "./actions";
+import { sendCode, checkCode, createAccount, appealClosed, handleFree, type AuthState } from "./actions";
 
 const LOOKS = ["kai", "milo", "ava", "dre", "lina", "jens", "nour", "noah", "ruby", "sem"];
 
-export default function SignInForm({ demo }: { demo: boolean }) {
+export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
   const t = useT();
   const [s1, send, p1] = useActionState<AuthState, FormData>(sendCode, { step: "email" });
   const [s2, check, p2] = useActionState<AuthState, FormData>(checkCode, s1);
@@ -24,7 +24,7 @@ export default function SignInForm({ demo }: { demo: boolean }) {
   );
   const step = s2.step === "profile" ? "profile" : s1.step === "code" ? "code" : "email";
 
-  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} />;
+  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} intent={intent} />;
 
   if (step === "code") return (
     <form action={check} className="authstack">
@@ -39,19 +39,10 @@ export default function SignInForm({ demo }: { demo: boolean }) {
 
   return (
     <form action={send} className="authstack">
-      <div><h2 className="t-h1">{t("Welcome to ByRequest")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("Sign in or join with your email. No password: you get a six digit code. Nobody on ByRequest ever sees your email.")}</p></div>
+      <div><h2 className="t-h1">{intent === "earn" ? t("Start earning") : intent === "buy" ? t("Post your first request") : t("Welcome to ByRequest")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("Sign in or join with your email. No password: you get a six digit code. Nobody on ByRequest ever sees your email.")}</p></div>
       <div className="field"><label htmlFor="email">{t("Email")}</label><input className="input" id="email" name="email" type="email" autoComplete="email" placeholder={t("you@example.com")} required /></div>
       {s1.error ? <p className="formerr" role="alert">{t(s1.error)}</p> : null}
       <button className="btn btn-primary btn-lg btn-block" disabled={p1}>{p1 ? t("Sending…") : t("Continue with email")}</button>
-      {demo ? (<div className="demo">
-        <div className="divider">{t("Quick sign in")}</div>
-        <div className="demorow">
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("nightowl")}><span className="mini mini-l" aria-hidden="true">N</span>{t("Buyer, nightowl")}</button>
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("milo")}><img src="/av/milo.webp" alt="" className="mini" />{t("Creator, milo")}</button>
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("ops")}><span className="mini mini-l" aria-hidden="true">S</span>{t("Support, ops")}</button>
-          <button type="button" className="btn btn-secondary" onClick={() => demoSignIn("noah")}><img src="/av/noah.webp" alt="" className="mini" />{t("Creator, setup open")}</button>
-        </div>
-      </div>) : null}
     </form>
   );
 }
@@ -60,10 +51,10 @@ export default function SignInForm({ demo }: { demo: boolean }) {
 const STEPS = ["role", "you", "about", "agree"] as const;
 const ERR_STEP: [RegExp, (typeof STEPS)[number]][] = [[/username|letters, numbers/i, "you"], [/adults|birth|country/i, "about"], [/18 or older|consent|terms/i, "agree"], [/choose what/i, "role"]];
 
-function Join({ create, pending, error }: { create: (f: FormData) => void; pending: boolean; error?: string }) {
+function Join({ create, pending, error, intent }: { create: (f: FormData) => void; pending: boolean; error?: string; intent?: "buy" | "earn" }) {
   const t = useT();
-  const [step, setStep] = useState<(typeof STEPS)[number]>("role");
-  const [f, setF] = useState({ intent: "" as "" | "buy" | "earn", handle: "", look: "kai", birthYear: "", country: "BE", adult: false, sensitive: false, marketing: false });
+  const [step, setStep] = useState<(typeof STEPS)[number]>(intent ? "you" : "role");
+  const [f, setF] = useState({ intent: (intent ?? "") as "" | "buy" | "earn", handle: "", look: "kai", birthYear: "", country: "BE", adult: false, sensitive: false, marketing: false });
   const [err, setErr] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [seen, setSeen] = useState<string | undefined>();
@@ -103,7 +94,7 @@ function Join({ create, pending, error }: { create: (f: FormData) => void; pendi
         <button type="button" className={"role-c media" + (f.intent === "buy" ? " on" : "")} onClick={() => { setF({ ...f, intent: "buy" }); go(1); }}>
           <img className="cimg" src="/img/c05.webp" alt="" /><span className="role-shade" />
           <span className="role-chip">{t("Video")} · 10 min · <b>€80</b></span>
-          <span className="role-tx"><b>{t("I want content made for me")}</b><span>{t("Post a request with your budget. Creators make you an offer, you choose.")}</span></span></button>
+          <span className="role-tx"><b>{t("I want content made for me")}</b><span>{t("Describe what you want and set your budget. Verified creators apply, you choose who makes it.")}</span></span></button>
         <button type="button" className={"role-c media" + (f.intent === "earn" ? " on" : "")} onClick={() => { setF({ ...f, intent: "earn" }); go(1); }}>
           <img className="cimg" src="/img/c21.webp" alt="" /><span className="role-shade" />
           <span className="role-chip earn">{t("You earn")} <b>€64</b></span>

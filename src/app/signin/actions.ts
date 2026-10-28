@@ -97,6 +97,7 @@ export async function demoSignIn(handle: string) {
   if (process.env.DEV_SHOW_CODE !== "1") throw new Error("Not available.");
   const u = await db.query.users.findFirst({ where: eq(schema.users.handle, handle) });
   if (!u || !u.email.endsWith("@demo.byrequest.app")) throw new Error("Only seeded demo accounts. Run npm run db:seed first.");
+  if (await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) })) throw new Error("Not available.");
   await startSession(u.id);
   redirect("/");
 }

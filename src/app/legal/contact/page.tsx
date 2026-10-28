@@ -7,10 +7,10 @@ export default async function Contact() {
   return (<div className="sbx" style={{ background: "var(--paper)" }}><div className="card" style={{ width: "min(620px,100%)", display: "flex", flexDirection: "column", gap: 12 }}>
     <Link href="/"><img src="/logo.png" alt="byrequest" style={{ height: 36 }} /></Link>
     <h1 className="t-h2">{t("Point of contact")}</h1>
-    <p className="t-sm">{t("For authorities, the European Commission and the Digital Services Coordinators:")} <b>{t("authorities@byrequest.app")}</b>{t(". Languages: Dutch, English, French.")}</p>
-    <p className="t-sm">{t("For users and anyone else:")} <b>{t("support@byrequest.app")}</b>{t(", or the inbox in the app.")}</p>
+    <p className="t-sm">{t("For authorities, the European Commission and the Digital Services Coordinators:")} <b>{t("authorities@byrequest.me")}</b>{t(". Languages: Dutch, English, French.")}</p>
+    <p className="t-sm">{t("For users and anyone else:")} <b>{t("support@byrequest.me")}</b>{t(", or the inbox in the app.")}</p>
     <p className="t-sm">{t("To report illegal content or abuse, with or without an account:")} <Link href="/report">{t("/report")}</Link>{t(". To have content with you in it removed:")} <Link href="/removal">{t("/removal")}</Link>.</p>
-    <p className="t-sm">{t("Privacy and data protection:")} <b>{t("privacy@byrequest.app")}</b>.</p>
+    <p className="t-sm">{t("Privacy and data protection:")} <b>{t("privacy@byrequest.me")}</b>.</p>
     <p className="t-xs muted">{t("Company details, registered address and enterprise number are published here once the company is registered. Draft pending legal review.")}</p>
   </div></div>);
 }
