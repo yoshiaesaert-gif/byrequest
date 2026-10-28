@@ -32,7 +32,7 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
           <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? t("Buying") : t("Creating")}{isCreator ? (verified ? ` · ${t("Verified creator")}` : ` · ${t("Setup not finished")}`) : ""}</div></div></div>
           {isCreator
             ? <button className="mi switch" onClick={async () => { await setMode(buy ? "sell" : "buy"); setOpen(false); toast(buy ? t("You are now creating") : t("You are now buying")); router.push("/"); }}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? t("Switch to creating") : t("Switch to buying")}</button>
-            : <Link className="mi switch" href="/settings#creator"><svg className="ico" aria-hidden="true"><use href="#i-money" /></svg>{t("Start creating, earn money")}</Link>}
+            : <Link className="mi switch" href="/earn"><svg className="ico" aria-hidden="true"><use href="#i-money" /></svg>{t("Start creating, earn money")}</Link>}
           <hr />
           <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>{t("Profile and privacy")}</Link>
           <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Edit your avatar")}</Link>

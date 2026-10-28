@@ -3,8 +3,11 @@ import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
-import { acceptDocs } from "@/server/onboarding";
+import { cookies } from "next/headers";
+import { acceptDocs, ensure } from "@/server/onboarding";
 import { BUYER_COUNTRIES } from "@/config/compliance";
+import { RuleError } from "@/domain/rules";
+import { getLocale } from "@/i18n/server";
 import { issueCode, verifyCode, startSession, endSession, currentUser, markVerified, verifiedEmail, clearVerified } from "@/server/auth";
 
 export type AuthState = { step: "email" | "code" | "profile" | "blocked"; email?: string; devCode?: string | null; error?: string; reason?: string; sent?: boolean };
@@ -14,8 +17,14 @@ const Email = z.string().trim().toLowerCase().email();
 export async function sendCode(_: AuthState, f: FormData): Promise<AuthState> {
   const e = Email.safeParse(f.get("email"));
   if (!e.success) return { step: "email", error: "Enter a valid email address." };
-  const { code } = await issueCode(e.data);
-  return { step: "code", email: e.data, devCode: code };
+  try {
+    const { code } = await issueCode(e.data, await getLocale());
+    return { step: "code", email: e.data, devCode: code };
+  } catch (err) {
+    if (err instanceof RuleError) return { step: "email", error: err.message };
+    console.error("sign in code failed", err instanceof Error ? err.message : "error");
+    return { step: "email", error: "We could not send the code. Try again in a minute." };
+  }
 }
 
 export async function checkCode(prev: AuthState, f: FormData): Promise<AuthState> {
@@ -44,6 +53,7 @@ const Profile = z.object({
   country: z.enum(BUYER_COUNTRIES.map(([c]) => c) as [string, ...string[]], { message: "Choose your country." }),
   marketing: z.literal("on").optional(),
   look: z.string().default("kai"),
+  intent: z.enum(["buy", "earn"], { message: "Choose what you want to do on ByRequest." }),
 });
 
 export async function createAccount(prev: AuthState, f: FormData): Promise<AuthState> {
@@ -63,6 +73,13 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   await acceptDocs(u.id, ["terms", "privacy"]);
   await clearVerified();
   await startSession(u.id);
+  // Two different starts: buyers land on the board with their welcome tour, earners go straight into creator setup.
+  if (p.data.intent === "earn") {
+    await ensure(u.id);
+    await db.insert(schema.creatorProfiles).values({ userId: u.id }).onConflictDoNothing();
+    (await cookies()).set("brq_mode", "sell", { path: "/", sameSite: "lax", maxAge: 31536000 });
+    redirect("/onboarding?welcome=1");
+  }
   redirect("/?welcome=1");
 }
 

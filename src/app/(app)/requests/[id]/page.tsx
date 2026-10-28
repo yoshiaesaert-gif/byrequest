@@ -77,7 +77,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
             : !u.isCreator ? (<>
               <b className="t-h3">{t("Want to make this?")}</b>
               <p className="t-sm muted">{t("Become a creator in a few steps. Your legal name and ID are never shown on your profile.")}</p>
-              <Link href="/settings#creator" className="btn btn-primary btn-block">{t("Start creating")}</Link>
+              <Link href="/earn" className="btn btn-primary btn-block">{t("Start creating")}</Link>
               <Link href={`/post?c=${r.category}&amount=${r.amount}&budget=${Math.round(r.dealCents / 100)}&title=${encodeURIComponent(r.title)}`} className="btn btn-secondary btn-block">{t("Post a similar request")}</Link>
             </>)
             : !a!.caps.offer ? (<>

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { legalIn } from "@/legal/translations";
 import { getT } from "@/i18n/server";
 import Link from "next/link";
@@ -8,14 +9,12 @@ import * as ob from "@/server/onboarding";
 import { Av, I } from "@/components/ui";
 import { PAYOUT_COUNTRIES, PROVIDER_ENV, STEP_UP_MINUTES, activeProvider, FIELDS } from "@/config/compliance";
 import Steps from "./steps";
-import { BecomeCreator } from "../settings/parts";
+import HowItWorks from "@/components/how-it-works";
 
-export default async function Onboarding({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+export default async function Onboarding({ searchParams }: { searchParams: Promise<{ step?: string; welcome?: string }> }) {
   const { t, locale } = await getT();
   const u = await requireUser();
-  if (!u.isCreator) return (<div className="wrap"><div className="ob"><div className="card ob-card">
-    <h1 className="t-h1">{t("Become a creator")}</h1><p className="muted">{t("Earn by making what buyers ask for. You choose every request yourself. Verify once and keep your profile private.")}</p>
-    <BecomeCreator /></div></div></div>);
+  if (!u.isCreator) redirect("/earn");
   const o = await ob.ensure(u.id);
   const [a, terms, privacy, agreementDoc, idCheck, appeals, fresh] = await Promise.all([
     ob.access(u.id), ob.hasCurrent(u.id, "terms"), ob.hasCurrent(u.id, "privacy"), ob.currentDoc("creator_agreement"),
@@ -32,6 +31,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
 
   return (<div className="wrap"><div className="ob">
     <Link href="/" className="back"><I n="left" c="sm" />{t("Continue later")}</Link>
+    {(await searchParams).welcome ? <><div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: u.handle })}</b><div className="t-sm">{t("Three short steps and you can make your first offer. Your progress is saved after every step.")}</div></div></div><HowItWorks hidden variant="earn" autoOpen /></> : null}
     <h1 className="t-h1">{t("Become a creator")}</h1>
     <p className="muted" style={{ marginTop: 6 }}>{t("Verify once. Keep your profile private. Your progress is saved after every step.")}</p>
     {PROVIDER_ENV === "test" ? <div className="banner test" style={{ marginTop: 16, marginBottom: 0 }}><I n="alert" /><div className="grow"><b>{t("Test environment")}</b><div className="t-sm">{t("Verification and payouts run against a simulated provider. Approvals here are not production checks.")}</div></div></div> : null}

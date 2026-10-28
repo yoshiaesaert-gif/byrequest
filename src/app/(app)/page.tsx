@@ -19,7 +19,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
   const u = await requireUser();
   const sell = u.isCreator && (await cookies()).get("brq_mode")?.value === "sell";
   const sp = await searchParams;
-  return sell ? <CreatorHome userId={u.id} handle={u.handle} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} board={sp.board} />;
+  return sell ? <CreatorHome userId={u.id} handle={u.handle} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} board={sp.board} creator={u.isCreator} />;
 }
 
 const DROPS = [
@@ -38,8 +38,8 @@ const PROMISES = [
 ] as const;
 const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout photo set", "Fit check, 5 photos"];
 
-async function BuyerHome({ userId, handle, welcome, board }: { userId: string; handle: string; welcome: boolean; board?: string }) {
-  const hideHow = (await cookies()).get("brq_hw")?.value === "hide";
+async function BuyerHome({ userId, handle, welcome, board, creator }: { userId: string; handle: string; welcome: boolean; board?: string; creator: boolean }) {
+  const hideHow = (await cookies()).get("brq_hwb")?.value === "hide";
   const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
   const [mine, myDeals, pulse, rawTop, rawBoard, rawEnding, creators, stats] = await Promise.all([
     q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }),
@@ -85,6 +85,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         <p>{t("Say what you want and what it is worth. Creators who fit make an offer. You choose.")}</p>
         <div className="h-ask"><Ask /></div>
         <div className="h-ex">{EXAMPLES.map((e) => <Link key={e} href={parseAskHref(e)}>{t(e)}</Link>)}</div>
+        <div className="h-cta"><Link href="/post" className="btn btn-brand btn-lg"><I n="plus" c="sm" />{t("Post a request")}</Link><span>{t("Free to post. You only pay when you choose an offer.")}</span></div>
         <div className="h-live"><span className="livedot" />{t("{n} requests open now", { n: pulse.open })}{pulse.paidCents ? ` · ${t("{amount} paid to creators this week", { amount: euros(pulse.paidCents) })}` : ""}</div>
       </div>
       {hero ? <HeroLive req={hero.req} offers={hero.offers} /> : null}
@@ -96,7 +97,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{L(live.r.title)}</b> · {t(live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review")}</span><span className="go">{t("Open")} <I n="right" c="sm" /></span></Link> : null}
       </div>) : null}
 
-    <HowItWorks hidden={hideHow} />
+    <HowItWorks hidden={hideHow && !welcome} variant="buy" autoOpen={welcome} />
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
@@ -151,6 +152,11 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
           <Link key={c.id} href={`/c/${c.handle}`} className="cr"><div className="media avfill"><Av a={c.avatar} name={c.handle} size={300} square /><div className="top"><span className="badge glass">{p.showsFace ? t("Face shown") : t("No face")}</span></div></div>
             <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} t={t} /></span></div><div className="m">{c.ratingCount ? `${t("{n} deals", { n: c.ratingCount })} · ` : ""}{t("from {amount}", { amount: euros(p.fromCents) })}</div></div></Link>))}</div>
       </section>) : null}
+
+    {!creator ? <section className="h-earn">
+      <div><span className="h-kick">{t("The other side")}</span><h2>{t("Rather earn yourself?")}</h2><p>{t("Pick requests you like, make them in your own time and get paid. No followers, no profile to keep up, your name never shown.")}</p></div>
+      <Link href="/earn" className="btn btn-white btn-lg">{t("See how earning works")}</Link>
+    </section> : null}
   </div>);
 }
 
@@ -166,10 +172,15 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
   return (<div className="wrap">
     {a.status === "active"
       ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{a.payout?.env === "test" ? t("Identity, agreement and payouts are approved in the test environment.") : t("Identity, agreement and payouts are approved.")}</div></div>{a.payout?.env === "test" ? <span className="envtag">Test</span> : null}</div>
-      : <div className={"banner " + (a.status === "action_required" || a.status === "restricted" ? "warn" : "info")}><I n={a.status === "pending_verification" ? "clock" : "alert"} />
-          <div className="grow"><b>{t(a.status === "pending_verification" ? "Your verification is being reviewed." : a.status === "draft" ? "Verify once. Keep your profile private." : a.status === "suspended" ? "Your creator account is suspended." : a.areas.payout !== "approved" ? "Action needed to enable payouts." : "Action needed to finish your setup.")}</b>
-            <div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div>
-          {a.status !== "suspended" ? <Link href="/onboarding" className="btn btn-primary btn-sm">{t("Continue setup")}</Link> : null}</div>}
+      : a.status === "suspended" ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{t("Your creator account is suspended.")}</b><div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div></div>
+      : <section className="cs">
+          <div className="cs-tx"><span className="h-kick">{t("Your setup")}</span><h2>{a.status === "pending_verification" ? t("Almost there: we are checking your details.") : t("Three steps to your first earnings")}</h2>
+            <p>{t("Verify once, privately. Your legal name and ID are never shown. Until then you can already look around and prepare your profile.")}</p>
+            {a.status !== "pending_verification" ? <Link href="/onboarding" className="btn btn-brand btn-lg">{t("Continue setup")}</Link> : null}</div>
+          <ol className="cs-steps">{([["identity", "Verify your identity", "ID and a quick selfie, about 3 minutes"], ["agreement", "Accept the creator agreement", "What you make, what you earn, your rights"], ["payout", "Add your payout account", "Where the money lands"]] as const).map(([k, l, d], i) => {
+            const st = a.areas[k]; const done = st === "approved"; const wait = st === "pending";
+            return <li key={k} className={done ? "done" : wait ? "wait" : ""}><span className="cs-n">{done ? "✓" : i + 1}</span><div><b>{t(l)}</b><span>{done ? t("Done") : wait ? t("Being checked") : t(d)}</span></div></li>; })}</ol>
+        </section>}
 
     <div className="hello"><div><span className="eyebrow">{t("Hi {name}", { name: handle })}</span><h1 className="t-display" style={{ marginTop: 10 }}>{t("{n} requests are open now", { n: fit.length })}</h1></div><Link href="/for-you" className="btn btn-primary"><I n="foryou" c="sm" />{t("Browse requests")}</Link></div>
 
@@ -185,7 +196,7 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
       </div>
     </div>
 
-    <HowItWorks hidden={hideHow} />
+    <HowItWorks hidden={hideHow} variant="earn" />
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
       <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (

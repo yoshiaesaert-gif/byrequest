@@ -1,5 +1,7 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { mailReady, sendLoginCode } from "./mail";
+import { RuleError } from "@/domain/rules";
 import { redirect } from "next/navigation";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { and, eq, gt } from "drizzle-orm";
@@ -7,19 +9,41 @@ import { db, schema } from "@/db";
 
 const COOKIE = "brq_s";
 const DAYS = 30;
-const secret = () => process.env.SESSION_SECRET || "dev";
+const secret = () => {
+  const s = process.env.SESSION_SECRET;
+  if (!s && process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET is not set.");
+  return s || "dev";
+};
 const hmac = (v: string) => createHmac("sha256", secret()).update(v).digest("hex");
+
+/* Limits on asking for codes, per address and per network address, so nobody can flood an inbox
+   or try codes at scale. One instance runs the app, so memory is enough. */
+const hits = new Map<string, number[]>();
+function allow(key: string, max: number, windowMs: number) {
+  const now = Date.now();
+  const list = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (list.length >= max) { hits.set(key, list); return false; }
+  list.push(now); hits.set(key, list);
+  if (hits.size > 50_000) hits.clear();
+  return true;
+}
+
+/* The code is shown on screen only in a demo without a mail provider. With mail configured the code
+   only ever travels by email. */
+export const showCodeOnScreen = () => process.env.DEV_SHOW_CODE === "1" && !mailReady();
 
 /* Passwordless: a six digit code by email. Codes are stored hashed, expire after 10 minutes
    and allow five attempts. */
-export async function issueCode(emailRaw: string) {
+export async function issueCode(emailRaw: string, locale = "en") {
   const email = emailRaw.trim().toLowerCase();
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0].trim() || "local";
+  if (!allow(`e:${email}`, 5, 15 * 60_000) || !allow(`i:${ip}`, 20, 60 * 60_000)) throw new RuleError("Too many codes asked. Wait a few minutes and try again.");
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const row = { email, codeHash: hmac(email + ":" + code), attempts: 0, expiresAt: new Date(Date.now() + 10 * 60_000) };
   await db.insert(schema.loginCodes).values(row).onConflictDoUpdate({ target: schema.loginCodes.email, set: row });
-  // Production: send through the transactional mail provider with a neutral sender name.
-  if (process.env.DEV_SHOW_CODE !== "1") console.info(`[mail] login code sent to ${email}`);
-  return { email, code: process.env.DEV_SHOW_CODE === "1" ? code : null };
+  if (mailReady()) await sendLoginCode(email, code, locale);
+  else if (!showCodeOnScreen()) console.warn("[mail] no mail provider configured: set RESEND_API_KEY so people can sign in");
+  return { email, code: showCodeOnScreen() ? code : null };
 }
 
 export async function verifyCode(emailRaw: string, code: string) {
