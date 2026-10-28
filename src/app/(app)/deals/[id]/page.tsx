@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
-import { deal } from "@/server/queries";
+import { deal, markChatRead } from "@/server/queries";
 import { access } from "@/server/onboarding";
 import { listFor } from "@/server/participants";
 import { Av, Cover, I, when } from "@/components/ui";
@@ -21,6 +21,8 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   if (!x) notFound();
   const buyer = x.d.buyerId === u.id;
   const other = buyer ? x.creator : x.buyer;
+  await markChatRead(id, u.id, buyer);
+  const otherReadAt = buyer ? x.d.creatorReadAt : x.d.buyerReadAt;
   const [a, parts, lastDelivery, hold] = await Promise.all([
     buyer ? null : access(u.id),
     buyer ? [] : listFor(u.id),
@@ -35,7 +37,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
     <div className="two">
       <Room
         me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
-        other={{ id: other.id, handle: other.handle, publicKey: other.publicKey }}
+        other={{ id: other.id, handle: other.handle, publicKey: other.publicKey, readAt: otherReadAt?.toISOString() ?? null }}
         deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount }}
         delivery={lastDelivery ? { review: lastDelivery.review, onlyCreator: lastDelivery.onlyCreator } : null}
         canUpload={a?.caps.upload ?? false} missing={a?.missing ?? []} payoutHeld={hold?.entry === "payout_on_hold"}

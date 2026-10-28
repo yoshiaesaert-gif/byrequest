@@ -40,3 +40,4 @@ export const reqRescreen = async (id: string) => run(() => M.screenRequest(id));
 export const reqEdit = async (id: string, input: M.EditInput) => run((s) => M.edit(s, id, input), "admin");
 export const reqBulk = async (ids: string[], action: "approve" | "close") => run((s) => M.bulk(s, ids, action), "admin");
 export const reqAuto = async (on: boolean) => run((s) => M.setAutoApprove(s, on), "admin");
+export const testInbox = async () => run(async (s) => { const { fillTestInbox } = await import("@/server/testdata"); const r = await fillTestInbox(s); if (!r.ok) throw new RuleError(r.error); return r.made; });

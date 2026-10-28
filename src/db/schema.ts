@@ -151,6 +151,8 @@ export const deals = pgTable("deals", {
   objectUntil: timestamp("object_until", { withTimezone: true }),
   settledAt: timestamp("settled_at", { withTimezone: true }),
   buyerRating: integer("buyer_rating"),
+  buyerReadAt: timestamp("buyer_read_at", { withTimezone: true }),     // last time each side had the chat open: read ticks and unread counts
+  creatorReadAt: timestamp("creator_read_at", { withTimezone: true }),
   reviewText: text("review_text"),
   creatorRating: integer("creator_rating"),          // the creator rates the buyer, stars only                    // optional words with the rating, written by the buyer
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

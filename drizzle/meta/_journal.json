@@ -50,6 +50,13 @@
       "when": 1793221625112,
       "tag": "0006_pay_at_posting",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793225432672,
+      "tag": "0007_chat_reads",
+      "breakpoints": true
     }
   ]
 }

@@ -174,3 +174,27 @@ export async function creatorEarnings(creatorId: string) {
     .where(and(eq(ledger.userId, creatorId), eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, new Date(Date.now() - 84 * 86400_000)))).groupBy(sql`1`).orderBy(sql`1`);
   return { monthCents: paid.c, heldCents: held.c, pendingCents: pending.c, weeks };
 }
+
+/* Opening a chat marks it read for that side, together with its message notifications. */
+export async function markChatRead(dealId: string, userId: string, buyer: boolean) {
+  const now = new Date();
+  await db.update(deals).set(buyer ? { buyerReadAt: now } : { creatorReadAt: now }).where(eq(deals.id, dealId));
+  await db.update(notifications).set({ readAt: now }).where(and(eq(notifications.userId, userId), eq(notifications.href, `/deals/${dealId}`), sql`${notifications.readAt} is null`));
+}
+
+/* Every chat of a user, newest activity first, with the last line and the number of unread messages. */
+export async function conversations(userId: string) {
+  const rows = await db.execute(sql`
+    select d.id, d.status, d.buyer_id = ${userId} as buyer, r.title, r.cover,
+      o.handle as other, o.avatar as other_avatar,
+      lm.kind as last_kind, lm.body as last_body, lm.sender_id as last_sender, coalesce(lm.created_at, d.created_at) as last_at,
+      (select count(*)::int from messages m where m.deal_id = d.id and m.kind = 'e2e' and m.sender_id <> ${userId}
+        and m.created_at > coalesce(case when d.buyer_id = ${userId} then d.buyer_read_at else d.creator_read_at end, 'epoch')) as unread
+    from deals d
+    join requests r on r.id = d.request_id
+    join users o on o.id = case when d.buyer_id = ${userId} then d.creator_id else d.buyer_id end
+    left join lateral (select kind, body, sender_id, created_at from messages m where m.deal_id = d.id order by created_at desc limit 1) lm on true
+    where d.buyer_id = ${userId} or d.creator_id = ${userId}
+    order by last_at desc limit 60`);
+  return rows.rows as { id: string; status: string; buyer: boolean; title: string; cover: string | null; other: string; other_avatar: unknown; last_kind: "e2e" | "system" | null; last_body: string | null; last_sender: string | null; last_at: string | Date; unread: number }[];
+}

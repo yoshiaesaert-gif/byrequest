@@ -1,3 +1,4 @@
+import TestInbox from "./test-inbox";
 import Link from "next/link";
 import { overview } from "@/server/backoffice";
 import { euros } from "@/domain/rules";
@@ -19,7 +20,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   ];
   return (<div className="wrap bo-page">
     {need === "admin" ? <div className="banner"><div className="grow"><b>That action needs an admin.</b><div className="t-sm">Support can review and answer, admins can also block, restrict, reveal identity and manage the team.</div></div></div> : null}
-    <div className="bo-h"><h1>Overview</h1><p>Live figures from this database. Money is a mirror of what the payment partner reports. ByRequest holds no funds.</p></div>
+    <div className="bo-h"><h1>Overview</h1><p>Live figures from this database. Money is a mirror of what the payment partner reports. ByRequest holds no funds.</p><div style={{ marginTop: 12 }}><TestInbox /></div></div>
 
     <dl className="bo-kpis">
       <div><dt>Open requests</dt><dd className="num">{o.requests.open}</dd><span>{o.requests.week} new this week</span></div>

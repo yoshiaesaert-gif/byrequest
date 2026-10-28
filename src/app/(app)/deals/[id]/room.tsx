@@ -6,12 +6,12 @@ import { sendMessage, releaseNow, object, rate, rateBuyer } from "../../actions"
 import { toast } from "@/components/chrome";
 import { myKeys, seal, open } from "@/components/e2e";
 import { when } from "@/components/ui";
-import { useT } from "@/i18n/client";
+import { useLocale, useT } from "@/i18n/client";
 
 type Msg = { id: string; kind: "e2e" | "system"; senderId: string | null; nonce: string | null; body: string; at: string };
 type Props = {
   me: { id: string; handle: string; role: "buyer" | "creator" };
-  other: { id: string; handle: string; publicKey: string | null };
+  other: { id: string; handle: string; publicKey: string | null; readAt: string | null };
   deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; ratedBuyer: boolean; category: string; amount: number };
   delivery: { review: string; onlyCreator: boolean } | null;
   canUpload: boolean; missing: string[]; payoutHeld: boolean;
@@ -25,6 +25,8 @@ const noop = () => () => {};
 /* The chat is end to end encrypted, so ByRequest cannot scan it. This check runs only on the
    sender's device, before encryption, and only warns: nothing is sent to the server. */
 const RISKY = [/\b(?:\+?\d[\d\s().-]{7,}\d)\b/, /[\w.+-]+@[\w-]+\.[\w.]{2,}/, /\b(?:whats\s?app|telegram|signal|snap(?:chat)?|insta(?:gram)?|onlyfans|tiktok|paypal|tikkie|payconiq|revolut|iban|bitcoin|crypto)\b/i, /\b(?:meet|meeting|in person|irl|hotel|my place|your place|afspreken|ontmoeten|langskomen)\b/i];
+const EMOJI = ["😊", "😂", "😍", "🥰", "😘", "😉", "😏", "🔥", "💦", "🍑", "😈", "🙈", "🤭", "😅", "🙏", "👍", "👌", "👏", "💪", "✨", "❤️", "💜", "🖤", "💋", "🎉", "🌙", "☕", "📸", "🎬", "🎧", "⏰", "✅"];
+const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|\p{Emoji_Component}|\u200d|\ufe0f|\s){1,12}$/u;
 const REASONS = ["Not what was agreed", "Face does not match the offer", "Unusable, for example black or silent", "Someone other than the creator"];
 
 export default function Room(p: Props) {
@@ -32,6 +34,10 @@ export default function Room(p: Props) {
   const tr = useT();
   const [pending, start] = useTransition();
   const [text, setText] = useState("");
+  const [pendingMsgs, setPendingMsgs] = useState<{ id: string; text: string; at: string }[]>([]);
+  const [emoji, setEmoji] = useState(false);
+  const field = useRef<HTMLTextAreaElement>(null);
+  const locale = useLocale();
   const [sheet, setSheet] = useState<null | "object" | "upload">(null);
   const box = useRef<HTMLDivElement>(null);
   // Keys exist only in the browser: the server renders "Decrypting…", the client decrypts after hydration.
@@ -46,7 +52,12 @@ export default function Room(p: Props) {
   const s = p.deal.status;
 
   useEffect(() => { const h = setInterval(() => router.refresh(), 6000); return () => clearInterval(h); }, [router]);
-  useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight }); }, [p.msgs.length]);
+  useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight, behavior: "smooth" }); }, [p.msgs.length, pendingMsgs.length]);
+  // A sent message stays visible with a clock until the server copy arrives.
+  // Sending runs in a transition that ends once the refreshed thread is on screen.
+  const [pendingOut, setPendingOut] = useState(p.msgs.length);
+  if (!pending && pendingMsgs.length && p.msgs.length > pendingOut) { setPendingMsgs([]); setPendingOut(p.msgs.length); }
+  useEffect(() => { const f = field.current; if (f) { f.style.height = "auto"; f.style.height = Math.min(f.scrollHeight, 140) + "px"; } }, [text]);
 
   const steps = ["Accepted", "Making it", "Review", buyer ? "In your vault" : "In the vault", "Paid out"].map((x) => tr(x));
   // The highlighted step is the one in progress now, never one that has not happened yet.
@@ -54,16 +65,23 @@ export default function Room(p: Props) {
   const chat = p.msgs.some((m) => m.kind === "e2e");
 
   const [warned, setWarned] = useState(false);
-  const send = (e: React.FormEvent) => {
-    e.preventDefault();
+  const send = (e?: React.FormEvent) => {
+    e?.preventDefault();
     const t = text.trim();
     if (!t || !kp) return;
     if (!warned && RISKY.some((r) => r.test(t))) { setWarned(true); return; }
     setWarned(false);
     if (!p.other.publicKey) { toast(tr("{name} has not opened ByRequest on a device yet. Try again soon.", { name: p.other.handle }), "err"); return; }
     const sealed = seal(t, p.other.publicKey, kp);
-    setText("");
-    start(async () => { const r = await sendMessage(p.deal.id, sealed.nonce, sealed.body); if (!r.ok) toast(tr(r.error), "err"); router.refresh(); });
+    setText(""); setEmoji(false);
+    const tmp = { id: "tmp" + Date.now(), text: t, at: new Date().toISOString() };
+    setPendingMsgs((x) => [...x, tmp]); setPendingOut(p.msgs.length);
+    start(async () => { const r = await sendMessage(p.deal.id, sealed.nonce, sealed.body); if (!r.ok) { toast(tr(r.error), "err"); setPendingMsgs((x) => x.filter((m) => m.id !== tmp.id)); } router.refresh(); });
+  };
+  const addEmoji = (em: string) => {
+    const f = field.current, a = f?.selectionStart ?? text.length, b = f?.selectionEnd ?? text.length;
+    setText(text.slice(0, a) + em + text.slice(b));
+    requestAnimationFrame(() => { f?.focus(); f?.setSelectionRange(a + em.length, a + em.length); });
   };
 
   let next: { t: string; d: string; acts?: React.ReactNode };
@@ -89,22 +107,56 @@ export default function Room(p: Props) {
     <div className="stepper">{steps.map((l, i) => <div key={l} className={"stp " + (i < cur ? "done" : i === cur ? "cur" : "")}><i />{l}</div>)}</div>
     <div className={"next is-" + s}><div style={{ minWidth: 0 }}><b className="t-h3">{next.t}</b><p className="t-sm muted" style={{ marginTop: 4 }}>{next.d}</p></div>{next.acts ? <div className="acts">{next.acts}</div> : null}</div>
     <div className="card chatbox">
-      <div className="msgs" ref={box}>
-        {p.msgs.map((m) => {
-          if (m.kind === "system") return <span key={m.id} className="sysmsg"><Ico n="check" c="sm" />{sys(m.body, tr)}</span>;
-          const mine = m.senderId === p.me.id;
-          const t = plain[m.id];
-          return <div key={m.id} className={"bub " + (mine ? "me" : "them") + (t ? "" : " locked")}>{t ?? (kp ? tr("Encrypted on another device") : tr("Decrypting…"))}</div>;
-        })}
-        {!chat && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
+      <div className="msgs" ref={box} aria-live="polite">
+        {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
+        {!chat && !pendingMsgs.length && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
       </div>
       <p className="safety-note"><Ico n="lock" c="sm" /><b>{tr("End to end encrypted.")}</b>&nbsp;{tr("Only you and {name} can read this chat. Meeting in person, paying outside ByRequest and sharing contact details are not allowed.", { name: p.other.handle })} <Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report this chat")}</Link></p>
       {warned ? <p className="chat-warn" role="alert"><Ico n="alert" c="sm" />{tr("This looks like contact details, a payment outside ByRequest or a meeting. That is not allowed and removes your protection: no review, no refund, no help. Send anyway only if it is something else.")}</p> : null}
-      <form className="composer" onSubmit={send}><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={p.other.publicKey ? tr("Message {name}", { name: p.other.handle }) : tr("The chat opens once {name} signs in on a device", { name: p.other.handle })} disabled={!p.other.publicKey} autoComplete="off" aria-label={tr("Message")} maxLength={2000} /><button className="btn btn-primary" aria-label={tr("Send")} disabled={pending || !p.other.publicKey}><Ico n="send" /></button></form>
+      <form className="composer" onSubmit={send}>
+        {emoji ? <div className="emoji-pop" role="listbox" aria-label={tr("Emoji")}>{EMOJI.map((em) => <button key={em} type="button" onClick={() => addEmoji(em)} aria-label={em}>{em}</button>)}</div> : null}
+        <button type="button" className={"emoji-btn" + (emoji ? " on" : "")} onClick={() => setEmoji((x) => !x)} aria-label={tr("Emoji")} aria-expanded={emoji} disabled={!p.other.publicKey}>😊</button>
+        <textarea ref={field} rows={1} className="input" value={text} onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer:coarse)").matches) { e.preventDefault(); send(); } }}
+          placeholder={p.other.publicKey ? tr("Message {name}", { name: p.other.handle }) : tr("The chat opens once {name} signs in on a device", { name: p.other.handle })} disabled={!p.other.publicKey} autoComplete="off" aria-label={tr("Message")} maxLength={2000} />
+        <button className="btn btn-primary" aria-label={tr("Send")} disabled={!text.trim() || !p.other.publicKey}><Ico n="send" /></button>
+      </form>
     </div>
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
     {sheet === "upload" ? <UploadSheet p={p} onClose={() => setSheet(null)} /> : null}
   </div>);
+}
+
+/* The conversation: a divider per day, bubbles of one sender grouped, the time in every bubble and,
+   for your own messages, a clock while sending, one tick when sent and two when the other has read it. */
+function thread(p: Props, plain: Record<string, string | null>, pend: { id: string; text: string; at: string }[], kp: unknown, client: boolean, locale: string, tr: (s: string, v?: Record<string, string | number>) => string) {
+  const items = [...p.msgs.map((m) => ({ ...m, pending: false, text: m.kind === "e2e" ? plain[m.id] : null })),
+    ...pend.map((m) => ({ id: m.id, kind: "e2e" as const, senderId: p.me.id, nonce: null, body: "", at: m.at, pending: true, text: m.text }))];
+  const day = (d: Date) => d.toDateString();
+  const today = new Date(), yest = new Date(Date.now() - 86400_000);
+  const dayLabel = (d: Date) => day(d) === day(today) ? tr("Today") : day(d) === day(yest) ? tr("Yesterday")
+    : d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", ...(d.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}) });
+  const time = (d: Date) => d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  const readAt = p.other.readAt ? new Date(p.other.readAt).getTime() : 0;
+  const out: React.ReactNode[] = [];
+  let lastDay = "";
+  items.forEach((m, i) => {
+    const at = new Date(m.at);
+    if (client && day(at) !== lastDay) { lastDay = day(at); out.push(<div key={"d" + m.id} className="daydiv"><span>{dayLabel(at)}</span></div>); }
+    if (m.kind === "system") { out.push(<span key={m.id} className="sysmsg"><Ico n="check" c="sm" />{sys(m.body, tr)}{client ? <time>{time(at)}</time> : null}</span>); return; }
+    const mine = m.senderId === p.me.id;
+    const next = items[i + 1];
+    const last = !next || next.kind === "system" || next.senderId !== m.senderId || new Date(next.at).getTime() - at.getTime() > 5 * 60_000 || day(new Date(next.at)) !== day(at);
+    const big = !!m.text && EMOJI_ONLY.test(m.text) && !/\d/.test(m.text);
+    const tick = !mine ? null : m.pending ? <Ico n="clock" c="tick" /> : readAt >= at.getTime()
+      ? <span className="tick read" aria-label={tr("Read")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L17 7M9.5 16l1 1 10.5-10.5" /></svg></span>
+      : <span className="tick" aria-label={tr("Sent")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19.5 7" /></svg></span>;
+    out.push(<div key={m.id} className={"bub " + (mine ? "me" : "them") + (m.text ? "" : " locked") + (last ? " tail" : " grp") + (big ? " big" : "") + (m.pending ? " sending" : "")}>
+      <span className="bub-t">{m.text ?? (kp ? tr("Encrypted on another device") : tr("Decrypting…"))}</span>
+      {client ? <span className="bub-m"><time dateTime={m.at}>{time(at)}</time>{tick}</span> : null}
+    </div>);
+  });
+  return out;
 }
 
 /* System lines are stored in English; amounts become a variable so the line translates as a whole. */
