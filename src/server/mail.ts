@@ -3,8 +3,7 @@ import "server-only";
 /* Transactional mail. Uses Resend (https://resend.com) when RESEND_API_KEY is set, with a neutral
    sender so nothing in an inbox or on a lock screen gives ByRequest away. MAIL_FROM must be an address
    on a domain verified at Resend, for example "Notes <code@byrequest.me>". */
-/* Mail for everyone once the sending domain is verified. Until then MAIL_STAFF_ONLY=1 keeps mail
-   for staff accounts only (the sender can reach the owner's own address). */
+/* Mail for everyone; MAIL_STAFF_ONLY=1 limits it to staff accounts while a sending domain is not verified. */
 export const mailReady = () => !!process.env.RESEND_API_KEY && process.env.MAIL_STAFF_ONLY !== "1";
 export const staffMailReady = () => !!process.env.RESEND_API_KEY;
 

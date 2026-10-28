@@ -1446,5 +1446,6 @@ const nl: Record<string, string> = {
   "A service fee and VAT come on top. You see the total before you pay.": "Daar komen servicekost en btw bij. Je ziet het totaal voor je betaalt.",
   "Confirm your email": "Bevestig je e-mail",
   "Your code for {email} is filled in below. Press continue to set up your account.": "Je code voor {email} staat hieronder al ingevuld. Druk op verder om je account in te stellen.",
+  "The subject line stays neutral. Check your spam folder if it does not arrive within a minute.": "De onderwerpregel blijft neutraal. Niets binnen na een minuut? Kijk even in je spam.",
 };
 export default nl;

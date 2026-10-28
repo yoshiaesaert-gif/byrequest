@@ -1446,5 +1446,6 @@ const fr: Record<string, string> = {
   "A service fee and VAT come on top. You see the total before you pay.": "Les frais de service et la TVA s'ajoutent. Tu vois le total avant de payer.",
   "Confirm your email": "Confirme ton e-mail",
   "Your code for {email} is filled in below. Press continue to set up your account.": "Ton code pour {email} est déjà rempli ci dessous. Appuie sur continuer pour configurer ton compte.",
+  "The subject line stays neutral. Check your spam folder if it does not arrive within a minute.": "L'objet reste neutre. Rien reçu après une minute ? Regarde dans tes spams.",
 };
 export default fr;
