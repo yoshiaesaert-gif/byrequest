@@ -11,7 +11,7 @@ describe("i18n", () => {
   });
   it("translates with placeholders and falls back to English for unknown text", () => {
     const t = translator(nl);
-    expect(t("{n} offers", { n: 3 })).toBe("3 offers");
+    expect(t("{n} offers", { n: 3 })).toBe("3 kandidaten");
     expect(t("Welcome, {name}.", { name: "Sam" })).toBe("Welkom, Sam.");
     expect(t("Something new")).toBe("Something new");
   });

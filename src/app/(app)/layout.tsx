@@ -21,10 +21,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
   const active = u.isCreator ? (await access(u.id)).status === "active" : false;
   const buy = mode === "buy";
-  const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Offers")], ["/studio", t("Studio")]];
+  const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Applications")], ["/studio", t("Studio")]];
   const tabs = buy
     ? [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/post", "plus", ""], ["/deals", "deals", t("Deals")], ["/vault", "vault", t("Vault")]]
-    : [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/deals", "deals", t("Offers")], ["/inbox", "inbox", t("Inbox")], ["/studio", "wallet", t("Studio")]];
+    : [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/deals", "deals", t("Applications")], ["/inbox", "inbox", t("Inbox")], ["/studio", "wallet", t("Studio")]];
   const inboxBtn = <Link href="/inbox" className="icon-btn" aria-label={`Inbox${n ? `, ${n} new` : ""}`}><I n="inbox" />{n ? <span className="dot">{n > 9 ? "9+" : n}</span> : null}</Link>;
   return (
     <div className="app" data-frost={u.prefs.frost ? "on" : "off"}>

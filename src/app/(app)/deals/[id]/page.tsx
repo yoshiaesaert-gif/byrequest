@@ -29,7 +29,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
   ]);
   const accepted = (await searchParams).accepted;
   return (<div className="wrap">
-    <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? t("Deals") : t("Offers")}</Link>
+    <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? t("Deals") : t("Applications")}</Link>
     {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Payment secured.")}</b><div className="t-sm">{t("{amount} is held by the payment partner until delivery. It shows as BRQ DIGITAL.", { amount: euros(x.d.dealCents + x.d.feeCents + x.d.vatCents) })}</div></div></div> : null}
     <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">{t("Deal with {name}", { name: other.handle })}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{L(x.r.title)}</h1></div></div></div>
     <div className="two">

@@ -603,11 +603,16 @@ p{margin:0}
 .fcard .eyb{font-family:var(--meta);font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.86}
 .fcard .fmeta{display:flex;flex-wrap:wrap;gap:2px 0;font-size:.92rem;color:rgba(255,255,255,.84)}
 .fcard .fmeta span+span::before{content:"·";margin:0 8px;opacity:.7}
-.fcard .fdeal{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 14px 14px 18px;border-radius:22px;background:rgba(10,12,16,.42);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.fcard .fdeal{display:flex;flex-direction:column;align-items:stretch;gap:16px;margin-top:4px}
 .fcard .fearn{display:flex;flex-direction:column;gap:6px;color:#fff}
 .fcard .fearn .lbl{align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;background:#C8F5DC;color:#05502F;font-family:var(--meta);font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 .fcard .fearn b{font-size:3.4rem;font-weight:900;letter-spacing:-.065em;line-height:.82}
-.fcard .fgo{height:54px;padding:0 20px;border-radius:16px;font-size:1rem;gap:8px;flex:0 0 auto}
+.fcard .fgo{display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 8px 0 24px;border-radius:999px;background:#fff;color:#0E0D17;font-size:1.05rem;font-weight:800;letter-spacing:-.01em;box-shadow:0 14px 30px -14px rgba(0,0,0,.6);transition:transform .18s ease,box-shadow .18s ease}
+.fcard .fgo:hover{transform:translateY(-2px);box-shadow:0 18px 34px -14px rgba(0,0,0,.7)}
+.fcard .fgo i{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#0E0D17;color:#fff;transition:transform .18s ease}.fcard .fgo:hover i{transform:translateX(3px)}
+.fcard .fearn{flex-direction:row!important;align-items:baseline;flex-wrap:wrap;gap:4px 12px!important}
+.fcard .fearn .lbl{align-self:center!important}
+.fcard .ffix{flex-basis:100%;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.75)}
 .upf{display:flex;gap:12px;align-items:center;padding:14px;border-radius:var(--r);background:var(--sunk)}
 .upf .ci{width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--paper);display:grid;place-items:center;flex:0 0 auto}
 .upf b{display:block}

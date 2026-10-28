@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toggleSave } from "../actions";
 import { toast } from "@/components/chrome";
@@ -22,6 +22,17 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
   const [now] = useState(() => Date.now());
   const [saved, setSaved] = useState<Record<string, boolean>>(() => Object.fromEntries(items.map((i) => [i.id, i.saved])));
   const step = (d: number) => ref.current?.scrollBy({ top: d * ref.current.clientHeight, behavior: "smooth" });
+  // Arrow keys flip to the next or previous card, like swiping.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.defaultPrevented || e.altKey || e.metaKey || e.ctrlKey || (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) || document.querySelector(".hw-glass")) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); step(1); }
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  });
   const tabs: [string, string][] = [["for-you", t("For you")], ["new", t("New")], ["ending", t("Ending soon")]];
 
   return (
@@ -36,8 +47,10 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
               <div className="mid">
                 <div className="fhead"><span className="eyb">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}</span><div className="t">{r.title}</div>
                   <div className="fmeta"><span>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</span><span>{t(r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required")}</span><span>{t("Vault")} {t(VAULT[r.minVault])}</span></div><BuyerLine b={r.buyer} t={t} light />{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>{t("by ByRequest")}</div> : null}</div>
-                <div className="fdeal"><div className="fearn"><span className="lbl">{t("You earn")}</span><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b></div>
-                  <Link className="btn btn-white fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}>{t("Make an offer")}<Ico n="right" c="sm" /></Link></div>
+                <div className="fdeal">
+                  <div className="fearn"><span className="lbl">{sell ? t("You earn") : t("Budget")}</span><b className="num">{euros(sell ? Math.round(r.dealCents * CREATOR_SHARE) : r.dealCents)}</b>{sell ? <span className="ffix">{t("Fixed price, no bidding")}</span> : null}</div>
+                  <Link className="fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>
+                </div>
               </div>
             </article>
             <div className="frail">
