@@ -1447,5 +1447,9 @@ const nl: Record<string, string> = {
   "Confirm your email": "Bevestig je e-mail",
   "Your code for {email} is filled in below. Press continue to set up your account.": "Je code voor {email} staat hieronder al ingevuld. Druk op verder om je account in te stellen.",
   "The subject line stays neutral. Check your spam folder if it does not arrive within a minute.": "De onderwerpregel blijft neutraal. Niets binnen na een minuut? Kijk even in je spam.",
+  "Right after delivery": "Meteen na levering",
+  "Right after delivery: once it passed the check and the 24 hour objection window, or earlier when the buyer releases it. The money then goes straight to your payout account.": "Meteen na de levering: zodra ze de check en de bezwaartermijn van 24 uur doorstond, of eerder als de koper ze vrijgeeft. Het geld gaat dan rechtstreeks naar je uitbetaalrekening.",
+  "After delivery": "Na levering",
+  "right after each delivery, through the payment partner": "meteen na elke levering, via de betaalpartner",
 };
 export default nl;

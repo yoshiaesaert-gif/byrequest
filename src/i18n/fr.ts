@@ -1447,5 +1447,9 @@ const fr: Record<string, string> = {
   "Confirm your email": "Confirme ton e-mail",
   "Your code for {email} is filled in below. Press continue to set up your account.": "Ton code pour {email} est déjà rempli ci dessous. Appuie sur continuer pour configurer ton compte.",
   "The subject line stays neutral. Check your spam folder if it does not arrive within a minute.": "L'objet reste neutre. Rien reçu après une minute ? Regarde dans tes spams.",
+  "Right after delivery": "Dès la livraison",
+  "Right after delivery: once it passed the check and the 24 hour objection window, or earlier when the buyer releases it. The money then goes straight to your payout account.": "Dès la livraison : une fois la vérification et le délai d'objection de 24 heures passés, ou plus tôt si l'acheteur libère le paiement. L'argent part alors directement sur ton compte de paiement.",
+  "After delivery": "Après livraison",
+  "right after each delivery, through the payment partner": "dès chaque livraison, via le partenaire de paiement",
 };
 export default fr;

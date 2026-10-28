@@ -17,7 +17,7 @@ export default async function Studio() {
     <div className="pulse" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
       <div className="card"><span>{t("This month")}</span><b className="num">{euros(earn.monthCents)}</b><span>{t("paid out")}</span></div>
       <div className="card"><span>{t("In progress")}</span><b className="num">{euros(earn.pendingCents)}</b><span>{t("released after review and 24 hours")}</span></div>
-      <div className="card"><span>{t("Payouts")}</span><b>{t(a.caps.receivePayouts ? "Enabled" : "Not enabled")}</b><span>{a.caps.receivePayouts ? t("every Friday, through the payment partner") : earn.heldCents ? t("{amount} waiting for payout setup", { amount: euros(earn.heldCents) }) : t("finish payout setup")}</span></div>
+      <div className="card"><span>{t("Payouts")}</span><b>{t(a.caps.receivePayouts ? "Enabled" : "Not enabled")}</b><span>{a.caps.receivePayouts ? t("right after each delivery, through the payment partner") : earn.heldCents ? t("{amount} waiting for payout setup", { amount: euros(earn.heldCents) }) : t("finish payout setup")}</span></div>
     </div>
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Preview requests")}</h2></div>

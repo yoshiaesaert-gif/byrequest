@@ -19,7 +19,7 @@ const FAQ = [
   ["Do I have to show my face?", "No. You decide per offer. Many creators never show their face."],
   ["Will anyone see my name?", "No. Buyers only see your username and avatar. Your legal name and ID are only used for verification and payouts."],
   ["Who are the buyers?", "Verified adults. You see their stars and how many deals they did, never who they are. Man or woman does not matter: it is about the request."],
-  ["When do I get paid?", "After the delivery passed the check and the 24 hour objection window, or earlier when the buyer releases it. Payouts go out every Friday."],
+  ["When do I get paid?", "Right after delivery: once it passed the check and the 24 hour objection window, or earlier when the buyer releases it. The money then goes straight to your payout account."],
   ["Do I need followers or a profile?", "No. There is nothing to keep up. Your profile can stay private and only shows to buyers you make an offer to."],
 ] as const;
 

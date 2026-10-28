@@ -30,7 +30,7 @@ export default function Landing({ initial, year }: { initial?: "buy" | "earn"; y
   const pick = (x: "buy" | "earn") => { setSide(x); setTurn((n) => n + 1); };
   const earn = side === "earn";
   const steps = earn
-    ? [["Verify", "ID and age, 5 minutes"], ["Apply", "For what you like"], ["Get paid", "Every Friday"]]
+    ? [["Verify", "ID and age, 5 minutes"], ["Apply", "For what you like"], ["Get paid", "Right after delivery"]]
     : [["Post", "What and your budget"], ["Choose", "Verified creators apply"], ["Watch", "Private, in your vault"]];
   return (
     <div className={"lp" + (earn ? " is-earn" : "")}>
