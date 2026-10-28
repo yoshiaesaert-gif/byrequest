@@ -8,9 +8,9 @@ import SignInForm from "./form";
    side: buyers see what they pay, creators see the same requests as what they earn. The choice
    carries into sign up. */
 const CARDS = [
-  { k: "fc1", cover: "c07", badge: "Photo set", title: "Post workout photo set", pay: 36, earn: 29 },
-  { k: "fc2", cover: "c05", badge: "Video · 10 min", title: "Shower video, calm and natural", pay: 80, earn: 64 },
-  { k: "fc3", cover: "c17", badge: "Voice note", title: "Good night voice note", pay: 20, earn: 16 },
+  { k: "fc1", cover: "c07", badge: "Photo set", title: "Locker room, shirt off", pay: 36, earn: 29 },
+  { k: "fc2", cover: "c05", badge: "Video · 10 min", title: "Shower video, slow and steamy", pay: 80, earn: 64 },
+  { k: "fc3", cover: "c17", badge: "Voice note", title: "Moan my name", pay: 20, earn: 16 },
 ] as const;
 const LEGAL: [string, string][] = [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/creator_agreement", "Creator agreement"], ["/legal/participant_consent", "Consent to appear"], ["/legal/contact", "Point of contact"], ["/report", "Report a problem"], ["/removal", "Request removal"]];
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;

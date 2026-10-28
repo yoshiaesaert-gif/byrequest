@@ -31,7 +31,7 @@ export async function checkCode(prev: AuthState, f: FormData): Promise<AuthState
   const e = Email.safeParse(f.get("email"));
   if (!e.success) return { step: "email", error: "Start again with your email." };
   const email = e.data;
-  const ok = await verifyCode(email, String(f.get("code") ?? ""));
+  const ok = await verifyCode(email, String(f.get("code") ?? "").replace(/\D/g, ""));   // a pasted "232 330" or "232-330" works too
   if (!ok) return { ...prev, error: "That code is not right or has expired." };
   const u = await db.query.users.findFirst({ where: eq(schema.users.email, email) });
   if (u?.bannedAt) {

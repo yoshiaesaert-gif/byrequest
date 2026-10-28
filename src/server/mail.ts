@@ -18,7 +18,8 @@ const SITE = process.env.SITE_URL || "https://byrequest.me";
 /* A small, table based layout that renders the same in Gmail, Outlook and Apple Mail. */
 function codeMail(c: (typeof COPY)[keyof typeof COPY], code: string) {
   const year = new Date().getFullYear();
-  const digits = code.split("").map((d) => `<td style="width:46px;height:58px;border-radius:12px;background:#F2F1FA;font:700 28px/58px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0E1013;text-align:center">${d}</td><td style="width:8px"></td>`).join("");
+  // One text block: letter spacing only looks like separate digits, so a copy gives exactly the six digits.
+  const digits = `<td style="padding:14px 22px 14px 30px;border-radius:14px;background:#F2F1FA;font:700 32px/1.2 'SF Mono',Menlo,Consolas,'Courier New',monospace;letter-spacing:14px;color:#0E1013;user-select:all;-webkit-user-select:all">${code}</td>`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><title>${c.title}</title></head>
 <body style="margin:0;padding:0;background:#F4F4F1">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${code} · ${c.valid}</div>

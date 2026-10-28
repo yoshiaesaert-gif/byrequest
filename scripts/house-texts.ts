@@ -14,9 +14,9 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Chuchote moi jusqu'au sommeil", "Une voix douce et chaude tout près du micro. Dis mon prénom, Lucie, et raconte ce que tu ferais si tu étais allongé à côté de moi maintenant. Lentement, un peu coquin."],
   },
   tomvdb: {
-    nl: ["welk setje voor zaterdag?", "Zaterdag een feest en ik kan niet kiezen. Stuur 6 fotos van outfits die jij zou dragen, en het laatste mag het setje eronder zijn. Spiegel in je slaapkamer is perfect."],
-    en: ["which set for saturday?", "Party on saturday and I can't choose. Send 6 photos of outfits you would wear, and the last one can be the set underneath. A mirror in your bedroom is perfect."],
-    fr: ["quel ensemble pour samedi ?", "Soirée samedi et je n'arrive pas à choisir. Envoie 6 photos de tenues que tu porterais, et la dernière peut être l'ensemble en dessous. Le miroir de ta chambre, c'est parfait."],
+    nl: ["Lingerie try on, 6 sets", "6 foto's in 6 verschillende sets lingerie, voor de spiegel. Zeg bij elke foto welke jouw favoriet is en waarom. Hoe gewaagder hoe beter."],
+    en: ["Lingerie try on, 6 sets", "6 pics in 6 different lingerie sets, in front of the mirror. Tell me with each one which is your favourite and why. The bolder the better."],
+    fr: ["Essayage lingerie, 6 ensembles", "6 photos dans 6 ensembles de lingerie différents, devant le miroir. Dis moi pour chacune laquelle tu préfères et pourquoi. Plus c'est osé, mieux c'est."],
   },
   mark_r: {
     nl: ["Hotelkamer, deur op slot", "5 minuten in een hotelkamer of iets wat erop lijkt. Badjas, gedimd licht, je kijkt in de camera alsof ik net binnenkom. Laat de badjas maar langzaam zakken."],
@@ -24,14 +24,14 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Chambre d'hôtel, porte fermée", "5 minutes dans une chambre d'hôtel ou quelque chose qui y ressemble. Peignoir, lumière tamisée, tu regardes la caméra comme si je venais d'entrer. Laisse glisser le peignoir doucement."],
   },
   "stijn.antwerpen": {
-    nl: ["Verras me, durf wat", "Ik laat het aan jou over, maar maak het spannend. Wat zou jij maken als niemand meekeek? Hoe gewaagder, hoe liever. Het budget is serieus bedoeld."],
-    en: ["Surprise me, be bold", "I leave it to you, but make it exciting. What would you make if nobody was watching? The bolder, the better. The budget is meant seriously."],
-    fr: ["Surprends moi, ose", "Je te laisse carte blanche, mais rends ça excitant. Que ferais tu si personne ne regardait ? Plus c'est osé, mieux c'est. Le budget est sérieux."],
+    nl: ["Alpha God: zet me op mijn plaats", "Zoek een zelfzekere straight gast die me op mijn plaats zet. Praat neer op me, laat me je aandacht verdienen, zeg wat ik waard ben. Dominant, verbaal, geen genade. Gezicht mag, hoeft niet."],
+    en: ["Alpha God: show me where I belong", "Looking for a confident straight guy who shows me where I belong. Talk down to me, make me earn your attention, tell me what I'm worth. Dominant, verbal, no mercy. Face optional."],
+    fr: ["Alpha God : remets moi à ma place", "Je cherche un hétéro sûr de lui qui me remet à ma place. Parle moi de haut, fais moi mériter ton attention, dis moi ce que je vaux. Dominant, verbal, sans pitié. Visage facultatif."],
   },
   pieterjan: {
-    nl: ["Wakker worden met jouw stem", "2 minuten, je ligt nog in bed onder de lakens en je vertelt hoe je me wakker zou maken. Hees en zacht. Vlaams accent is een plus."],
-    en: ["Wake up to your voice", "2 minutes, you're still in bed under the sheets telling me how you would wake me up. Husky and soft. A Flemish accent is a plus."],
-    fr: ["Me réveiller avec ta voix", "2 minutes, tu es encore au lit sous les draps et tu me racontes comment tu me réveillerais. Voix rauque et douce. Un accent flamand, c'est un plus."],
+    nl: ["Hijgend wakker worden, 2 minuten", "Voice note van 2 minuten, net wakker, nog onder de lakens. Adem zwaar en vertel wat je nu het liefst zou doen. Vlaams accent is een plus."],
+    en: ["Breathless good morning, 2 minutes", "A 2 minute voice note, just woken up, still under the sheets. Breathe heavy and tell me what you'd most like to do right now."],
+    fr: ["Bonjour haletant, 2 minutes", "Un vocal de 2 minutes, à peine réveillée, encore sous les draps. Respire fort et dis moi ce que tu aimerais faire là, tout de suite."],
   },
   julien_lg: {
     nl: ["Thuistraining, alleen in short", "Je workout thuis in alleen een short. Pushups, planken, het zweet dat begint te glanzen. Gsm op statief en dichtbij. Gezicht hoeft niet."],
@@ -39,9 +39,9 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Séance à la maison, en short seulement", "Ta séance à la maison, juste en short. Pompes, gainage, la sueur qui commence à briller. Téléphone sur trépied et de près. Visage pas nécessaire."],
   },
   dennis1987: {
-    nl: ["zondag, alleen een groot hemd", "10 fotos van een luie zondag in alleen een groot hemd. Lakens, blote benen, die blik over je schouder. Plagend mag, sfeer staat voorop."],
-    en: ["sunday, just a big shirt", "10 photos of a lazy sunday in nothing but a big shirt. Sheets, bare legs, that look over your shoulder. Teasing is welcome, mood comes first."],
-    fr: ["dimanche, juste une grande chemise", "10 photos d'un dimanche paresseux avec seulement une grande chemise. Draps, jambes nues, ce regard par dessus l'épaule. Taquin bienvenu, l'ambiance avant tout."],
+    nl: ["Zondag in bed, niets eronder", "10 foto's van een luie zondag in bed. Alleen een laken of een groot shirt, en niets eronder. Hoe meer je laat zien, hoe beter."],
+    en: ["Sunday in bed, nothing underneath", "10 pics of a lazy Sunday in bed. Just a sheet or a big shirt, and nothing underneath. The more you show, the better."],
+    fr: ["Dimanche au lit, rien dessous", "10 photos d'un dimanche paresseux au lit. Juste un drap ou un grand t-shirt, et rien dessous. Plus tu en montres, mieux c'est."],
   },
   "alex.w": {
     nl: ["lees me iets ondeugends voor", "Een diepe stem die 5 minuten iets prikkelends voorleest. Een spannend verhaal, jouw keuze. Laat de pauzes maar duren."],
@@ -59,19 +59,19 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Après le footing, encore essoufflé", "De retour du footing, t-shirt enlevé, gouttes sur la peau, encore essoufflé contre le mur. Lent et vrai. Visage pas nécessaire."],
   },
   seb_namur: {
-    nl: ["Voor je uitgaat, 8 fotos", "8 fotos terwijl je je klaarmaakt om uit te gaan. Kousen aan, jurk nog open, gedimd licht voor de spiegel. Een klein briefje erbij en ik smelt."],
-    en: ["Before you go out, 8 photos", "8 photos while you get ready to go out. Stockings on, dress still open, dim light in front of the mirror. Add a little note and I melt."],
-    fr: ["Avant de sortir, 8 photos", "8 photos pendant que tu te prépares pour sortir. Bas enfilés, robe encore ouverte, lumière tamisée devant le miroir. Si tu ajoutes un petit mot, je fonds."],
+    nl: ["Lingerie onder je jurk, 8 foto's", "8 foto's: eerst in je jurk, dan laat je stap voor stap zien wat eronder zit. Spiegel, gedimd licht."],
+    en: ["Lingerie under the dress, 8 pics", "8 pics: first in your dress, then show me step by step what's underneath. Mirror, dim light."],
+    fr: ["Lingerie sous la robe, 8 photos", "8 photos : d'abord en robe, puis montre moi pas à pas ce qu'il y a dessous. Miroir, lumière tamisée."],
   },
   bart_k: {
-    nl: ["Een verjaardagscadeau, alleen voor mij", "Ik word 41 en wil iets wat niemand anders ziet. 5 minuten, je fluistert gelukkige verjaardag Bart en pakt jezelf daarna langzaam uit. De rest laat ik aan jou."],
-    en: ["A birthday present, just for me", "I'm turning 41 and want something nobody else sees. 5 minutes, you whisper happy birthday Bart and then slowly unwrap yourself. The rest is up to you."],
-    fr: ["Un cadeau d'anniversaire, rien que pour moi", "J'ai 41 ans et je veux quelque chose que personne d'autre ne verra. 5 minutes, tu chuchotes joyeux anniversaire Bart puis tu te déballes lentement. Le reste, c'est toi qui choisis."],
+    nl: ["Trage striptease, alleen voor mij", "5 minuten, muziek die jij goed vindt, stuk voor stuk uit. Laat me wachten. Kijk af en toe in de camera alsof je weet dat ik kijk."],
+    en: ["Slow strip tease, just for me", "5 minutes, music you like, one piece at a time. Make me wait. Look into the camera now and then like you know I'm watching."],
+    fr: ["Strip tease lent, rien que pour moi", "5 minutes, une musique que tu aimes, pièce par pièce. Fais moi attendre. Regarde la caméra de temps en temps comme si tu savais que je regarde."],
   },
   "ryan.ams": {
-    nl: ["kleedkamer, na de pomp", "12 fotos voor de spiegel na het trainen, shirt uit, broek laag op de heupen. Die pomp is de bedoeling. Gezicht optioneel."],
-    en: ["locker room, after the pump", "12 pics in front of the mirror after training, shirt off, shorts low on the hips. The pump is the point. Face optional."],
-    fr: ["vestiaire, après l'effort", "12 photos devant le miroir après l'entraînement, torse nu, short bas sur les hanches. C'est le gonflement qui compte. Visage optionnel."],
+    nl: ["Alpha in de kleedkamer, 12 foto's", "12 foto's na je training, nog gepompt. Dominante poses, die grijns, alsof ik blij mag zijn dat ik mag kijken. Shirt uit, broek laag. Gezicht optioneel."],
+    en: ["Alpha in the locker room, 12 pics", "12 pics after training, still pumped. Dominant poses, that smirk, like I should be grateful to look. Shirt off, shorts low. Face optional."],
+    fr: ["Alpha au vestiaire, 12 photos", "12 photos après l'entraînement, encore gonflé. Poses dominantes, ce sourire en coin, comme si je devais être reconnaissant de regarder. Torse nu, short bas. Visage facultatif."],
   },
   wout: {
     nl: ["vertel wat je aanhebt", "Een voice note van 4 minuten alsof we samenwonen en je net thuiskomt. Vertel wat je aanhebt en wat je straks wil doen. Laat me raden."],
@@ -79,14 +79,14 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["dis moi ce que tu portes", "Un message vocal de 4 minutes comme si on vivait ensemble et que tu rentrais. Dis moi ce que tu portes et ce que tu veux faire tout à l'heure. Laisse moi deviner."],
   },
   "maxime.c": {
-    nl: ["Avondritueel, bij kaarslicht", "Je avondritueel bij kaarslicht. Bad, olie op je huid, zijden pyjama die nog openhangt. 10 minuten, alsof ik in de kamer ben. Niet geacteerd aub."],
-    en: ["Evening ritual, by candlelight", "Your evening ritual by candlelight. Bath, oil on your skin, a silk pyjama still hanging open. 10 minutes, as if I'm in the room. Not acted please."],
-    fr: ["Rituel du soir, à la bougie", "Ton rituel du soir à la lueur des bougies. Bain, huile sur la peau, pyjama en soie encore ouvert. 10 minutes, comme si j'étais dans la pièce. Pas de mise en scène svp."],
+    nl: ["Insmeren met olie, heel traag", "10 minuten, gedimd licht, olie op je huid. Neem je tijd, overal, en kijk af en toe in de camera."],
+    en: ["Oiling up, really slowly", "10 minutes, dim light, oil on your skin. Take your time, everywhere, and look into the camera now and then."],
+    fr: ["Huile sur la peau, très lentement", "10 minutes, lumière tamisée, huile sur ta peau. Prends ton temps, partout, et regarde la caméra de temps en temps."],
   },
   thomas_lv: {
-    nl: ["korte flex, zonder shirt", "3 minuten flexen na je training, zonder shirt, lampje van opzij voor de schaduwen. Snel nodig, vandaag of morgen."],
-    en: ["quick flex, no shirt", "3 minutes flexing after your workout, no shirt, a lamp from the side for the shadows. Need it fast, today or tomorrow."],
-    fr: ["flex rapide, sans t-shirt", "3 minutes de flex après l'entraînement, sans t-shirt, une lampe sur le côté pour les ombres. Besoin rapide, aujourd'hui ou demain."],
+    nl: ["Jerk off video, 3 minuten, geen gezicht", "Solo, alleen jij. Neem je tijd, bouw het rustig op en maak het af op camera. Geen gezicht nodig. Liefst vandaag of morgen."],
+    en: ["Jerk off video, 3 minutes, no face", "Solo, just you. Take your time, build it up slowly and finish on camera. No face needed. Today or tomorrow if you can."],
+    fr: ["Vidéo de branlette, 3 minutes, sans visage", "En solo, juste toi. Prends ton temps, monte doucement et termine face caméra. Pas besoin de visage. Aujourd'hui ou demain si possible."],
   },
   dave_eindhoven: {
     nl: ["Benen, kousen en hakken", "5 fotos van je benen in zwarte kousen en hakken, op de rand van het bed. Geen gezicht nodig. Ja, ik weet wat ik wil."],
@@ -94,9 +94,9 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Jambes, bas et talons", "5 photos de tes jambes en bas noirs et talons, sur le bord du lit. Visage pas nécessaire. Oui, je sais ce que je veux."],
   },
   olivier: {
-    nl: ["een lange avond, op jouw manier", "Schenk een glas wijn in, zet muziek op en neem me 10 minuten mee. Dansen, plagen, iets uittrekken als het goed voelt. Neem je tijd, ik betaal voor kwaliteit."],
-    en: ["a slow evening, your way", "Pour a glass of wine, put on music and take me along for 10 minutes. Dance, tease, take something off if it feels right. Take your time, I'm paying for quality."],
-    fr: ["une longue soirée, à ta façon", "Sers toi un verre de vin, mets de la musique et emmène moi pendant 10 minutes. Danse, taquine, enlève quelque chose si ça te semble juste. Prends ton temps, je paie pour la qualité."],
+    nl: ["Dirty talk, recht in de camera", "10 minuten. Kijk me aan en vertel precies wat je met me zou doen. Traag, zelfzeker, geen script. Ik betaal voor kwaliteit, niet voor snelheid."],
+    en: ["Dirty talk, straight into the camera", "10 minutes. Look at me and tell me exactly what you would do to me. Slow, confident, no script. I'm paying for quality, not speed."],
+    fr: ["Dirty talk, droit dans la caméra", "10 minutes. Regarde moi et dis moi exactement ce que tu me ferais. Lent, sûr de toi, sans script. Je paie pour la qualité, pas pour la vitesse."],
   },
   "robbe.leuven": {
     nl: ["fluister wat je zou doen", "Een fluisterbericht van 3 minuten, vlak voor het slapen. Zeg mijn naam, Robbe, en vertel wat je zou doen als ik nu binnenkwam."],
@@ -119,9 +119,9 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["longue douche, sans te presser", "15 minutes. Lumière chaude, vapeur, la porte entrouverte. Pas besoin de parler, juste l'eau et toi. J'attends volontiers une semaine pour quelque chose de bien fait."],
   },
   koen_brugge: {
-    nl: ["Kook voor me, alleen een schort", "Film jezelf terwijl je kookt in alleen een schort, en praat tegen me alsof ik aan tafel zit. 6 minuten. Draai je af en toe om ;)"],
-    en: ["Cook for me, apron only", "Film yourself cooking in nothing but an apron, and talk to me as if I'm sitting at the table. 6 minutes. Turn around now and then ;)"],
-    fr: ["Cuisine pour moi, juste un tablier", "Filme toi en train de cuisiner avec juste un tablier, et parle moi comme si j'étais à table. 6 minutes. Retourne toi de temps en temps ;)"],
+    nl: ["Alpha God: jij bent de baas", "Straight, gespierd, nul geduld. Commandeer me, laat me je bedanken dat ik mag kijken. Het betalen hoort erbij, dat is net het punt. 6 minuten, recht in de camera."],
+    en: ["Alpha God: you're the boss", "Straight, built, zero patience. Order me around and make me thank you for the privilege of watching. Paying is part of it, that's the whole point. 6 minutes, straight into the camera."],
+    fr: ["Alpha God : c'est toi le patron", "Hétéro, musclé, zéro patience. Donne moi des ordres et fais moi te remercier d'avoir le droit de regarder. Payer fait partie du jeu, c'est tout l'intérêt. 6 minutes, droit dans la caméra."],
   },
   antoine_l: {
     nl: ["Je stem, nog warm van het bed", "Een voice note van 5 minuten met je hese ochtendstem, nog onder de lakens. Vertel wat je droomde, hoe spannender hoe beter. Ik ben gek op accenten."],
@@ -129,9 +129,9 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Ta voix, encore chaude du lit", "Un message vocal de 5 minutes avec ta voix rauque du matin, encore sous les draps. Raconte ton rêve, plus il est chaud mieux c'est. J'adore les accents."],
   },
   sven: {
-    nl: ["Stretchen in strakke sportkleding", "8 minuten stretchen in je woonkamer, strakke sportkleding, camera laag. Langzaam, diep ademen, af en toe een blik naar de lens. Praten hoeft niet."],
-    en: ["Stretching in tight activewear", "8 minutes of stretching in your living room, tight activewear, camera low. Slow, deep breaths, a glance at the lens now and then. No talking needed."],
-    fr: ["Étirements en tenue moulante", "8 minutes d'étirements dans ton salon, tenue de sport moulante, caméra basse. Lentement, respiration profonde, un regard vers l'objectif de temps en temps. Pas besoin de parler."],
+    nl: ["Ondergoed try on, draai je om", "8 minuten, 5 slipjes of strings na elkaar. Traag aantrekken, voor de spiegel, en draai je telkens langzaam om voor me."],
+    en: ["Underwear try on, turn around", "8 minutes, 5 pairs one after the other. Put them on slowly in front of the mirror and turn around for me every time."],
+    fr: ["Essayage de culottes, retourne toi", "8 minutes, 5 culottes l'une après l'autre. Enfile les lentement devant le miroir et retourne toi doucement pour moi à chaque fois."],
   },
   mike_tilburg: {
     nl: ["net uit de douche, alleen een handdoek", "6 fotos net na het douchen, handdoek laag om de heupen, druppels op je borst, beslagen spiegel. Geen gezicht nodig."],
@@ -149,8 +149,8 @@ export const TEXTS: Record<string, { nl: T; en: T; fr: T }> = {
     fr: ["Une vidéo taquine, rien que pour moi", "Je vis seul en ce moment et je voudrais une vidéo rien que pour moi. 5 minutes, taquine, un peu provocante. La lingerie est bienvenue. Merci d'avance."],
   },
   "joris.nl": {
-    nl: ["zeg wat je aan me zou doen", "Rotweek gehad. 2 minuten een lage stem die me vertelt wat je met me zou doen om me te laten ontspannen. Rustig, dichtbij, geen haast."],
-    en: ["tell me what you'd do to me", "Had a rough week. 2 minutes of a low voice telling me what you would do to help me unwind. Calm, close, no rush."],
-    fr: ["dis moi ce que tu me ferais", "Semaine pourrie. 2 minutes d'une voix grave qui me dit ce que tu me ferais pour me détendre. Calme, proche, sans te presser."],
+    nl: ["Kreun mijn naam, 2 minuten", "Voice note van 2 minuten, dicht bij de microfoon. Adem, kreun, en zeg af en toe mijn naam: Joris. Hoe echter hoe beter."],
+    en: ["Moan my name, 2 minutes", "A 2 minute voice note, close to the mic. Breathe, moan, and say my name now and then: Joris. The more real the better."],
+    fr: ["Gémis mon prénom, 2 minutes", "Un vocal de 2 minutes, tout près du micro. Respire, gémis, et dis mon prénom de temps en temps : Joris. Plus c'est vrai, mieux c'est."],
   },
 };

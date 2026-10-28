@@ -11,12 +11,12 @@ type Face = "not_needed" | "optional" | "required";
 const STEPS = ["type", "details", "who", "access", "budget", "review"] as const;
 const COVERS: Record<Cat, string[]> = { video: ["c01", "c03", "c05", "c11", "c13", "c04"], photos: ["c07", "c21", "c23", "c02", "c24", "c22"], voice: ["c17", "c16", "c15", "c18", "c19", "c20"], custom: ["c26", "c25", "c28", "c29", "c30", "c27"] };
 const CATS: { k: Cat; ic: string; img: string; sub: string }[] = [
-  { k: "video", ic: "video", img: "c05", sub: "Shower, workout, routine" }, { k: "photos", ic: "image", img: "c21", sub: "A set, in full resolution" },
-  { k: "voice", ic: "mic", img: "c17", sub: "Good night, good morning, your name" }, { k: "custom", ic: "spark", img: "c28", sub: "Your own idea" },
+  { k: "video", ic: "video", img: "c05", sub: "Jerk off, shower, strip tease" }, { k: "photos", ic: "image", img: "c21", sub: "Underwear, gym, feet" },
+  { k: "voice", ic: "mic", img: "c17", sub: "Moans, dirty talk, your name" }, { k: "custom", ic: "spark", img: "c28", sub: "Alpha Gods or your own idea" },
 ];
 /* Length per type: video starts at 5 minutes and goes up to 10. */
 const RANGE: Record<Cat, { min: number; max: number; def: number }> = { video: { min: 1, max: 10, def: 5 }, voice: { min: 1, max: 10, def: 2 }, photos: { min: 1, max: 30, def: 6 }, custom: { min: 1, max: 30, def: 5 } };
-const SUGGEST: Record<Cat, string[]> = { video: ["Shower video, calm and natural", "After the gym, still warm", "Slow morning routine"], photos: ["Post workout photo set", "Fit check in the mirror", "Lazy Sunday in bed"], voice: ["Good night voice note", "Good morning message", "Say my name, softly"], custom: ["Your own idea, surprise me", "Birthday clip for me", "Ring light shoot"] };
+const SUGGEST: Record<Cat, string[]> = { video: ["Jerk off video, all the way", "Shower video, slow and steamy", "Slow strip tease, just for me"], photos: ["Underwear try on, 6 pics", "Locker room after the pump", "Socks off after training"], voice: ["Moan my name", "Dirty talk before I sleep", "Whisper what you would do to me"], custom: ["Alpha God: show me where I belong", "Alpha God: you're the boss", "Your own idea, be bold"] };
 const AGES: [number, number][] = [[18, 25], [25, 35], [35, 45], [45, 99]];
 const TINTS = ["ink", "violet", "ember", "ocean", "rose", "gold"] as const;
 const TITLE_MIN = 10, DETAILS_MIN = 40;
@@ -116,7 +116,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
             <div className="field"><label htmlFor="wt">{t("Title")}</label><input className="input" id="wt" maxLength={70} placeholder={t(SUGGEST[w.category][0])} value={w.title} onChange={(e) => set({ title: e.target.value })} />
               <span className={"wz-count" + (left(w.title.trim().length, TITLE_MIN) ? "" : " ok")}>{left(w.title.trim().length, TITLE_MIN) ? t("{n} more characters", { n: left(w.title.trim().length, TITLE_MIN) }) : <><Ico n="check" c="sm" />{t("Good title")}</>}</span></div>
             <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: t(s) })}>{t(s)}</button>)}</div>
-            <div className="field"><label htmlFor="wd">{t("Describe what you want")}</label><textarea className="input" id="wd" rows={5} maxLength={800} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("For example: evening light, a white towel, slow and calm, no music. Say good night at the end.")} />
+            <div className="field"><label htmlFor="wd">{t("Describe what you want")}</label><textarea className="input" id="wd" rows={5} maxLength={800} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("For example: dim light, just a towel, take your time and look into the camera. Say my name at the end.")} />
               <span className={"wz-count" + (left(w.details.trim().length, DETAILS_MIN) ? "" : " ok")}>{left(w.details.trim().length, DETAILS_MIN) ? t("{n} more characters", { n: left(w.details.trim().length, DETAILS_MIN) }) : <><Ico n="check" c="sm" />{t("Clear enough to apply")}</>}<em>{w.details.length}/800</em></span></div></>)}
 
           {step === "who" && (<><h2>{t("Who are you looking for?")}</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>

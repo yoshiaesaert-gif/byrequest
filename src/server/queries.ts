@@ -198,3 +198,10 @@ export async function conversations(userId: string) {
     order by last_at desc limit 60`);
   return rows.rows as { id: string; status: string; buyer: boolean; title: string; cover: string | null; other: string; other_avatar: unknown; last_kind: "e2e" | "system" | null; last_body: string | null; last_sender: string | null; last_at: string | Date; unread: number }[];
 }
+
+/* How many open requests fit each hot theme right now. */
+export async function themeCounts() {
+  const { THEMES } = await import("@/content/themes");
+  const open = await db.select({ title: requests.title, details: requests.details }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
+  return Object.fromEntries(THEMES.map((x) => [x.k, open.filter((r) => x.match.test(`${r.title} ${r.details}`)).length])) as Record<string, number>;
+}
