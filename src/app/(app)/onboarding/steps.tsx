@@ -152,7 +152,6 @@ function Agreement({ p, next }: { p: Props; next: () => void }) {
   if (!a) return <div className="card ob-card"><h2>{t("Creator agreement")}</h2><p className="muted">{t("The agreement is not published yet.")}</p></div>;
   return (<div className="card ob-card">
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><span className="eyebrow">{t("Step D")}</span><h2>{a.title}</h2><span className="t-sm muted">{t("Version")} {a.version}</span></div><Status s={a.status as Check} /></div>
-    {a.draft ? <div className="banner test" style={{ margin: 0 }}><Ico n="alert" /><div className="grow t-sm">{t("Working draft, pending legal and payment partner review.")}</div></div> : null}
     <ul className="docsum">{a.summary.map((x) => <li key={x}><Ico n="check" c="sm" />{x}</li>)}</ul>
     <Link href="/legal/creator_agreement" target="_blank" className="btn btn-secondary" style={{ alignSelf: "flex-start" }}>{t("Read the full agreement")}</Link>
     {a.status === "approved" ? <><p className="t-sm">{t("You accepted version")} {a.version}.</p><button className="btn btn-primary btn-lg" onClick={next}>{t("See your overview")}</button></> : (<>

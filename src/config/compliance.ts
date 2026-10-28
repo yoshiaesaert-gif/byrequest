@@ -10,13 +10,14 @@ export const PROVIDER_ENV: Env = process.env.BRQ_PROVIDER_ENV === "live" ? "live
 export type ProviderInfo = {
   id: string;
   label: string;
-  env: Env;
+  env: Env | "any";                                   // "any": a real provider that also runs while payments are still simulated
   status: "test_only" | "not_contracted" | "contracted";
   roles: ("identity" | "payout" | "payments")[];
   note: string;
 };
 
 export const PROVIDERS: Record<string, ProviderInfo> = {
+  didit: { id: "didit", label: "Didit", env: "any", status: "contracted", roles: ["identity"], note: "ID document, liveness and face match on the free plan. Set DIDIT_API_KEY, DIDIT_WORKFLOW_ID and DIDIT_WEBHOOK_SECRET." },
   sandbox: { id: "sandbox", label: "Test provider (simulated)", env: "test", status: "test_only", roles: ["identity", "payout", "payments"], note: "Simulated outcomes for development and QA. Never a production check." },
   pay: { id: "pay", label: "PAY.", env: "live", status: "not_contracted", roles: ["payments", "payout"], note: "Candidate. Model not yet reviewed or approved." },
   verotel: { id: "verotel", label: "Verotel / Yoursafe", env: "live", status: "not_contracted", roles: ["payments", "payout", "identity"], note: "Candidate. Model not yet reviewed or approved." },
@@ -29,7 +30,7 @@ export function activeProvider(role: "identity" | "payout"): ProviderInfo | null
   const id = role === "identity" ? process.env.BRQ_IDENTITY_PROVIDER : process.env.BRQ_PAYOUT_PROVIDER;
   const p = PROVIDERS[id || (PROVIDER_ENV === "test" ? "sandbox" : "")];
   if (!p || !p.roles.includes(role)) return null;
-  if (p.env !== PROVIDER_ENV) return null;
+  if (p.env !== "any" && p.env !== PROVIDER_ENV) return null;
   if (p.env === "live" && p.status !== "contracted") return null;
   return p;
 }

@@ -1,4 +1,4 @@
-import { adapterById, SignatureError, type IdentityAdapter, type PayoutAdapter } from "@/server/providers";
+import { adapterById, IgnoredEvent, SignatureError, type IdentityAdapter, type PayoutAdapter } from "@/server/providers";
 import { applyIdentityEvent, applyPayoutEvent } from "@/server/onboarding";
 import { reevaluate } from "@/server/participants";
 import { db, schema } from "@/db";
@@ -27,6 +27,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/webhooks/[kind]
     return Response.json({ result: await applyPayoutEvent(provider, e) });
   } catch (err) {
     if (err instanceof SignatureError) return new Response("Invalid signature", { status: 401 });
+    if (err instanceof IgnoredEvent) return Response.json({ result: "ignored" });   // not a final decision yet
     console.error("webhook failed", kind, provider, err instanceof Error ? err.name : "error");
     return new Response("Error", { status: 500 });   // the provider retries; duplicates are safe
   }

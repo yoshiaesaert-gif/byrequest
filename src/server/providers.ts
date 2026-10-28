@@ -94,7 +94,56 @@ const sandboxPayout: PayoutAdapter = {
   },
 };
 
-const IDENTITY: Record<string, IdentityAdapter> = { sandbox: sandboxIdentity };
+/* Didit (didit.me): hosted ID document check, liveness and face match. A session is created with the
+   API key; the decision arrives by webhook, signed with HMAC SHA256 (X-Signature-V2 over the JSON with
+   sorted keys, or X-Signature over the raw body), five minute tolerance. Statuses that are not final
+   are acknowledged and ignored. */
+export class IgnoredEvent extends Error {}
+const diditBase = () => process.env.DIDIT_BASE_URL || "https://verification.didit.me";
+const sortedJson = (v: unknown): string => {
+  if (v === null || typeof v !== "object") return JSON.stringify(v);
+  if (Array.isArray(v)) return "[" + v.map(sortedJson).join(",") + "]";
+  return "{" + Object.keys(v as object).sort().map((k) => JSON.stringify(k) + ":" + sortedJson((v as Record<string, unknown>)[k])).join(",") + "}";
+};
+const hexEq = (a: string, b: string) => { const x = Buffer.from(a, "hex"), y = Buffer.from(b, "hex"); return x.length > 0 && x.length === y.length && timingSafeEqual(x, y); };
+const ageFrom = (dob?: string) => { if (!dob) return null; const d = new Date(dob); if (isNaN(+d)) return null; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a; };
+
+const diditIdentity: IdentityAdapter = {
+  id: "didit",
+  async start({ subject, returnUrl }) {
+    const r = await fetch(`${diditBase()}/v3/session/`, {
+      method: "POST", signal: AbortSignal.timeout(10000),
+      headers: { "content-type": "application/json", "x-api-key": process.env.DIDIT_API_KEY ?? "" },
+      body: JSON.stringify({ workflow_id: process.env.DIDIT_WORKFLOW_ID, vendor_data: subject, callback: returnUrl }),
+    });
+    if (r.status !== 201 && r.status !== 200) throw new Error(`didit session ${r.status}`);
+    const j = (await r.json()) as { session_id: string; url: string };
+    return { externalRef: j.session_id, redirectUrl: j.url };
+  },
+  verifyWebhook(raw, headers) {
+    const secret = process.env.DIDIT_WEBHOOK_SECRET ?? "";
+    const body = JSON.parse(raw) as Record<string, unknown> & { session_id: string; status: string; created_at?: number; timestamp?: number; decision?: Record<string, unknown> };
+    const ts = Number(headers.get("x-timestamp") ?? body.timestamp ?? body.created_at);
+    if (!secret || !Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) throw new SignatureError("stale or unsigned");
+    const v2 = headers.get("x-signature-v2"), v1 = headers.get("x-signature");
+    const ok = (v2 && hexEq(createHmac("sha256", secret).update(sortedJson(body), "utf8").digest("hex"), v2)) || (v1 && hexEq(createHmac("sha256", secret).update(raw).digest("hex"), v1));
+    if (!ok) throw new SignatureError("bad signature");
+    const st = String(body.status);
+    const decision = st === "Approved" ? "approved" : st === "Declined" ? "declined" : st === "Expired" || st === "Abandoned" ? "expired" : st === "Resubmitted" ? "resubmit" : null;
+    if (!decision) throw new IgnoredEvent(st);
+    const d = (body.decision ?? {}) as Record<string, unknown>;
+    const idv = ((d.id_verification ?? (Array.isArray(d.id_verifications) ? d.id_verifications[0] : null)) ?? {}) as Record<string, string | undefined>;
+    const age = ageFrom(idv.date_of_birth);
+    return {
+      eventId: `${body.session_id}:${st}:${ts}`, occurredAt: new Date(ts * 1000), externalRef: body.session_id, decision,
+      over18: age === null ? null : age >= 18, documentChecked: decision === "approved", livenessChecked: decision === "approved",
+      person: { legalName: [idv.first_name, idv.last_name].filter(Boolean).join(" ") || undefined, dateOfBirth: idv.date_of_birth, country: idv.issuing_state ?? idv.nationality },
+      reason: decision === "approved" ? undefined : st,
+    };
+  },
+};
+
+const IDENTITY: Record<string, IdentityAdapter> = { sandbox: sandboxIdentity, didit: diditIdentity };
 const PAYOUT: Record<string, PayoutAdapter> = { sandbox: sandboxPayout };
 
 export function identityAdapter(): IdentityAdapter | null { const p = activeProvider("identity"); return p ? IDENTITY[p.id] ?? null : null; }
