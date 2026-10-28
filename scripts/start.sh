@@ -2,6 +2,7 @@
 # Container entry: migrate, seed demo data once, run the release worker, then serve.
 set -e
 npx drizzle-kit migrate
+npx tsx scripts/move-db.ts
 if [ "${SEED_DEMO:-1}" = "1" ]; then npx tsx scripts/seed.ts --if-empty; fi
 npx tsx scripts/sync-legal.ts || true
 npx tsx scripts/extra-creators.ts || true
