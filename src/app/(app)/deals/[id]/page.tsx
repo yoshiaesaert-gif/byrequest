@@ -54,10 +54,8 @@ export default async function DealPage({ params, searchParams }: { params: Promi
         </dl>
         <dl className="dsum-dl dsum-money">
           {buyer ? (<>
-            <div><dt>{t("Offer")}</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
-            <div><dt>{t("Service fee")}</dt><dd className="num">{euros(x.d.feeCents)}</dd></div>
-            {x.d.vatCents ? <div><dt>{t("VAT")} {x.d.vatRate / 100}%</dt><dd className="num">{euros(x.d.vatCents)}</dd></div> : null}
-            <div className="tot"><dt>{x.d.vatCents ? t("Secured, VAT incl.") : t("Secured")}</dt><dd className="num">{euros(x.d.dealCents + x.d.feeCents + x.d.vatCents)}</dd></div>
+            <div className="tot"><dt>{t("Paid, all in")}</dt><dd className="num">{euros(x.d.dealCents + x.d.feeCents + x.d.vatCents)}</dd></div>
+            {x.d.vatCents ? <div><dt>{t("Of which VAT {rate}%", { rate: x.d.vatRate / 100 })}</dt><dd className="num">{euros(x.d.vatCents)}</dd></div> : null}
           </>) : (<>
             <div><dt>{t("Deal value")}</dt><dd className="num">{euros(x.d.dealCents)}</dd></div>
             <div className="tot"><dt>{t("You earn")}</dt><dd className="num">{euros(x.d.creatorCents)}</dd></div>

@@ -18,11 +18,11 @@ const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c
 export default function Landing({ initial, year }: { initial?: "buy" | "earn"; year: number }) {
   const t = useT();
   const [side, setSide] = useState<"buy" | "earn">(initial ?? "earn");
-  // Creators first, then the two sides take turns every 3 seconds until the visitor picks one or starts typing.
+  // Creators first, then the two sides take turns every 5 seconds until the visitor picks one or starts typing.
   const [auto, setAuto] = useState(!initial);
   useEffect(() => {
     if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const h = setInterval(() => setSide((x) => (x === "earn" ? "buy" : "earn")), 3000);
+    const h = setInterval(() => setSide((x) => (x === "earn" ? "buy" : "earn")), 5000);
     return () => clearInterval(h);
   }, [auto]);
   const pick = (x: "buy" | "earn") => { setAuto(false); setSide(x); };
@@ -53,6 +53,7 @@ export default function Landing({ initial, year }: { initial?: "buy" | "earn"; y
             <button role="tab" aria-selected={!earn} className={!earn ? "on" : ""} onClick={() => pick("buy")}>{t("I want something")}</button>
             <i aria-hidden="true" />
           </div>
+          {auto ? <span className="lp-prog" aria-hidden="true"><b key={side} /></span> : null}
           <h1 key={side}>{earn ? <>{t("Pick it.")} {t("Make it.")}<br /><em>{t("Get paid.")}</em></> : <>{t("Ask for it.")}<br />{t("Someone makes it.")}</>}</h1>
           <ol className="lp-steps" key={side + "s"}>{steps.map(([h, d], i) => <li key={h}><span className="num">{i + 1}</span><div><b>{t(h)}</b><small>{t(d)}</small></div></li>)}</ol>
         </div>

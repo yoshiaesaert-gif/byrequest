@@ -20,7 +20,7 @@ export default function HeroLive({ req, offers }: { req: HeroReq; offers: HeroOf
   return (
     <div className="hl" aria-hidden="true"><div className="hl-in">
       <Link href={`/requests/${req.id}`} className="hl-card" tabIndex={-1}>
-        {req.cover ? <img className="hl-img" src={`/img/${req.cover}.webp`} alt="" /> : null}
+        {req.cover && !req.cover.startsWith("g-") ? <img className="hl-img" src={`/img/${req.cover}.webp`} alt="" /> : <span className={"neutralbg " + (req.cover ?? "")} />}
         <span className="hl-shade" />
         <div className="hl-top"><span>{req.ages}</span><span>{req.left}</span></div>
         <div className="hl-bot">

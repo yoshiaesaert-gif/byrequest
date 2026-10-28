@@ -1,122 +1,182 @@
 "use client";
 import { useT } from "@/i18n/client";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { postRequest } from "../actions";
 import { toast } from "@/components/chrome";
-import { CAT_LABEL, euros, CREATOR_SHARE, amountLabel, quote } from "@/domain/rules";
+import { CAT_LABEL, amountLabel, quoteFromTotal, suggestPrice, type VaultPeriod } from "@/domain/rules";
 
 type Cat = "video" | "photos" | "voice" | "custom";
+type Face = "not_needed" | "optional" | "required";
 const STEPS = ["type", "details", "who", "access", "budget", "review"] as const;
 const COVERS: Record<Cat, string[]> = { video: ["c01", "c03", "c05", "c11", "c13", "c04"], photos: ["c07", "c21", "c23", "c02", "c24", "c22"], voice: ["c17", "c16", "c15", "c18", "c19", "c20"], custom: ["c26", "c25", "c28", "c29", "c30", "c27"] };
 const CATS: { k: Cat; ic: string; img: string; sub: string }[] = [
   { k: "video", ic: "video", img: "c05", sub: "Shower, workout, routine" }, { k: "photos", ic: "image", img: "c21", sub: "A set, in full resolution" },
   { k: "voice", ic: "mic", img: "c17", sub: "Good night, good morning, your name" }, { k: "custom", ic: "spark", img: "c28", sub: "Your own idea" },
 ];
-const SUGGEST: Record<Cat, string[]> = { video: ["Shower video, calm and natural", "After the gym", "Morning routine"], photos: ["Post workout photo set", "Fit check", "Fresh sneakers"], voice: ["Good night voice note", "Good morning message", "Say my name"], custom: ["Your own idea, surprise me", "Birthday clip", "Ring light shoot"] };
-const euros2 = (c: number) => "€" + (c / 100).toFixed(2);
+/* Length per type: video starts at 5 minutes and goes up to 10. */
+const RANGE: Record<Cat, { min: number; max: number; def: number }> = { video: { min: 1, max: 10, def: 5 }, voice: { min: 1, max: 10, def: 2 }, photos: { min: 1, max: 30, def: 6 }, custom: { min: 1, max: 30, def: 5 } };
+const SUGGEST: Record<Cat, string[]> = { video: ["Shower video, calm and natural", "After the gym, still warm", "Slow morning routine"], photos: ["Post workout photo set", "Fit check in the mirror", "Lazy Sunday in bed"], voice: ["Good night voice note", "Good morning message", "Say my name, softly"], custom: ["Your own idea, surprise me", "Birthday clip for me", "Ring light shoot"] };
+const AGES: [number, number][] = [[18, 25], [25, 35], [35, 45], [45, 99]];
+const TINTS = ["ink", "violet", "ember", "ocean", "rose", "gold"] as const;
+const TITLE_MIN = 10, DETAILS_MIN = 40;
+const TIPS: Record<(typeof STEPS)[number], string[]> = {
+  type: ["Pick the type that fits best. You can describe everything else in the next step."],
+  details: ["Say what matters: mood, light, outfit, setting, pace and what is said.", "Leave some room for the creator. Their own touch often makes it better.", "No names of real people, no contact details. Those requests are not published.", "Keep the title neutral: everyone on the board can read it."],
+  who: ["A wider age range brings more candidates.", "'Face optional' gives creators more freedom, and you more choice."],
+  access: ["3 days or more to deliver brings the most candidates.", "The vault period is how long you can watch it. Longer costs a little more.", "Most candidates apply in the first 24 hours."],
+  budget: ["The price is all in: service fee and VAT included, nothing is added.", "Creators see what they earn. Nobody else sees what you pay.", "Not approved, or nobody applies? You get everything back."],
+  review: ["You pay now. The payment partner holds the money until delivery.", "A person checks your request before it goes live, usually within a few hours."],
+};
+const euros2 = (c: number) => "€" + (c / 100).toFixed(2).replace(/\.00$/, "");
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
-const DEF_BAND: Record<Cat, [number, number]> = { video: [60, 110], photos: [25, 45], voice: [15, 40], custom: [45, 120] };
+const DRAFT = "brq_post_draft";
 
-export default function Wizard({ initial, bands, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; budget: number }; bands: Record<string, [number, number]>; vatBp: number; ageOk: boolean; waiver: string }) {
-  const [waived, setWaived] = useState(false);
+type Draft = { category: Cat; amount: number; title: string; details: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
+
+export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string }) {
   const t = useT();
+  const [waived, setWaived] = useState(false);
   const [i, setI] = useState(initial.title ? 1 : 0);
-  const [w, setW] = useState({
-    category: initial.category, amount: initial.amount, title: initial.title, details: "",
-    who: "Man" as "Man" | "Woman" | "Anyone", ageMin: 18, ageMax: 30, face: "not_needed" as "not_needed" | "optional" | "required",
-    dueHours: 48, minVault: "30d" as "7d" | "30d" | "1y" | "forever", budget: initial.budget || 0, neutral: false, openHours: 24,
+  const [w, setW] = useState<Draft>({
+    category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: "",
+    who: "Anyone", ages: [0, 1], face: "not_needed", dueHours: 72, minVault: "30d", openHours: 24, price: initial.budget || null, neutral: false, tint: "violet",
   });
   const [pending, start] = useTransition();
-  const set = (p: Partial<typeof w>) => setW((x) => ({ ...x, ...p }));
-  const band = bands[w.category] ?? DEF_BAND[w.category];
-  const budget = w.budget || Math.round((band[0] + band[1]) / 2 / 5) * 5;
+  // The draft survives a reload (for example when a new version of the site goes live mid way).
+  useEffect(() => { try { const d = sessionStorage.getItem(DRAFT); if (d && !initial.title) { const x = JSON.parse(d) as { w: Draft; i: number }; queueMicrotask(() => { setW(x.w); setI(x.i); }); } } catch {} }, [initial.title]);
+  useEffect(() => { try { sessionStorage.setItem(DRAFT, JSON.stringify({ w, i })); } catch {} }, [w, i]);
+
+  const set = (p: Partial<Draft>) => setW((x) => ({ ...x, ...p }));
   const step = STEPS[i];
-  const unit = w.category === "photos" ? "photos" : "min";
+  const R = RANGE[w.category];
+  const ageMin = AGES[Math.min(...w.ages)]?.[0] ?? 18, ageMax = AGES[Math.max(...w.ages)]?.[1] ?? 99;
+  const ageLabel = w.ages.length === 0 || (ageMin === 18 && ageMax === 99) ? t("Any age 18+") : ageMax === 99 ? `${ageMin}+` : t("{a} to {b}", { a: ageMin, b: ageMax });
+  const priceOf = (p: Partial<Draft>) => suggestPrice({ category: w.category, amount: w.amount, face: w.face, minVault: w.minVault, dueHours: w.dueHours, ...p } as Parameters<typeof suggestPrice>[0]);
+  const suggested = priceOf({});
+  const price = w.price ?? suggested;
+  const q = quoteFromTotal(price * 100, vatBp);
   const preview = COVERS[w.category][w.title.length % COVERS[w.category].length];
-  const canNext = step === "details" ? w.title.trim().length >= 4 : true;
-  const zone = budget < band[0] ? "low" : budget > band[1] ? "high" : "mid";
+  const zone = price < suggested * 0.85 ? "low" : price > suggested * 1.2 ? "high" : "mid";
+  const canNext = step === "details" ? w.title.trim().length >= TITLE_MIN && w.details.trim().length >= DETAILS_MIN : true;
+  const left = (n: number, min: number) => Math.max(0, min - n);
 
+  // Pick up to two neighbouring age bands; a band that is not next to the others starts a new choice.
+  const toggleAge = (k: number) => setW((x) => {
+    if (x.ages.includes(k)) return { ...x, ages: x.ages.filter((a) => a !== k) };
+    const next = [...x.ages, k].sort();
+    return { ...x, ages: next.length <= 2 && next[next.length - 1] - next[0] === next.length - 1 ? next : [k] };
+  });
+  const ups = [
+    w.minVault !== "forever" ? { l: "Forever in your vault", p: { minVault: "forever" as VaultPeriod } } : null,
+    w.dueHours > 24 ? { l: "Delivered within 24 hours", p: { dueHours: 24 } } : null,
+    w.face === "not_needed" ? { l: "Face in the content, optional", p: { face: "optional" as Face } } : null,
+  ].filter(Boolean).map((u) => ({ ...u!, extra: priceOf(u!.p) - suggested })).filter((u) => u.extra > 0).slice(0, 3);
 
-  const opt = (k: keyof typeof w, v: string | number, l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<typeof w>)}>{l}</button>;
+  const opt = <K extends keyof Draft>(k: K, v: Draft[K], l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<Draft>)}>{t(l)}</button>;
   const submit = () => start(async () => {
-    const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin: w.ageMin, ageMax: w.ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget, neutral: w.neutral, openHours: w.openHours, waiver: waived });
-    if (r && !r.ok) toast(t(r.error), "err");
+    try {
+      const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
+      if (r && !r.ok) toast(t(r.error), "err"); else sessionStorage.removeItem(DRAFT);
+    } catch (e) {
+      if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) { sessionStorage.removeItem(DRAFT); throw e; }
+      location.reload();   // a new release went live while posting: reload, the draft is kept
+    }
   });
 
+  const card = (
+    <div className="rq wz-card" style={{ pointerEvents: "none" }}>
+      <div className="media">{w.neutral ? <span className={"neutralbg g-" + w.tint} /> : <><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></>}
+        <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">{t("Your price")}</span><b className="num">€{price}</b></div></div></div>
+      <div><div className="t">{w.title || t("Your request")}</div><div className="m">{t(CAT_LABEL[w.category])} · {t(w.who)} · {ageLabel}</div></div>
+    </div>);
+
   return (
-    <div className="wizard wrap" style={{ maxWidth: 760 }}>
+    <div className="wizard wrap wz2">
       <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{t("Step {n} of {m}", { n: i + 1, m: STEPS.length })}</span></div>
-      <div className="wz-body">
-        {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
-          <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
-            <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>{t("Worn items")}</b><span className="s">{t("Coming soon")}</span></div></button></div></>)}
+      <div className="wz-grid">
+        <div className="wz-body" key={step}>
+          {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
+            <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: RANGE[c.k].def, price: null }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
+              <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>{t("Worn items")}</b><span className="s">{t("Coming soon")}</span></div></button></div></>)}
 
-        {step === "details" && (<><h2>{t("Tell creators the details")}</h2><p className="lead">{t("Keep the title short and neutral. Everyone can see it.")}</p>
-          <div className="field"><label>{w.category === "photos" ? "Number of photos" : "Length in minutes"}</label><div className="stepperx">
-            <button type="button" onClick={() => set({ amount: Math.max(1, w.amount - 1) })} aria-label={t("Less")}><Ico n="minus" /></button><b className="num">{w.amount}<span style={{ fontSize: "1rem", fontWeight: 600, color: "var(--muted)" }}> {unit}</span></b>
-            <button type="button" onClick={() => set({ amount: Math.min(60, w.amount + 1) })} aria-label={t("More")}><Ico n="plus" /></button></div>
-            <span className="t-sm muted">{w.category === "photos" ? "The exact number is checked automatically." : "The minimum length is checked automatically. A shorter file cannot be sent."}</span></div>
-          <div className="field"><label htmlFor="wt">{t("Title")}</label><input className="input" id="wt" maxLength={70} placeholder={t(SUGGEST[w.category][0])} value={w.title} onChange={(e) => set({ title: e.target.value })} /></div>
-          <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: t(s) })}>{t(s)}</button>)}</div>
-          <div className="field"><label htmlFor="wd">{t("More details, optional")}</label><textarea className="input" id="wd" rows={3} maxLength={600} style={{ height: "auto", padding: 14 }} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("Mood, light, what to wear. Keep it within the rules.")} /></div></>)}
+          {step === "details" && (<><h2>{t("Tell creators the details")}</h2><p className="lead">{t("The clearer you are, the better the candidates.")}</p>
+            <div className="field"><label>{t(w.category === "photos" ? "Number of photos" : "Length in minutes")}</label><div className="stepperx">
+              <button type="button" onClick={() => set({ amount: Math.max(R.min, w.amount - 1), price: null })} disabled={w.amount <= R.min} aria-label={t("Less")}><Ico n="minus" /></button><b className="num">{w.amount}<span className="unit"> {t(w.category === "photos" ? "photos" : "min")}</span></b>
+              <button type="button" onClick={() => set({ amount: Math.min(R.max, w.amount + 1), price: null })} disabled={w.amount >= R.max} aria-label={t("More")}><Ico n="plus" /></button></div>
+              <span className="t-sm muted">{t(w.category === "photos" ? "The exact number is checked automatically." : "The minimum length is checked automatically. A shorter file cannot be sent.")}</span></div>
+            <div className="field"><label htmlFor="wt">{t("Title")}</label><input className="input" id="wt" maxLength={70} placeholder={t(SUGGEST[w.category][0])} value={w.title} onChange={(e) => set({ title: e.target.value })} />
+              <span className={"wz-count" + (left(w.title.trim().length, TITLE_MIN) ? "" : " ok")}>{left(w.title.trim().length, TITLE_MIN) ? t("{n} more characters", { n: left(w.title.trim().length, TITLE_MIN) }) : <><Ico n="check" c="sm" />{t("Good title")}</>}</span></div>
+            <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: t(s) })}>{t(s)}</button>)}</div>
+            <div className="field"><label htmlFor="wd">{t("Describe what you want")}</label><textarea className="input" id="wd" rows={5} maxLength={800} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("For example: evening light, a white towel, slow and calm, no music. Say good night at the end.")} />
+              <span className={"wz-count" + (left(w.details.trim().length, DETAILS_MIN) ? "" : " ok")}>{left(w.details.trim().length, DETAILS_MIN) ? t("{n} more characters", { n: left(w.details.trim().length, DETAILS_MIN) }) : <><Ico n="check" c="sm" />{t("Clear enough to apply")}</>}<em>{w.details.length}/800</em></span></div></>)}
 
-        {step === "who" && (<><h2>{t("Who are you looking for?")}</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>
-          <div className="field"><label>{t("Creator")}</label><div className="optrow">{opt("who", "Man", "Man")}{opt("who", "Woman", "Woman")}{opt("who", "Anyone", "Anyone")}</div></div>
-          <div className="field"><label>{t("Age range")}</label><div className="optrow">{[[18, 25], [20, 30], [25, 35], [30, 45], [18, 99]].map(([a, b]) => <button key={a + "-" + b} type="button" className={"chip" + (w.ageMin === a && w.ageMax === b ? " is-on" : "")} onClick={() => set({ ageMin: a, ageMax: b })}>{b === 99 ? "Any age 18+" : `${a} to ${b}`}</button>)}</div><span className="t-sm muted">{t("Shown on your card instead of any location.")}</span></div>
-          <div className="field"><label>{t("Face in the content")}</label><div className="optrow">{opt("face", "not_needed", "Not needed")}{opt("face", "optional", "Optional")}{opt("face", "required", "Required")}</div><span className="t-sm muted">{t("Creators state up front if their face is shown. You see it on every offer.")}</span></div></>)}
+          {step === "who" && (<><h2>{t("Who are you looking for?")}</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>
+            <div className="field"><label>{t("Creator")}</label><div className="optrow">{opt("who", "Man", "Man")}{opt("who", "Woman", "Woman")}{opt("who", "Anyone", "Anyone")}</div></div>
+            <div className="field"><label>{t("Age range")}</label><div className="optrow">
+              {AGES.map(([a, b], k) => <button key={k} type="button" className={"chip" + (w.ages.includes(k) ? " is-on" : "")} onClick={() => toggleAge(k)}>{b === 99 ? `${a}+` : t("{a} to {b}", { a, b })}</button>)}
+              <button type="button" className={"chip" + (w.ages.length === 0 ? " is-on" : "")} onClick={() => set({ ages: [] })}>{t("Any age 18+")}</button></div>
+              <span className="t-sm muted">{t("Pick up to two ranges next to each other.")}</span></div>
+            <div className="field"><label>{t("Face in the content")}</label><div className="optrow">{opt("face", "not_needed", "Not needed")}{opt("face", "optional", "Optional")}{opt("face", "required", "Required")}</div><span className="t-sm muted">{t("Creators state up front if their face is shown.")}</span></div></>)}
 
-        {step === "access" && (<><h2>{t("Delivery and access")}</h2><p className="lead">{t("How fast you need it, and the minimum time it stays in your vault.")}</p>
-          <div className="field"><label>{t("Deliver within")}</label><div className="optrow">{opt("dueHours", 24, "24 hours")}{opt("dueHours", 48, "48 hours")}{opt("dueHours", 72, "3 days")}{opt("dueHours", 168, "1 week")}</div></div>
-          <div className="field"><label>{t("Minimum time in your vault")}</label><div className="optrow">{opt("minVault", "7d", "7 days")}{opt("minVault", "30d", "30 days")}{opt("minVault", "1y", "1 year")}{opt("minVault", "forever", "Forever")}</div><span className="t-sm muted">{t("Creators with a shorter access period cannot make an offer.")}</span></div>
-          <div className="field"><label>{t("Keep the request open for")}</label><div className="optrow">{opt("openHours", 6, "6 hours")}{opt("openHours", 24, "24 hours")}{opt("openHours", 72, "3 days")}</div></div></>)}
+          {step === "access" && (<><h2>{t("Delivery and access")}</h2><p className="lead">{t("How fast you need it, and the minimum time it stays in your vault.")}</p>
+            <div className="field"><label>{t("Deliver within")}</label><div className="optrow">{opt("dueHours", 24, "24 hours")}{opt("dueHours", 48, "48 hours")}{opt("dueHours", 72, "3 days")}{opt("dueHours", 168, "1 week")}</div></div>
+            <div className="field"><label>{t("Minimum time in your vault")}</label><div className="optrow">{opt("minVault", "7d", "7 days")}{opt("minVault", "30d", "30 days")}{opt("minVault", "1y", "1 year")}{opt("minVault", "forever", "Forever")}</div></div>
+            <div className="field"><label>{t("Keep the request open for")}</label><div className="optrow">{opt("openHours", 24, "24 hours")}{opt("openHours", 72, "3 days")}{opt("openHours", 96, "4 days")}</div></div></>)}
 
-        {step === "budget" && (<><h2>{t("What is it worth to you?")}</h2><p className="lead">{t("Creators see this amount. You pay it when you post, and get it all back if the request is not approved or nobody applies.")}</p>
-          <div className="bd">
-            <div className="bd-main">
-              <div className="bd-amt"><button type="button" onClick={() => set({ budget: Math.max(10, budget - 5) })} aria-label={t("Lower")}><Ico n="minus" /></button>
-                <span className="num" aria-live="polite">€{budget}</span>
-                <button type="button" onClick={() => set({ budget: Math.min(2000, budget + 5) })} aria-label={t("Higher")}><Ico n="plus" /></button></div>
-              <p className={"bd-say " + zone}>{zone === "low" ? "A little low. Some creators may pass on this one." : zone === "high" ? "Generous. This one will stand out on the board." : `Nice. Most creators say yes between €${band[0]} and €${band[1]}.`}</p>
-              <div className="tape" aria-hidden="true">
-                <div className="tape-in" style={{ transform: `translateX(-${((Math.min(budget, 300) - 10) / 5) * 14}px)` }}>
-                  <span className="tape-band" style={{ left: ((band[0] - 10) / 5) * 14, width: ((band[1] - band[0]) / 5) * 14 }} />
-                  {Array.from({ length: 59 }, (_, k) => { const v = 10 + k * 5; return <i key={v} className={v % 50 === 0 ? "big" : v % 10 === 0 ? "mid" : ""} style={{ left: k * 14 }}>{v % 50 === 0 ? <em>€{v}</em> : null}</i>; })}
+          {step === "budget" && (<><h2>{t("What is it worth to you?")}</h2><p className="lead">{t("We suggest a price based on your choices. Adjust it as you like.")}</p>
+            <div className="bd">
+              <div className="bd-main">
+                <div className="bd-amt"><button type="button" onClick={() => set({ price: Math.max(15, price - 5) })} aria-label={t("Lower")}><Ico n="minus" /></button>
+                  <span className="num" aria-live="polite">€{price}</span>
+                  <button type="button" onClick={() => set({ price: Math.min(2000, price + 5) })} aria-label={t("Higher")}><Ico n="plus" /></button></div>
+                <p className="bd-all">{t("All in. Service fee and VAT included, nothing is added.")}</p>
+                <div className="tape" aria-hidden="true">
+                  <div className="tape-in" style={{ transform: `translateX(-${((Math.min(price, 300) - 10) / 5) * 14}px)` }}>
+                    <span className="tape-band" style={{ left: ((suggested * 0.85 - 10) / 5) * 14, width: ((suggested * 0.35) / 5) * 14 }} />
+                    {Array.from({ length: 59 }, (_, k) => { const v = 10 + k * 5; return <i key={v} className={v % 50 === 0 ? "big" : v % 10 === 0 ? "mid" : ""} style={{ left: k * 14 }}>{v % 50 === 0 ? <em>€{v}</em> : null}</i>; })}
+                  </div>
+                  <span className="tape-needle" />
                 </div>
-                <span className="tape-needle" />
+                <input className="tape-range" type="range" min={15} max={300} step={5} value={Math.min(price, 300)} onChange={(e) => set({ price: Number(e.target.value) })} aria-label={t("Price")} />
+                <p className={"bd-say " + zone}>{zone === "low" ? t("Below what we suggest. Fewer creators may apply.") : zone === "high" ? t("Generous. This one will stand out on the board.") : t("A fair price for this request.")}
+                  {price !== suggested ? <button type="button" className="bd-reset" onClick={() => set({ price: null })}>{t("Use suggestion: €{n}", { n: suggested })}</button> : null}</p>
               </div>
-              <input className="tape-range" type="range" min={10} max={300} step={5} value={Math.min(budget, 300)} onChange={(e) => set({ budget: Number(e.target.value) })} aria-label={t("Budget")} />
-              <p className="bd-fine">{t("You pay")} <b>€{(budget * 1.1).toFixed(2)}</b> {t("when you accept, service fee included. The creator gets")} <b>€{Math.round(budget * CREATOR_SHARE)}</b>.</p>
-            </div>
-            <div className="bd-card" aria-label={t("Preview of your card")}>
-              <span className="bd-cap">{t("On the board")}</span>
-              <div className="rq" style={{ pointerEvents: "none" }}><div className="media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" />
-                <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">{t("Earn")}</span><b className="num">€{Math.round(budget * CREATOR_SHARE)}</b></div></div></div>
-                <div><div className="t">{w.title || "Your request"}</div><div className="m">{CAT_LABEL[w.category]} · {w.who} · {w.ageMax === 99 ? "18+" : `${w.ageMin} to ${w.ageMax}`}</div></div></div>
-            </div>
-          </div></>)}
+              {ups.length ? <div className="bd-ups"><b>{t("Want more?")}</b>{ups.map((u) => (
+                <button key={u.l} type="button" onClick={() => set({ ...u.p, price: null })}><span className="num">+€{u.extra}</span>{t(u.l)}<Ico n="right" c="sm" /></button>))}</div> : null}
+            </div></>)}
 
-        {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("You pay now. The payment partner holds the money until delivery. Not approved, or nobody applies? You get everything back.")}</p>
-          <div className="card" style={{ padding: "4px 20px" }}><div className="list">
-            {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`], ["Title", w.title], ["Looking for", `${t(w.who)}, ${w.ageMax === 99 ? t("Any age 18+") : t("{a} to {b}", { a: w.ageMin, b: w.ageMax })}`], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required")], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 })], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault])], ["Card", t(w.neutral ? "Neutral, number only" : "Mood photo, picked for you")]].map(([k, v]) => (
-              <div key={k} className="lrow" style={{ gridTemplateColumns: "140px minmax(0,1fr)" }}><span className="muted">{t(k)}</span><b>{v}</b></div>))}</div></div>
-          <div className="cardpick">
-            <button type="button" className={!w.neutral ? "on" : ""} onClick={() => set({ neutral: false })}><span className="cp-prev media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></span><b>{t("Mood photo")}</b><span className="t-sm muted">{t("We pick one that keeps the board varied. Covered by frosted glass.")}</span></button>
-            <button type="button" className={w.neutral ? "on" : ""} onClick={() => set({ neutral: true })}><span className="cp-prev neutralbg" /><b>{t("Neutral")}</b><span className="t-sm muted">{t("Just the number. The most discreet option.")}</span></button>
-          </div>
-          {(() => { const q = quote(Math.max(1, budget) * 100, vatBp); return (
+          {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("You pay now. The payment partner holds the money until delivery. Not approved, or nobody applies? You get everything back.")}</p>
+            <div className="card wz-sum"><div className="list">
+              {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`, 1], ["Title", w.title, 1], ["Description", w.details, 1], ["Looking for", `${t(w.who)}, ${ageLabel}`, 2], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"), 2], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 }), 3], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]), 3]].map(([k, v, s]) => (
+                <div key={k as string} className="lrow"><span className="muted">{t(k as string)}</span><b className={k === "Description" ? "wz-desc" : ""}>{v}</b><button type="button" className="wz-edit" onClick={() => setI(s as number)}>{t("Edit")}</button></div>))}</div></div>
+            <div className="field"><label>{t("Your card on the board")}</label>
+              <div className="cardpick">
+                <button type="button" className={!w.neutral ? "on" : ""} onClick={() => set({ neutral: false })}><span className="cp-prev media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></span><b>{t("Mood photo")}</b><span className="t-sm muted">{t("We pick one that keeps the board varied. Covered by frosted glass.")}</span></button>
+                <button type="button" className={w.neutral ? "on" : ""} onClick={() => set({ neutral: true })}><span className="cp-prev media"><span className={"neutralbg g-" + w.tint} /></span><b>{t("A colour")}</b><span className="t-sm muted">{t("No photo, just your colour. The most discreet option.")}</span>
+                  {w.neutral ? <span className="tints" onClick={(e) => e.stopPropagation()}>{TINTS.map((c) => <i key={c} role="button" tabIndex={0} aria-label={c} className={"tint g-" + c + (w.tint === c ? " on" : "")} onClick={() => set({ tint: c })} onKeyDown={(e) => e.key === "Enter" && set({ tint: c })} />)}</span> : null}</button>
+              </div></div>
             <div className="card wz-pay">
-              <div className="breakdown"><div><span className="muted">{t("Budget")}</span><span className="num">{euros2(q.dealCents)}</span></div><div><span className="muted">{t("Service fee")}</span><span className="num">{euros2(q.feeCents)}</span></div><div><span className="muted">{t("VAT")} {q.vatRate / 100}%</span><span className="num">{euros2(q.vatCents)}</span></div><div className="tot"><span>{t("Total, VAT included")}</span><span className="num">{euros2(q.total)}</span></div></div>
+              <div className="wz-total"><span>{t("Total")}</span><b className="num">{euros2(q.total)}</b></div>
+              <p className="t-sm muted">{t("Service fee and VAT included. Of which VAT {rate}%: {vat}.", { rate: q.vatRate / 100, vat: euros2(q.vatCents) })}</p>
               {ageOk ? <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{t(waiver)}</span></label>
                 : <><p className="t-sm">{t("Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.")}</p>
-                  <a className="btn btn-secondary" href={`/verify-age?next=${encodeURIComponent(`/post?c=${w.category}&amount=${w.amount}&budget=${budget}&title=${encodeURIComponent(w.title)}`)}`}>{t("Confirm my age")}</a></>}
-            </div>); })()}
-          <p className="t-sm muted">{t("By posting you confirm the request follows the rules: adults only, no other people without their consent, nothing illegal.")}</p></>)}
+                  <a className="btn btn-secondary" href={`/verify-age?next=${encodeURIComponent("/post")}`}>{t("Confirm my age")}</a></>}
+            </div>
+            <p className="t-sm muted">{t("By posting you confirm the request follows the rules: adults only, no other people without their consent, nothing illegal.")}</p></>)}
+        </div>
+
+        <aside className="wz-aside">
+          <span className="wz-cap">{t("Live preview")}</span>
+          {card}
+          <div className="wz-price"><span>{t("Your price")}</span><b className="num">€{price}</b><small>{t("All in")}</small></div>
+          <div className="wz-tips"><b><Ico n="spark" c="sm" />{t("Tips")}</b><ul>{TIPS[step].map((x) => <li key={x}>{t(x)}</li>)}</ul></div>
+        </aside>
       </div>
       <div className="wz-foot">
         <button className="btn btn-secondary" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>{t("Back")}</button>
-        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending || !ageOk || !waived}>{pending ? t("Securing payment…") : t("Pay {amount} and post", { amount: euros2(quote(Math.max(1, budget) * 100, vatBp).total) })}</button>
-          : <button className="btn btn-primary" onClick={() => setI(i + 1)} disabled={!canNext}>{t("Continue")}</button>}
+        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending || !ageOk || !waived}>{pending ? t("Securing payment…") : t("Pay {amount} and post", { amount: euros2(q.total) })}</button>
+          : <button className="btn btn-primary btn-lg" onClick={() => setI(i + 1)} disabled={!canNext}>{t("Continue")}</button>}
       </div>
     </div>
   );

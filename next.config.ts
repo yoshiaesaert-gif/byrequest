@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
+import { existsSync, readFileSync } from "node:fs";
+
+/* Written once per Docker build (see Dockerfile), read again by `next start`, so both agree. */
+const deploymentId = existsSync(".build-id") ? readFileSync(".build-id", "utf8").trim() : undefined;
 
 /* Every screen is personal and depends on the session, so pages render per request.
    Security headers apply to all routes. */
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  deploymentId,
   experimental: { serverActions: { bodySizeLimit: "600mb" } },
   async headers() {
     return [{

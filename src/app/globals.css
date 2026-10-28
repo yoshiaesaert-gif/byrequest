@@ -662,3 +662,10 @@ p{margin:0}
 .st-look.on{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
 .st-look:hover{transform:scale(1.05)}
 .st-note{font-size:.8125rem;color:var(--muted);margin-top:12px}
+
+/* Neutral cards in a colour the buyer picked: no photo, just a quiet gradient. */
+.neutralbg.g-violet{background:radial-gradient(120% 90% at 20% 10%,#7C6FFF 0%,#3B2FA8 55%,#17123F 100%)}
+.neutralbg.g-ember{background:radial-gradient(120% 90% at 20% 10%,#FF8A5B 0%,#B3361E 55%,#3A0F08 100%)}
+.neutralbg.g-ocean{background:radial-gradient(120% 90% at 20% 10%,#4FC3F7 0%,#1565C0 55%,#0A1F44 100%)}
+.neutralbg.g-rose{background:radial-gradient(120% 90% at 20% 10%,#FF8FB8 0%,#B8326A 55%,#3D0B22 100%)}
+.neutralbg.g-gold{background:radial-gradient(120% 90% at 20% 10%,#FBE3A6 0%,#C8902E 55%,#3D2A07 100%)}

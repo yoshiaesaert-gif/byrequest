@@ -6,7 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# One id per build: the browser notices a new release and reloads cleanly instead of calling old server code.
+RUN date +%s > .build-id && npm run build
 ENV NODE_ENV=production PORT=3000
 EXPOSE 3000
 CMD ["sh", "scripts/start.sh"]

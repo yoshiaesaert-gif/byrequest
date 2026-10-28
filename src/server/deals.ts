@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
-import { quote, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
+import { quote, quoteFromTotal, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
 import { payments, STATEMENT_NAME } from "./payments";
 import { ingest, remove, type Stored } from "./media";
 import { issueDecision } from "./decisions";
@@ -44,11 +44,13 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
    on the money already held. */
 type NewRequest = Omit<typeof requests.$inferInsert, "buyerId" | "status" | "payRef" | "payTotalCents" | "payFeeCents" | "payVatCents" | "payVatRate" | "paidAt" | "refundedAt">;
 
-export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean }) {
+export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean; totalCents?: number }) {
   if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
   if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start once chosen and that you lose the 14 day withdrawal right once it is delivered.");
   const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true } });
-  const m = quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
+  // An all in price is split backwards; otherwise the deal value is the base and fee and VAT come on top.
+  const m = opts.totalCents ? quoteFromTotal(opts.totalCents, vatRate(buyer?.country ?? "BE")) : quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
+  values = { ...values, dealCents: m.dealCents };
   const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
     const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, paidAt: new Date() }).returning();

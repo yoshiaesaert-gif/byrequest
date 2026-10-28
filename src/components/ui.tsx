@@ -24,7 +24,7 @@ export function Av({ a, name, size = 40, square }: { a: Avatar; name: string; si
 }
 
 export function Cover({ cover, frost }: { cover: string | null; frost?: boolean }) {
-  if (!cover) return <span className="neutralbg" />;
+  if (!cover || cover.startsWith("g-")) return <span className={"neutralbg " + (cover ?? "")} />;   // g-<tint>: a colour the buyer picked
   return (<>
     <img className="cimg" src={`/img/${cover}.webp`} alt="" loading="lazy" />
     <span className="cscrim" />

@@ -42,7 +42,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
         {items.map((r) => (
           <section className="fi" key={r.id}>
             <article className={"fcard media" + (peek ? " revealed" : "")}>
-              {r.cover ? <><img className="cimg" src={`/img/${r.cover}.webp`} alt="" /><span className="cscrim" />{frost ? <span className="frost" aria-hidden="true" /> : null}</> : <span className="neutralbg" />}
+              {r.cover && !r.cover.startsWith("g-") ? <><img className="cimg" src={`/img/${r.cover}.webp`} alt="" /><span className="cscrim" />{frost ? <span className="frost" aria-hidden="true" /> : null}</> : <span className={"neutralbg " + (r.cover ?? "")} />}
               <div className="top"><span className={"fpill" + ((new Date(r.closesAt).getTime() - now) / 3600_000 <= 6 ? " hot" : "")}><Ico n="clock" />{left(r.closesAt, now, t)}</span></div>
               <div className="mid">
                 <div className="fhead"><span className="eyb">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}</span><div className="t">{r.title}</div>

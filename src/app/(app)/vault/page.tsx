@@ -24,7 +24,7 @@ export default async function Vault({ searchParams }: { searchParams: Promise<{ 
     <div className="sortbar">{["All", "Videos", "Photos", "Audio"].map((x) => <Link key={x} href={x === "All" ? "/vault" : `/vault?f=${x}`} className={"chip" + (f === x ? " is-on" : "")}>{t(x)}</Link>)}</div>
     {list.length ? <div className="vault-grid">{list.map(({ v, m, r, creator }) => (
       <Link key={v.id} href={`/vault/${v.id}`} className="vi"><div className="media">
-        <img className="cimg" src={`/img/${r.cover ?? "c18"}.webp`} alt="" /><span className="cscrim" />
+        {r.cover?.startsWith("g-") ? <span className={"neutralbg " + r.cover} /> : <img className="cimg" src={`/img/${r.cover ?? "c18"}.webp`} alt="" />}<span className="cscrim" />
         <div className="top"><span className="badge glass">{m.mime.startsWith("image/") ? t("Photo") : m.durationSec ? `${Math.floor(m.durationSec / 60)}:${String(m.durationSec % 60).padStart(2, "0")}` : t("Audio")}</span><span className="badge glass"><I n="clock" c="sm" />{left(v.availableUntil)}</span></div>
         <div className="play"><span><I n={m.mime.startsWith("image/") ? "eye" : "play"} /></span></div></div>
         <div><b>{L(r.title)}</b><div className="t-sm muted">{t("from")} {creator}</div></div></Link>))}</div>

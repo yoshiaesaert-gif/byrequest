@@ -140,3 +140,29 @@ export function amountLabel(cat: Category, amount: number, t: (s: string, v?: Re
 }
 export const CAT_LABEL: Record<Category, string> = { video: "Video", photos: "Photos", voice: "Voice note", custom: "Custom", worn: "Worn" };
 export function euros(cents: number) { return "€" + Math.round(cents / 100).toLocaleString("en-IE"); }
+
+/* The buyer chooses one all in price. It is split backwards so the parts add up to exactly that
+   amount: VAT at the buyer's rate, then the service fee, the rest is the deal value of which the
+   creator earns CREATOR_SHARE. */
+export function quoteFromTotal(totalCents: number, vatRateBp: number) {
+  if (!Number.isInteger(totalCents) || totalCents <= 0) throw new Error("total must be a positive number of cents");
+  const net = Math.round(totalCents / (1 + vatRateBp / 10000));
+  const dealCents = Math.round(net / (1 + BUYER_FEE));
+  const feeCents = net - dealCents, vatCents = totalCents - net;
+  const creatorCents = Math.round(dealCents * CREATOR_SHARE);
+  return { dealCents, feeCents, buyerPays: net, creatorCents, platformCents: net - creatorCents, vatRate: vatRateBp, vatCents, total: totalCents };
+}
+
+/* A fair all in price for what was asked, rounded to €5. Length sets the base; a face, a longer
+   vault period and a faster delivery each add to it. */
+export type PriceInput = { category: "video" | "photos" | "voice" | "custom"; amount: number; face: "not_needed" | "optional" | "required"; minVault: VaultPeriod; dueHours: number };
+const BASE: Record<PriceInput["category"], [number, number]> = { video: [30, 9], photos: [15, 5], voice: [12, 5], custom: [45, 8] };
+export const VAULT_UPLIFT: Record<VaultPeriod, number> = { "7d": -0.1, "30d": 0, "1y": 0.2, forever: 0.4 };
+export function suggestPrice(p: PriceInput) {
+  const [base, per] = BASE[p.category];
+  let v = base + per * p.amount;
+  v *= 1 + (p.face === "required" ? 0.25 : p.face === "optional" ? 0.1 : 0);
+  v *= 1 + VAULT_UPLIFT[p.minVault];
+  v *= 1 + (p.dueHours <= 24 ? 0.2 : p.dueHours <= 48 ? 0.1 : 0);
+  return Math.max(15, Math.round(v / 5) * 5);
+}

@@ -23,7 +23,8 @@ export default async function Offers({ params, searchParams }: { params: Promise
   const L = await textsIn([r?.title], locale);
   const notes = await cached(list.map((x) => x.o.note).filter(Boolean), locale);
   const deal = r.status === "matched" ? await db.query.deals.findFirst({ where: eq(schema.deals.requestId, id) }) : null;
-  const m = quote(r.dealCents, vatRate(u.country));
+  // A paid request shows exactly what was paid; older unpaid ones are quoted on the deal value.
+  const m = r.payTotalCents ? { dealCents: r.dealCents, feeCents: r.payFeeCents ?? 0, vatCents: r.payVatCents ?? 0, vatRate: r.payVatRate ?? 0, total: r.payTotalCents } : quote(r.dealCents, vatRate(u.country));
   const ageOk = !BUYER_AGE_CHECK || (await isAgeVerified(u.id));
   const open = r.status === "open" && r.closesAt > new Date();
   return (<div className="wrap">
