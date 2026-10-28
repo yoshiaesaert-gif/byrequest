@@ -84,7 +84,7 @@ async function main() {
     }
     const has = await db.query.requests.findFirst({ where: and(eq(S.requests.buyerId, u.id), inArray(S.requests.status, ["open", "matched"])) });
     if (has) {
-      if (has.status === "open" && (has.title !== title || has.details !== details)) { await db.update(S.requests).set({ title, details }).where(eq(S.requests.id, has.id)); rewritten++; }
+      if (has.status === "open" && !has.staffEditedAt && (has.title !== title || has.details !== details)) { await db.update(S.requests).set({ title, details }).where(eq(S.requests.id, has.id)); rewritten++; }
       continue;
     }
     const cover = chooseFor(cat, title, usage, recent.slice(-3));

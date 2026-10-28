@@ -16,6 +16,7 @@ export const ACTION_LABEL: Record<string, string> = {
   content_rejected: "A delivery was not approved",
   age_closed: "Your account was closed because you are under 18",
   request_removed: "Your request was taken offline",
+  request_rejected: "Your request was not published",
 };
 
 export async function issueDecision(tx: Tx | typeof db, d: Decision) {

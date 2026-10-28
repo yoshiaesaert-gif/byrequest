@@ -5,6 +5,7 @@ import * as A from "@/server/admin";
 import * as B from "@/server/backoffice";
 import * as Rp from "@/server/reports";
 import * as H from "@/server/house";
+import * as M from "@/server/moderation";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
 import { reviewAlbum } from "@/server/albums";
 import { hideDelivery } from "@/server/participants";
@@ -33,3 +34,9 @@ export const supportOrg = async (userId: string, org: string | null) => run((s) 
 export const houseAccept = async (offerId: string) => run((s) => H.houseAccept(s, offerId));
 export const houseRate = async (dealId: string, stars: number) => run((s) => H.houseRate(s, dealId, stars));
 export const houseBudget = async (euros: number) => run((s) => H.setHouseBudget(s, euros), "admin");
+export const reqApprove = async (id: string, note = "") => run((s) => M.approve(s, id, note));
+export const reqReject = async (id: string, reason: string) => run((s) => M.reject(s, id, reason));
+export const reqRescreen = async (id: string) => run(() => M.screenRequest(id));
+export const reqEdit = async (id: string, input: M.EditInput) => run((s) => M.edit(s, id, input), "admin");
+export const reqBulk = async (ids: string[], action: "approve" | "close") => run((s) => M.bulk(s, ids, action), "admin");
+export const reqAuto = async (on: boolean) => run((s) => M.setAutoApprove(s, on), "admin");

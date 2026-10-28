@@ -7,6 +7,7 @@
 import "dotenv/config";
 import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
+import { screen } from "../src/domain/screening";
 
 async function main() {
   const demo = await db.select({ id: S.users.id }).from(S.users).where(like(S.users.email, "%@demo.byrequest.app"));
@@ -34,6 +35,9 @@ async function main() {
       junk = (await db.update(S.requests).set({ status: "closed" }).where(inArray(S.requests.id, rid)).returning({ id: S.requests.id })).length;
     }
   }
+  // Requests from before the review step get their automatic check once, so the back office shows it.
+  const unchecked = await db.select().from(S.requests).where(sql`${S.requests.checkVerdict} is null`).limit(2000);
+  for (const r of unchecked) { const out = screen(r); await db.update(S.requests).set({ checkVerdict: out.verdict, checkFlags: out.flags }).where(eq(S.requests.id, r.id)); }
   await db.execute(sql`update users u set rating_sum = coalesce(x.s, 0), rating_count = coalesce(x.n, 0)
     from (select c.id, sum(d.buyer_rating)::int s, count(d.buyer_rating)::int n from users c left join deals d on d.creator_id = c.id group by c.id) x
     where x.id = u.id and (u.rating_sum <> coalesce(x.s, 0) or u.rating_count <> coalesce(x.n, 0))`);

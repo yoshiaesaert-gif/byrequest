@@ -19,7 +19,7 @@ export default async function Deals() {
   const [deals, reqs, offers] = await Promise.all([myDeals(u.id), sell ? [] : myRequests(u.id), sell ? myOffers(u.id) : []]);
   const L = await textsIn([...deals, ...reqs, ...offers].map((x) => x.r.title), locale);
   const mine = deals.filter((d) => (sell ? d.d.creatorId === u.id : d.d.buyerId === u.id));
-  const open = reqs.filter((r) => r.r.status === "open");
+  const open = reqs.filter((r) => r.r.status === "open" || r.r.status === "in_review" || (r.r.status === "rejected" && r.r.createdAt > new Date(Date.now() - 14 * 86_400_000)));
   const pending = offers.filter((o) => o.o.status === "pending");
   return (<div className="wrap">
     <div className="page-h"><div><h1 className="t-h1">{sell ? t("Offers and deals") : t("Deals")}</h1><p className="muted" style={{ marginTop: 6 }}>{sell ? t("Your open offers and the deals you are working on.") : t("Your requests, offers and deliveries in one place.")}</p></div>
@@ -27,8 +27,8 @@ export default async function Deals() {
 
     {!sell && open.length ? <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Open requests")}</h2></div>
       <div className="card dlist" style={{ padding: "4px 16px" }}><div className="list">{open.map(({ r, offers: n }) => (
-        <Link key={r.id} href={`/requests/${r.id}/offers`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{L(r.title)}</b><div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {leftLabel(r.closesAt, t)}</div></div>
-          <span className={"badge " + (n ? "ok" : "")}>{n ? t("{n} offers", { n }) : t("Waiting")}</span></Link>))}</div></div></section> : null}
+        <Link key={r.id} href={`/requests/${r.id}/offers`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{L(r.title)}</b><div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}{r.status === "open" ? ` · ${leftLabel(r.closesAt, t)}` : ""}</div></div>
+          {r.status === "in_review" ? <span className="badge amber">{t("In review")}</span> : r.status === "rejected" ? <span className="badge">{t("Not published")}</span> : <span className={"badge " + (n ? "ok" : "")}>{n ? t("{n} offers", { n }) : t("Waiting")}</span>}</Link>))}</div></div></section> : null}
 
     {sell && pending.length ? <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Waiting for the buyer")}</h2></div>
       <div className="card dlist" style={{ padding: "4px 16px" }}><div className="list">{pending.map(({ o, r }) => (

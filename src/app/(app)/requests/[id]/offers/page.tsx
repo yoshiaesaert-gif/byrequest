@@ -28,8 +28,10 @@ export default async function Offers({ params, searchParams }: { params: Promise
   const open = r.status === "open" && r.closesAt > new Date();
   return (<div className="wrap">
     <Link href="/deals" className="back"><I n="left" c="sm" />{t("Deals")}</Link>
-    {(await searchParams).posted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Your request is live.")}</b><div className="t-sm">{t("Creators who fit will make offers. You get a neutral notification for each one.")}</div></div></div> : null}
-    <div className="page-h"><div><span className="eyebrow">{t("Your request")} · {open ? t("open") : t("closed")}</span><h1 className="t-h1" style={{ marginTop: 6 }}>{L(r.title)}</h1>
+    {r.status === "in_review" ? <div className="banner info"><I n="clock" /><div className="grow"><b>{t("Your request is being checked")}</b><div className="t-sm">{t("Every request is checked by the ByRequest team before it goes live. Usually within a few hours. You get a notification as soon as creators can see it.")}</div></div></div>
+      : r.status === "rejected" ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{t("Your request was not published")}</b><div className="t-sm">{t("You received a message with the reason and how to appeal. You can post a new request that follows the rules.")}</div></div><Link href="/post" className="btn btn-primary btn-sm">{t("New request")}</Link></div>
+      : (await searchParams).posted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Your request is live.")}</b><div className="t-sm">{t("Creators who fit will make offers. You get a neutral notification for each one.")}</div></div></div> : null}
+    <div className="page-h"><div><span className="eyebrow">{t("Your request")} · {r.status === "in_review" ? t("in review") : r.status === "rejected" ? t("not published") : open ? t("open") : t("closed")}</span><h1 className="t-h1" style={{ marginTop: 6 }}>{L(r.title)}</h1>
       <p className="muted t-sm" style={{ marginTop: 6 }}>{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {t(r.face === "not_needed" ? "No face needed" : r.face === "optional" ? "Face optional" : "Face required")} · {t("Vault at least")} {t(VAULT_LABEL[r.minVault]).toLowerCase()}</p></div></div>
     <Picker
       requestId={r.id} open={open} dealId={deal?.id ?? null}

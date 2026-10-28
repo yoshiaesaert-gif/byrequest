@@ -8,7 +8,7 @@ import {
 export const category = pgEnum("category", ["video", "photos", "voice", "custom", "worn"]);
 export const faceRule = pgEnum("face_rule", ["not_needed", "optional", "required"]);
 export const vaultPeriod = pgEnum("vault_period", ["7d", "30d", "1y", "forever"]);
-export const requestStatus = pgEnum("request_status", ["open", "matched", "closed", "expired"]);
+export const requestStatus = pgEnum("request_status", ["open", "matched", "closed", "expired", "in_review", "rejected"]);
 export const offerStatus = pgEnum("offer_status", ["pending", "accepted", "declined", "withdrawn"]);
 export const dealStatus = pgEnum("deal_status", [
   "held",        // buyer payment secured at the payment provider, creator is making it
@@ -102,6 +102,13 @@ export const requests = pgTable("requests", {
   lang: text("lang").notNull().default("en"),      // language the buyer wrote in: nl, fr or en
   status: requestStatus("status").notNull().default("open"),
   closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
+  // Moderation: new requests wait in review; the automatic check is a suggestion for staff, never the decision.
+  checkVerdict: text("check_verdict"),                          // approve, check or reject
+  checkFlags: jsonb("check_flags").$type<{ code: string; level: "block" | "warn" | "info"; label: string; match?: string }[]>().notNull().default([]),
+  reviewedBy: uuid("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewNote: text("review_note"),
+  staffEditedAt: timestamp("staff_edited_at", { withTimezone: true }),   // set when staff edit a request; scripts then leave it alone
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("requests_status").on(t.status, t.closesAt)]);
 

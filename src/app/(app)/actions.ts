@@ -1,4 +1,5 @@
 "use server";
+import { queueNew } from "@/server/moderation";
 import { ENABLED_CATEGORIES } from "@/config/compliance";
 import { cookies } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
@@ -67,7 +68,8 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
     const { neutral, ...data } = p.data;
     const cover = neutral ? null : await chooseCover(data.category, data.title);   // picked for variety, not by the buyer
-    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, lang: await getLocale(), closesAt: addHours(new Date(), data.openHours) }).returning();
+    const [r] = await db.insert(schema.requests).values({ ...data, buyerId: u.id, dealCents: data.budget * 100, cover, lang: await getLocale(), status: "in_review", closesAt: addHours(new Date(), data.openHours) }).returning();
+    await queueNew(r.id);   // automatic check, then a person approves it (or it goes live by itself when staff allow that)
     redirect(`/requests/${r.id}/offers?posted=1`);
   });
 }

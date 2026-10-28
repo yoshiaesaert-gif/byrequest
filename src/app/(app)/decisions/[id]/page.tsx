@@ -22,7 +22,7 @@ export default async function DecisionPage({ params, searchParams }: { params: P
     <span className="eyebrow">{t("Decision ·")} {when(d.createdAt)}</span>
     <h1 className="t-h1">{ACTION_LABEL[d.action] ?? "A decision about your account"}</h1>
     <dl className="dec-dl">
-      <div><dt>{t("Why")}</dt><dd>{d.facts}</dd></div>
+      <div><dt>{t("Why")}</dt><dd>{t(d.facts)}</dd></div>
       <div><dt>{t("Ground")}</dt><dd>{d.ground === "illegal_content" ? "The content is illegal" : "Our terms of use and content rules"}</dd></div>
       <div><dt>{t("What it covers")}</dt><dd>{d.scope}</dd></div>
       <div><dt>{t("How it was decided")}</dt><dd>{d.automated ? "Automatically, based on the result of a check" : "By a person on our team"}</dd></div>

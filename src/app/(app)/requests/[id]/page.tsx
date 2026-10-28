@@ -30,6 +30,9 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
     db.select({ id: schema.offers.id }).from(schema.offers).where(eq(schema.offers.requestId, id)),
   ]);
   const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
+  // Requests in review or rejected are only visible to their buyer and to the team.
+  const unpublished = r.status === "in_review" || r.status === "rejected";
+  if (unpublished && !staff) notFound();
   const profile = u.isCreator ? await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }) : null;
   const m = split(r.dealCents);
   const open = r.status === "open" && r.closesAt > new Date();
@@ -37,6 +40,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
 
   return (<div className="wrap">
     <Link href="/for-you" className="back"><I n="left" c="sm" />{t("Requests")}</Link>
+    {unpublished ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{r.status === "in_review" ? t("Not published: waiting for review") : t("Not published: rejected")}</b><div className="t-sm">{t("Only the team and the buyer see this page.")}</div></div><Link href={`/admin/requests/${id}`} className="btn btn-primary btn-sm">{t("Review in back office")}</Link></div> : null}
     <div className="two">
       <div>
         <div className="rd">

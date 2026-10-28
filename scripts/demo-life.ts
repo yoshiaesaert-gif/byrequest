@@ -198,7 +198,7 @@ async function main() {
   }
 
   // Older demo deals keep up with renamed titles.
-  for (const [from, to] of RENAMED) await db.update(S.requests).set({ title: to }).where(eq(S.requests.title, from));
+  for (const [from, to] of RENAMED) await db.update(S.requests).set({ title: to }).where(and(eq(S.requests.title, from), sql`${S.requests.staffEditedAt} is null`));
 
   // 3. Offers on the open requests from creators who fit.
   const open = await db.select().from(S.requests).where(and(eq(S.requests.status, "open"), sql`${S.requests.closesAt} > now()`, sql`${S.requests.buyerId} in (select id from users where house)`));
