@@ -51,3 +51,18 @@ One service runs the web app, the migrations and the release worker. Postgres is
 The site is in Dutch, English and French. Fixed texts are translated by hand in `src/i18n/nl.ts` and `src/i18n/fr.ts`. What people write is translated automatically, once, by the minute scheduler, and always marked "Automatically translated" with the original one click away.
 * `DEEPL_API_KEY`: optional. A DeepL API Free key (ends in `:fx`) gives 500,000 characters a month for free. Without it the free MyMemory tier is used, which allows far less per day.
 * `TRANSLATE_PROVIDER=off`: turns machine translation off.
+
+## Gratis opzet (nul kosten)
+
+| Onderdeel | Dienst | Gratis limiet | Wat je instelt |
+|---|---|---|---|
+| App | Render, free Docker | 750 uur per maand, slaapt na 15 min zonder verkeer | blueprint `render.yaml` |
+| Database | Neon free | 0,5 GB, verloopt niet | `DATABASE_URL` met `?sslmode=require` |
+| Video's en foto's | Cloudflare R2 | 10 GB, geen kosten voor downloaden | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` |
+| Wakker houden | cron-job.org en GitHub Actions | elke 5 tot 10 min | ping naar `https://byrequest.me/api/health` |
+| ID en leeftijd | Didit free | gratis basiscontrole (document, selfie, leeftijd) | `BRQ_IDENTITY_PROVIDER=didit`, `DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID`, `DIDIT_WEBHOOK_SECRET` |
+| Inlogmails | Resend free | 3000 mails per maand | `RESEND_API_KEY`, `MAIL_FROM` |
+
+Bestanden worden versleuteld (AES 256 GCM, sleutel `STORAGE_KEY`) in de bucket gezet. De server houdt een lokale kopie en haalt een ontbrekend bestand zelf terug na een herstart. Verander `STORAGE_KEY` nooit zodra er bestanden zijn.
+
+Didit: maak een workflow aan (ID verification met liveness en face match), zet als webhook `https://byrequest.me/api/webhooks/identity/didit` en kopieer de webhook secret.

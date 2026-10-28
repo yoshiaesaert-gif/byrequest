@@ -15,6 +15,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.3",
     "pg": "^8.23.1",

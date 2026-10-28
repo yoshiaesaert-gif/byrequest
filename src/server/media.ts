@@ -2,7 +2,8 @@ import "server-only";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import { createHash, randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
+import { AwsClient } from "aws4fetch";
 import { eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { RuleError } from "@/domain/rules";
@@ -13,8 +14,42 @@ import type { FileFacts } from "@/domain/rules";
 const run = promisify(execFile);
 const ROOT = path.resolve(/* turbopackIgnore: true */ process.env.STORAGE_DIR || "./storage");
 
-/* Local disk storage for development. Production swaps this for S3 compatible storage with
-   server side encryption; the rest of the app only uses put, filePath and remove. */
+/* Files live on local disk while they are processed and served. With S3_BUCKET set (Cloudflare R2,
+   Backblaze B2 or any S3 compatible store) every finished file is also encrypted with AES 256 GCM
+   (STORAGE_KEY) and kept in the bucket, so deliveries survive restarts of a server without a
+   permanent disk. A file missing locally is fetched back from the bucket on first use. */
+const BUCKET = process.env.S3_BUCKET;
+const s3 = BUCKET ? new AwsClient({ accessKeyId: process.env.S3_ACCESS_KEY_ID ?? "", secretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "", service: "s3", region: process.env.S3_REGION || "auto" }) : null;
+const objectUrl = (key: string) => `${process.env.S3_ENDPOINT?.replace(/\/$/, "")}/${BUCKET}/${key}`;
+const cryptKey = () => createHash("sha256").update(process.env.STORAGE_KEY || process.env.SESSION_SECRET || "dev").digest();
+export function seal(buf: Buffer) {
+  const iv = randomBytes(12), c = createCipheriv("aes-256-gcm", cryptKey(), iv);
+  const body = Buffer.concat([c.update(buf), c.final()]);
+  return Buffer.concat([iv, c.getAuthTag(), body]);
+}
+export function open(buf: Buffer) {
+  const d = createDecipheriv("aes-256-gcm", cryptKey(), buf.subarray(0, 12));
+  d.setAuthTag(buf.subarray(12, 28));
+  return Buffer.concat([d.update(buf.subarray(28)), d.final()]);
+}
+async function upload(key: string) {
+  if (!s3) return;
+  const r = await s3.fetch(objectUrl(key), { method: "PUT", body: new Uint8Array(seal(await readFile(filePath(key)))), headers: { "content-type": "application/octet-stream" } });
+  if (!r.ok) throw new Error(`storage upload ${r.status}`);
+}
+/* The local path of a stored file, restored from the bucket when this server does not have it. */
+export async function localFile(key: string) {
+  const p = filePath(key);
+  if (!s3 || (await stat(p).catch(() => null))) return p;
+  const r = await s3.fetch(objectUrl(key));
+  if (!r.ok) throw new Error(`storage fetch ${r.status}`);
+  await mkdir(path.dirname(p), { recursive: true });
+  const tmp = `${p}.${randomUUID()}.part`;
+  await writeFile(tmp, open(Buffer.from(await r.arrayBuffer())));
+  await rename(tmp, p);
+  return p;
+}
+
 export async function put(buf: Buffer, ext: string) {
   const key = `${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`;
   const p = filePath(key);
@@ -27,7 +62,10 @@ export function filePath(key: string) {
   if (!p.startsWith(ROOT + path.sep)) throw new Error("bad storage key");
   return p;
 }
-export async function remove(key: string) { await rm(filePath(key), { force: true }); }
+export async function remove(key: string) {
+  await rm(filePath(key), { force: true });
+  if (s3) await s3.fetch(objectUrl(key), { method: "DELETE" }).catch(() => null);
+}
 
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic",
   "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm", "audio/mpeg": "mp3", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/wav": "wav", "audio/webm": "webm" };
@@ -45,12 +83,14 @@ export async function ingest(file: File): Promise<Stored> {
     const clean = await sharp(raw).rotate().jpeg({ quality: 90, mozjpeg: true }).toBuffer(); // re-encode drops EXIF and GPS
     const meta = await sharp(clean).metadata();
     const key = await put(clean, "jpg");
+    await upload(key);
     return { key, mime: "image/jpeg", bytes: clean.length, width: meta.width ?? 0, height: meta.height ?? 0 };
   }
   const key = await put(raw, ext);
   const src = filePath(key), out = src.replace(/\.(\w+)$/, ".clean.$1");
   await run("ffmpeg", ["-y", "-v", "error", "-i", src, "-map_metadata", "-1", "-map_chapters", "-1", "-c", "copy", out]);
   await rename(out, src);
+  await upload(key);
   const facts = await probe(src);
   const meanVolumeDb = file.type.startsWith("audio/") ? await meanVolume(src) : null;
   return { key, mime: file.type, bytes: (await stat(src)).size, ...facts, meanVolumeDb };
@@ -72,7 +112,7 @@ async function meanVolume(p: string) {
 /* Visible watermark for still images, burned in per view. The invisible forensic code is added by
    the vendor integration (see forensic.ts); this layer is the deterrent people can see. */
 export async function watermarkImage(key: string, label: string) {
-  const img = sharp(filePath(key));
+  const img = sharp(await localFile(key));
   const { width = 1200, height = 1600 } = await img.metadata();
   const fs = Math.round(Math.max(width, height) / 42);
   const rows = Math.ceil(height / (fs * 5)) + 2, cols = Math.ceil(width / (fs * 12)) + 2;
@@ -107,7 +147,7 @@ async function refuseBlocked(raw: Buffer, image: boolean) {
 }
 
 export async function blockFile(key: string, mime: string, reason: string) {
-  const buf = await readFile(filePath(key)).catch(() => null);
+  const buf = await localFile(key).then((p) => readFile(p)).catch(() => null);
   if (!buf) return;
   await db.insert(schema.blockedHashes).values({ sha256: sha(buf), dhash: mime.startsWith("image/") ? await dhash(buf) : null, reason: reason.slice(0, 200) }).onConflictDoNothing();
 }

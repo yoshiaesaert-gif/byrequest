@@ -1,4 +1,6 @@
-# Render Blueprint: the web app (Docker) and a Postgres database, wired together.
+# Render Blueprint, zero cost setup: the web app on the free Docker plan, the database on Neon
+# (free, does not expire) and deliveries in Cloudflare R2 (free up to 10 GB). A keep alive ping
+# (.github/workflows/keepalive.yml and/or cron-job.org) stops the free plan from sleeping.
 services:
   - type: web
     name: byrequest
@@ -7,8 +9,8 @@ services:
     region: frankfurt
     healthCheckPath: /api/health
     envVars:
-      - key: DATABASE_URL
-        fromDatabase: { name: byrequest-db, property: connectionString }
+      - key: DATABASE_URL          # Neon connection string, with ?sslmode=require
+        sync: false
       - key: SESSION_SECRET
         generateValue: true
       - key: CRON_SECRET
@@ -25,9 +27,25 @@ services:
         value: test
       - key: STORAGE_DIR
         value: /app/storage
-databases:
-  - name: byrequest-db
-    plan: free
-    region: frankfurt
-    databaseName: byrequest
-    user: byrequest
+      - key: STORAGE_KEY           # encrypts files in the bucket; never change it once files exist
+        generateValue: true
+      - key: S3_ENDPOINT           # https://<account id>.r2.cloudflarestorage.com
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: BRQ_IDENTITY_PROVIDER # didit once the keys below are set; sandbox until then
+        value: sandbox
+      - key: DIDIT_API_KEY
+        sync: false
+      - key: DIDIT_WORKFLOW_ID
+        sync: false
+      - key: DIDIT_WEBHOOK_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        value: ByRequest <code@byrequest.me>

@@ -1,0 +1,12 @@
+# Keeps the free Render instance awake and the minute worker running. GitHub may delay scheduled
+# runs; cron-job.org (free, every 5 minutes) on the same URL is the reliable companion.
+name: keep alive
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 60 --retry 2 "${SITE_URL:-https://byrequest.me}/api/health"
+        env: { SITE_URL: "${{ vars.SITE_URL }}" }

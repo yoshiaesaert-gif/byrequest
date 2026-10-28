@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
-import { filePath, watermarkImage } from "@/server/media";
+import { localFile, watermarkImage } from "@/server/media";
 import { forensic } from "@/server/forensic";
 
 /* Vault files are only served to their buyer, inline, never cached, and images carry a
@@ -32,7 +32,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/media/[id]">) {
   }
 
   // Video and audio: byte range streaming so players can seek. The visible name overlay is drawn by the viewer.
-  const p = filePath(m.storageKey);
+  const p = await localFile(m.storageKey);
   const size = (await stat(p)).size;
   const range = /bytes=(\d*)-(\d*)/.exec(req.headers.get("range") ?? "");
   if (range) {
