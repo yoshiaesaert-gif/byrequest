@@ -208,7 +208,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
               <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
               <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
               <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span><h3>{feat.title}</h3><BuyerLine b={feat.buyer} t={t} light />{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
-                <div className="h-earn"><span>{t("Earn")}</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
+                <div className="h-earn"><span>{t("Budget")}</span><b className="num">{euros(feat.dealCents)}</b><small>{t("You get {amount}", { amount: euros(Math.round(feat.dealCents * CREATOR_SHARE)) })}</small></div></div>
             </div>
           </Link>
           {rest.slice(0, 6).map((r) => <RequestCard key={r.id} r={r} t={t} />)}

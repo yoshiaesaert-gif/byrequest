@@ -48,7 +48,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
                 <div className="fhead"><span className="eyb">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}</span><div className="t">{r.title}</div>
                   <div className="fmeta"><span>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</span><span>{t(r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required")}</span><span>{t("Vault")} {t(VAULT[r.minVault])}</span></div><BuyerLine b={r.buyer} t={t} light />{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>{t("by ByRequest")}</div> : null}</div>
                 <div className="fdeal">
-                  <div className="fearn"><span className="lbl">{sell ? t("You earn") : t("Budget")}</span><b className="num">{euros(sell ? Math.round(r.dealCents * CREATOR_SHARE) : r.dealCents)}</b>{sell ? <span className="ffix">{t("Fixed price, no bidding")}</span> : null}</div>
+                  <div className="fearn"><span className="lbl">{t("Budget")}</span><b className="num">{euros(r.dealCents)}</b>{sell ? <span className="ffix">{t("You get {amount} · fixed price", { amount: euros(Math.round(r.dealCents * CREATOR_SHARE)) })}</span> : null}</div>
                   <Link className="fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>
                 </div>
               </div>

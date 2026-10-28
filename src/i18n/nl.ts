@@ -1437,5 +1437,14 @@ const nl: Record<string, string> = {
   "Work for the creator": "Werk voor de creator",
   "VAT {rate}%": "Btw {rate}%",
   "The service fee covers payment protection, the review of every request and delivery, and support.": "De servicekost dekt de betaalbescherming, de controle van elke request en levering, en support.",
+  "Service fee {rate}%": "Servicekost {rate}%",
+  "You get {amount}": "Jij krijgt {amount}",
+  "You get {amount} · fixed price": "Jij krijgt {amount} · vaste prijs",
+  "Platform fee {rate}%": "Platformkost {rate}%",
+  "You receive": "Jij ontvangt",
+  "Your budget is the amount creators see on the board.": "Je budget is het bedrag dat creators op het bord zien.",
+  "A service fee and VAT come on top. You see the total before you pay.": "Daar komen servicekost en btw bij. Je ziet het totaal voor je betaalt.",
+  "Confirm your email": "Bevestig je e-mail",
+  "Your code for {email} is filled in below. Press continue to set up your account.": "Je code voor {email} staat hieronder al ingevuld. Druk op verder om je account in te stellen.",
 };
 export default nl;

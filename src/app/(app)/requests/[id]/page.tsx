@@ -72,7 +72,9 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
       </div>
       <aside className="sticky" id="offer">
         <div className="card checkout">
-          <div className="earnline"><span>{t("You earn when it is approved")}</span><b className="num">{euros(m.creatorCents)}</b></div>
+          <dl className="earnsplit"><div><dt>{t("Budget")}</dt><dd className="num">{euros(m.dealCents)}</dd></div>
+            <div><dt>{t("Platform fee {rate}%", { rate: 20 })}</dt><dd className="num">−{euros(m.dealCents - m.creatorCents)}</dd></div>
+            <div className="tot"><dt>{t("You receive")}</dt><dd className="num">{euros(m.creatorCents)}</dd></div></dl>
           {!open ? <p className="t-sm muted">{t("This request is closed.")}</p>
             : !u.isCreator ? (<>
               <b className="t-h3">{t("Want to make this?")}</b>

@@ -29,8 +29,9 @@ export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
   if (step === "code") return (
     <form action={check} className="authstack">
       <input type="hidden" name="email" value={s1.email} />
-      <div><h2 className="t-h1">{t("Check your inbox")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("We sent a six digit code to")} {s1.email}. {t("The email comes from a neutral sender.")}</p></div>
-      {s1.devCode ? <p className="devcode">{t("Your code:")} <b className="num">{s1.devCode}</b></p> : null}
+      {s1.devCode
+        ? <div><h2 className="t-h1">{t("Confirm your email")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("Your code for {email} is filled in below. Press continue to set up your account.", { email: s1.email ?? "" })}</p></div>
+        : <div><h2 className="t-h1">{t("Check your inbox")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("We sent a six digit code to")} {s1.email}. {t("The email comes from a neutral sender.")}</p></div>}
       <div className="field"><label htmlFor="code">{t("Code")}</label><input className="input codeinput" id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} defaultValue={s1.devCode ?? ""} autoFocus required /></div>
       {s2.error ? <p className="formerr" role="alert">{t(s2.error)}</p> : null}
       <button className="btn btn-primary btn-lg btn-block" disabled={p2}>{p2 ? t("Checking…") : t("Continue")}</button>

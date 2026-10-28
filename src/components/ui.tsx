@@ -67,8 +67,8 @@ export function Chips({ r, t = same }: { r: CardReq; t?: Tr }) {
 }
 export function BigNum({ r, t = same }: { r: CardReq; t?: Tr }) { return <div className="bn num">{r.amount}<small>{t(UNIT[r.category])}</small></div>; }
 export function Earn({ cents, t = same, budget }: { cents: number; t?: Tr; budget?: boolean }) {
-  // Creators see what they earn; buyers looking for inspiration see the budget that was offered.
-  return <div className="pr"><span className="lbl">{budget ? t("Budget") : t("Earn")}</span><b className="num">{euros(budget ? cents : Math.round(cents * CREATOR_SHARE))}</b></div>;
+  // Everyone sees the budget the buyer set; creators also see what they receive after the platform fee.
+  return <div className="pr"><span className="lbl">{t("Budget")}</span><b className="num">{euros(cents)}</b>{budget ? null : <small className="pr-net">{t("You get {amount}", { amount: euros(Math.round(cents * CREATOR_SHARE)) })}</small>}</div>;
 }
 export const who = (w: string, t: Tr = same) => t(w);
 

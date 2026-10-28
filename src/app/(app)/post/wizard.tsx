@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { postRequest } from "../actions";
 import { toast } from "@/components/chrome";
-import { CAT_LABEL, amountLabel, quoteFromTotal, suggestPrice, type VaultPeriod } from "@/domain/rules";
+import { CAT_LABEL, amountLabel, quote, suggestPrice, type VaultPeriod } from "@/domain/rules";
 
 type Cat = "video" | "photos" | "voice" | "custom";
 type Face = "not_needed" | "optional" | "required";
@@ -25,10 +25,10 @@ const TIPS: Record<(typeof STEPS)[number], string[]> = {
   details: ["Say what matters: mood, light, outfit, setting, pace and what is said.", "Leave some room for the creator. Their own touch often makes it better.", "No names of real people, no contact details. Those requests are not published.", "Keep the title neutral: everyone on the board can read it."],
   who: ["A wider age range brings more candidates.", "'Face optional' gives creators more freedom, and you more choice."],
   access: ["3 days or more to deliver brings the most candidates.", "The vault period is how long you can watch it. Longer costs a little more.", "Most candidates apply in the first 24 hours."],
-  budget: ["The price is all in: service fee and VAT included, nothing is added.", "Creators see what they earn. Nobody else sees what you pay.", "Not approved, or nobody applies? You get everything back."],
+  budget: ["Your budget is the amount creators see on the board.", "A service fee and VAT come on top. You see the total before you pay.", "Not approved, or nobody applies? You get everything back."],
   review: ["You pay now. The payment partner holds the money until delivery.", "A person checks your request before it goes live, usually within a few hours."],
 };
-const euros2 = (c: number) => "€" + (c / 100).toFixed(2).replace(/\.00$/, "");
+const euros2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const DRAFT = "brq_post_draft";
 
@@ -55,7 +55,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
   const priceOf = (p: Partial<Draft>) => suggestPrice({ category: w.category, amount: w.amount, face: w.face, minVault: w.minVault, dueHours: w.dueHours, ...p } as Parameters<typeof suggestPrice>[0]);
   const suggested = priceOf({});
   const price = w.price ?? suggested;
-  const q = quoteFromTotal(price * 100, vatBp);
+  const q = quote(price * 100, vatBp);   // the budget is what creators see; service fee and VAT come on top
   const preview = COVERS[w.category][w.title.length % COVERS[w.category].length];
   const zone = price < suggested * 0.85 ? "low" : price > suggested * 1.2 ? "high" : "mid";
   const canNext = step === "details" ? w.title.trim().length >= TITLE_MIN && w.details.trim().length >= DETAILS_MIN : true;
@@ -85,17 +85,17 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
   });
 
   const breakdown = (
-    <details className="pbk"><summary>{t("How is the price built up?")}<Ico n="down" c="sm" /></summary>
-      <dl><div><dt>{t("Work for the creator")}</dt><dd className="num">{euros2(q.dealCents)}</dd></div>
-        <div><dt>{t("Service fee")}</dt><dd className="num">{euros2(q.feeCents)}</dd></div>
+    <div className="pbk">
+      <dl><div><dt>{t("Your budget")}</dt><dd className="num">{euros2(q.dealCents)}</dd></div>
+        <div><dt>{t("Service fee {rate}%", { rate: 10 })}</dt><dd className="num">{euros2(q.feeCents)}</dd></div>
         <div><dt>{t("VAT {rate}%", { rate: q.vatRate / 100 })}</dt><dd className="num">{euros2(q.vatCents)}</dd></div>
-        <div className="tot"><dt>{t("Total")}</dt><dd className="num">{euros2(q.total)}</dd></div></dl>
+        <div className="tot"><dt>{t("You pay")}</dt><dd className="num">{euros2(q.total)}</dd></div></dl>
       <p>{t("The service fee covers payment protection, the review of every request and delivery, and support.")}</p>
-    </details>);
+    </div>);
   const card = (
     <div className="rq wz-card" style={{ pointerEvents: "none" }}>
       <div className="media">{w.neutral ? <span className={"neutralbg g-" + w.tint} /> : <><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></>}
-        <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">{t("Your price")}</span><b className="num">€{price}</b></div></div></div>
+        <div className="ov"><div><div className="bn num">{w.amount}<small>{w.category === "photos" ? "PHOTOS" : w.category === "voice" ? "MIN VOICE" : w.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO"}</small></div></div><div className="pr"><span className="lbl">{t("Budget")}</span><b className="num">€{price}</b></div></div></div>
       <div><div className="t">{w.title || t("Your request")}</div><div className="m">{t(CAT_LABEL[w.category])} · {t(w.who)} · {ageLabel}</div></div>
     </div>);
 
@@ -138,7 +138,6 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
                 <div className="bd-amt"><button type="button" onClick={() => set({ price: Math.max(15, price - 5) })} aria-label={t("Lower")}><Ico n="minus" /></button>
                   <span className="num" aria-live="polite">€{price}</span>
                   <button type="button" onClick={() => set({ price: Math.min(2000, price + 5) })} aria-label={t("Higher")}><Ico n="plus" /></button></div>
-                <p className="bd-all">{t("All in. Service fee and VAT included, nothing is added.")}</p>
                 {breakdown}
                 <div className="tape" aria-hidden="true">
                   <div className="tape-in" style={{ transform: `translateX(-${((Math.min(price, 300) - 10) / 5) * 14}px)` }}>
@@ -166,7 +165,6 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
                   {w.neutral ? <span className="tints" onClick={(e) => e.stopPropagation()}>{TINTS.map((c) => <i key={c} role="button" tabIndex={0} aria-label={c} className={"tint g-" + c + (w.tint === c ? " on" : "")} onClick={() => set({ tint: c })} onKeyDown={(e) => e.key === "Enter" && set({ tint: c })} />)}</span> : null}</button>
               </div></div>
             <div className="card wz-pay">
-              <div className="wz-total"><span>{t("Total")}</span><b className="num">{euros2(q.total)}</b></div>
               {breakdown}
               {ageOk ? <label className="check waiver"><input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} /><span>{t(waiver)}</span></label>
                 : <><p className="t-sm">{t("Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.")}</p>
@@ -178,7 +176,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
         <aside className="wz-aside">
           <span className="wz-cap">{t("Live preview")}</span>
           {card}
-          <div className="wz-price"><span>{t("Your price")}</span><b className="num">€{price}</b><small>{t("All in")}</small></div>
+          <div className="wz-price"><span>{t("Budget")} <b className="num">€{price}</b></span><span className="wz-pay-l">{t("You pay")} <b className="num">{euros2(q.total)}</b></span></div>
           <div className="wz-tips"><b><Ico n="spark" c="sm" />{t("Tips")}</b><ul>{TIPS[step].map((x) => <li key={x}>{t(x)}</li>)}</ul></div>
         </aside>
       </div>

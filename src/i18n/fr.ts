@@ -1437,5 +1437,14 @@ const fr: Record<string, string> = {
   "Work for the creator": "Travail du créateur",
   "VAT {rate}%": "TVA {rate} %",
   "The service fee covers payment protection, the review of every request and delivery, and support.": "Les frais de service couvrent la protection du paiement, la vérification de chaque demande et livraison, et le support.",
+  "Service fee {rate}%": "Frais de service {rate} %",
+  "You get {amount}": "Tu reçois {amount}",
+  "You get {amount} · fixed price": "Tu reçois {amount} · prix fixe",
+  "Platform fee {rate}%": "Frais de plateforme {rate} %",
+  "You receive": "Tu reçois",
+  "Your budget is the amount creators see on the board.": "Ton budget est le montant que les créateurs voient sur le tableau.",
+  "A service fee and VAT come on top. You see the total before you pay.": "Les frais de service et la TVA s'ajoutent. Tu vois le total avant de payer.",
+  "Confirm your email": "Confirme ton e-mail",
+  "Your code for {email} is filled in below. Press continue to set up your account.": "Ton code pour {email} est déjà rempli ci dessous. Appuie sur continuer pour configurer ton compte.",
 };
 export default fr;

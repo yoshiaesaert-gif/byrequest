@@ -18,14 +18,16 @@ const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c
 export default function Landing({ initial, year }: { initial?: "buy" | "earn"; year: number }) {
   const t = useT();
   const [side, setSide] = useState<"buy" | "earn">(initial ?? "earn");
-  // Creators first, then the two sides take turns every 5 seconds until the visitor picks one or starts typing.
-  const [auto, setAuto] = useState(!initial);
+  // Creators first, then the two sides take turns every 5 seconds. A click on the switch restarts the
+  // count from that side; the turns stop only once the visitor starts typing.
+  const [auto, setAuto] = useState(true);
+  const [turn, setTurn] = useState(0);
   useEffect(() => {
     if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const h = setInterval(() => setSide((x) => (x === "earn" ? "buy" : "earn")), 5000);
-    return () => clearInterval(h);
-  }, [auto]);
-  const pick = (x: "buy" | "earn") => { setAuto(false); setSide(x); };
+    const h = setTimeout(() => setSide((x) => (x === "earn" ? "buy" : "earn")), 5000);
+    return () => clearTimeout(h);
+  }, [auto, side, turn]);
+  const pick = (x: "buy" | "earn") => { setSide(x); setTurn((n) => n + 1); };
   const earn = side === "earn";
   const steps = earn
     ? [["Verify", "ID and age, 5 minutes"], ["Apply", "For what you like"], ["Get paid", "Every Friday"]]
@@ -36,6 +38,7 @@ export default function Landing({ initial, year }: { initial?: "buy" | "earn"; y
         <img className="cimg" src="/img/c20.webp" alt="" />
         <img className="cimg lp-img2" src="/img/tip_b2.webp" alt="" />
         <span className="lp-warm" aria-hidden="true" />
+        {auto ? <span className="lp-prog" aria-hidden="true"><b key={side + turn} /></span> : null}
         <div className="lp-vis-top"><img className="lp-logo" src="/logo_white.png" alt="byrequest" /><span className="lp-18">18+</span></div>
 
         <div className="fan lp-board" aria-hidden="true">
@@ -53,7 +56,6 @@ export default function Landing({ initial, year }: { initial?: "buy" | "earn"; y
             <button role="tab" aria-selected={!earn} className={!earn ? "on" : ""} onClick={() => pick("buy")}>{t("I want something")}</button>
             <i aria-hidden="true" />
           </div>
-          {auto ? <span className="lp-prog" aria-hidden="true"><b key={side} /></span> : null}
           <h1 key={side}>{earn ? <>{t("Pick it.")} {t("Make it.")}<br /><em>{t("Get paid.")}</em></> : <>{t("Ask for it.")}<br />{t("Someone makes it.")}</>}</h1>
           <ol className="lp-steps" key={side + "s"}>{steps.map(([h, d], i) => <li key={h}><span className="num">{i + 1}</span><div><b>{t(h)}</b><small>{t(d)}</small></div></li>)}</ol>
         </div>

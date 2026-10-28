@@ -721,8 +721,8 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .lp-vis-top{align-items:flex-start}
 @media (max-width:1100px){.lp-logo{height:60px}}
 @media (max-width:900px){.lp-logo{height:46px}}
-.lp-prog{display:block;width:220px;max-width:60%;height:3px;margin-top:10px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
-.lp-prog b{display:block;height:100%;width:100%;border-radius:3px;background:#fff;transform-origin:left;animation:lpFill 5s linear both}
+.lp-prog{position:absolute;left:0;right:0;bottom:0;z-index:2;height:4px;background:rgba(255,255,255,.14);overflow:hidden}
+.lp-prog b{display:block;height:100%;width:100%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.6);transform-origin:left;animation:lpFill 5s linear both}
 .lp.is-earn .lp-prog b{background:linear-gradient(90deg,#FBE3A6,#E9B44C)}
 @keyframes lpFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (max-width:900px){.lp-vis{margin:10px 10px 0;border-radius:var(--r-xl);padding:18px 18px 22px;overflow:hidden}.lp-board{height:220px;margin-top:6px}.lp-board .fc1,.lp-board .fc3{top:14px}.lp-board .fc2{top:0}}
@@ -780,3 +780,9 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .pbk dl div{display:flex;justify-content:space-between;gap:12px;font-size:.9rem}.pbk dt{color:var(--muted)}.pbk dd{margin:0;font-weight:600}
 .pbk dl .tot{border-top:1px solid var(--line);padding-top:8px;font-weight:800}.pbk dl .tot dt{color:var(--ink)}
 .pbk p{margin:0;padding:10px 16px 14px;font-size:.78rem;color:var(--muted);line-height:1.45}
+.pr-net{display:block;font-size:.66rem;font-weight:600;opacity:.85;margin-top:2px;letter-spacing:0}
+.h-earn small{display:block;font-size:.72rem;font-weight:600;opacity:.8}
+.earnsplit{margin:0 0 6px;display:grid;gap:8px}.earnsplit div{display:flex;justify-content:space-between;gap:12px;font-size:.92rem}.earnsplit dt{color:var(--muted)}.earnsplit dd{margin:0;font-weight:600}
+.earnsplit .tot{border-top:1px solid var(--line);padding-top:10px;font-size:1.05rem}.earnsplit .tot dt{color:var(--ink);font-weight:700}.earnsplit .tot dd{font-size:1.4rem;font-weight:800;color:var(--ok)}
+.wz-price{flex-direction:column;align-items:stretch;gap:4px}.wz-price span{display:flex;justify-content:space-between;align-items:baseline}.wz-price span b{font-size:1.25rem}.wz-pay-l{font-size:.84rem;color:var(--muted)}.wz-price .wz-pay-l b{font-size:1rem;color:var(--ink)}
+.pbk{padding-top:6px}.pbk dl{padding-top:8px}
