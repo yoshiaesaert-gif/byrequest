@@ -376,3 +376,7 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .ft-lang{margin-top:16px;color:#fff}
 .tr-note{font-size:.7rem;color:var(--muted);font-style:italic;margin-bottom:2px}
 .rd-tr{display:block;margin-top:6px;font-size:.74rem;opacity:.85;font-style:italic}.rd-tr a{color:inherit;text-decoration:underline}
+.cp-rev p{margin:6px 0 0;font-size:.94rem;line-height:1.5;color:var(--ink-2)}
+.cp-rev-off{color:var(--line-2)}
+.cp-rev-m{margin-left:auto;font-size:.76rem;color:var(--muted)}
+.ft-demo{flex-basis:100%;opacity:.7}

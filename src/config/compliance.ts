@@ -88,3 +88,8 @@ export const ENABLED_CATEGORIES = ["video", "photos", "voice", "custom"] as cons
 /* Buyers verify their age once with the identity provider before they pay or open the vault.
    A typed birth year is not enough for adult content (Commission guidelines on DSA art. 28). */
 export const BUYER_AGE_CHECK = process.env.BRQ_BUYER_AGE_CHECK !== "off";
+
+/* Demo mode: the test environment shown to colleagues and partners, filled with fictional
+   creators, deals and reviews (all on @demo.byrequest.app accounts, removed before launch).
+   It is never on in a live environment. Set BRQ_DEMO=0 to see the test environment without it. */
+export const DEMO_MODE = PROVIDER_ENV === "test" && process.env.BRQ_DEMO !== "0";

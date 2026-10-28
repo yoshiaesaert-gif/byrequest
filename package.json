@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx scripts/seed.ts && tsx scripts/sync-legal.ts && tsx scripts/extra-creators.ts && tsx scripts/house-requests.ts && tsx scripts/clean-demo.ts && tsx scripts/rebalance-covers.ts",
+    "db:seed": "tsx scripts/seed.ts && tsx scripts/sync-legal.ts && tsx scripts/extra-creators.ts && tsx scripts/house-requests.ts && tsx scripts/demo-life.ts && tsx scripts/clean-demo.ts && tsx scripts/rebalance-covers.ts",
     "worker": "tsx scripts/worker.ts",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit"

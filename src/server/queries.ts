@@ -1,4 +1,5 @@
 import "server-only";
+import { DEMO_MODE } from "@/config/compliance";
 import { and, asc, desc, eq, gt, inArray, or, sql, count } from "drizzle-orm";
 import { db, schema } from "@/db";
 
@@ -16,14 +17,15 @@ export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | 
     offers: sql<number>`(select count(*)::int from offers o where o.request_id = "requests"."id")`,
     house: sql<boolean>`(select u.house from users u where u.id = "requests"."buyer_id")`,
   }).from(requests).where(and(...conds)).orderBy(...order).limit(opts.limit ?? 40);
-  return rows.map(({ r, offers, house }) => ({ ...r, offers, house, mine: r.buyerId === opts.viewerId }));
+  // In the demo the team profiles play ordinary buyers, so their label is left out.
+  return rows.map(({ r, offers, house }) => ({ ...r, offers, house: house && !DEMO_MODE, mine: r.buyerId === opts.viewerId }));
 }
 
 export async function request(id: string) {
   const r = await db.query.requests.findFirst({ where: eq(requests.id, id) });
   if (!r) return r;
   const b = await db.query.users.findFirst({ where: eq(users.id, r.buyerId), columns: { house: true } });
-  return { ...r, house: !!b?.house };
+  return { ...r, house: !!b?.house && !DEMO_MODE };
 }
 
 export async function offersFor(requestId: string) {
@@ -98,8 +100,8 @@ export async function profileFor(handle: string, viewerId: string) {
     offerId = o?.id ?? null;
   }
   const album = offerId ? await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.offerId, offerId) }) : null;
-  const reviews = await db.select({ stars: deals.buyerRating, at: deals.settledAt, by: users.handle }).from(deals)
-    .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(desc(deals.settledAt)).limit(6);
+  const reviews = await db.select({ stars: deals.buyerRating, at: deals.settledAt, by: users.handle, text: deals.reviewText }).from(deals)
+    .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(desc(deals.settledAt)).limit(12);
   const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
   return { hidden: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
 }
@@ -137,7 +139,7 @@ export async function savedIds(userId: string) {
 export async function pulse() {
   const since = new Date(Date.now() - 7 * 86400_000);
   // Only real money counts: payouts to accounts that are not demo accounts.
-  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, since), sql`${ledger.userId} not in (select id from users where email like '%@demo.byrequest.app')`));
+  const [paid] = await db.select({ c: sql<number>`coalesce(sum(${ledger.cents}),0)::int` }).from(ledger).where(and(eq(ledger.entry, "creator_payout"), gt(ledger.createdAt, since), DEMO_MODE ? undefined : sql`${ledger.userId} not in (select id from users where email like '%@demo.byrequest.app')`));
   const [open] = await db.select({ n: count() }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
   const [done] = await db.select({ n: count() }).from(deals).where(eq(deals.status, "released"));
   const [avg] = await db.select({ h: sql<number>`coalesce(avg(extract(epoch from (${deals.deliveredAt} - ${deals.createdAt}))/3600),0)::float` }).from(deals).where(sql`${deals.deliveredAt} is not null`);

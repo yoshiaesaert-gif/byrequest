@@ -134,6 +134,7 @@ export const deals = pgTable("deals", {
   objectUntil: timestamp("object_until", { withTimezone: true }),
   settledAt: timestamp("settled_at", { withTimezone: true }),
   buyerRating: integer("buyer_rating"),
+  reviewText: text("review_text"),                    // optional words with the rating, written by the buyer
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("deals_due").on(t.status, t.objectUntil)]);
 

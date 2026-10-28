@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getT } from "@/i18n/server";
 import LangSwitch from "./lang-switch";
+import { DEMO_MODE } from "@/config/compliance";
 
 /* Site footer. Neutral wording, no imagery, nothing that reveals what ByRequest is on a shared screen. */
 export default async function Footer() {
@@ -26,6 +27,7 @@ export default async function Footer() {
         <span>© {year} ByRequest</span>
         <span>{t("Payments appear as BRQ DIGITAL")}</span>
         <span>{t("Press Esc twice to quick hide")}</span>
+        {DEMO_MODE ? <span className="ft-demo">{t("Demo environment: profiles, deals and reviews are fictional")}</span> : null}
       </div>
     </footer>
   );

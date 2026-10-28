@@ -12,7 +12,9 @@ async function main() {
   const demo = await db.select({ id: S.users.id }).from(S.users).where(like(S.users.email, "%@demo.byrequest.app"));
   const ids = demo.map((d) => d.id);
   let closed = 0, removedOffers = 0;
-  if (ids.length) {
+  // In the demo the demo accounts are the point: keep their requests and offers (see demo-life.ts).
+  const demoMode = process.env.BRQ_PROVIDER_ENV !== "live" && process.env.BRQ_DEMO !== "0";
+  if (ids.length && !demoMode) {
     const reqs = await db.select({ id: S.requests.id }).from(S.requests).where(and(inArray(S.requests.buyerId, ids), eq(S.requests.status, "open")));
     if (reqs.length) {
       const rid = reqs.map((r) => r.id);
