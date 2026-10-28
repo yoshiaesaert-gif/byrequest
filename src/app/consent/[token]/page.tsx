@@ -1,4 +1,5 @@
 import { getT } from "@/i18n/server";
+import { legalIn } from "@/legal/translations";
 import { notFound } from "next/navigation";
 import * as P from "@/server/participants";
 import { currentDoc } from "@/server/onboarding";
@@ -8,7 +9,7 @@ import { verify, give, decline } from "./actions";
 
 /* Private link for someone who appears in a creator's content. No account needed. */
 export default async function Consent({ params }: { params: Promise<{ token: string }> }) {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const { token } = await params;
   const p = await P.byToken(token);
   if (!p) notFound();
@@ -31,12 +32,12 @@ export default async function Consent({ params }: { params: Promise<{ token: str
             : consent?.depicted && consent.distribution ? (<><span className="status st-approved">{t("You agreed")}</span>
               <form action={async () => { "use server"; await decline(token, dl.id); }}><button className="btn btn-secondary btn-sm">{t("Withdraw my consent")}</button></form></>)
             : p.identity !== "approved" ? <span className="t-sm muted">{t("Verify first, then you can agree or decline.")}</span>
-            : (<><ul className="docsum">{(doc?.summary ?? []).map((s) => <li key={s}><svg className="ico sm" aria-hidden="true"><use href="#i-check" /></svg>{s}</li>)}</ul>
-              <p className="t-xs muted">{doc ? `${doc.title}, version ${doc.version}.` : ""} <a href="/legal/participant_consent" target="_blank" style={{ fontWeight: 600 }}>{t("Read the full text")}</a></p>
+            : (<><ul className="docsum">{((doc && legalIn(locale, "participant_consent", doc.version)?.summary) ?? doc?.summary ?? []).map((s) => <li key={s}><svg className="ico sm" aria-hidden="true"><use href="#i-check" /></svg>{s}</li>)}</ul>
+              <p className="t-xs muted">{doc ? t("{title}, version {v}.", { title: legalIn(locale, "participant_consent", doc.version)?.title ?? doc.title, v: doc.version }) : ""} <a href="/legal/participant_consent" target="_blank" style={{ fontWeight: 600 }}>{t("Read the full text")}</a></p>
               <div className="optrow"><form action={async () => { "use server"; await give(token, dl.id); }}><button className="btn btn-primary btn-sm">{t("I appear voluntarily and agree")}</button></form>
                 <form action={async () => { "use server"; await decline(token, dl.id); }}><button className="btn btn-secondary btn-sm">{t("Decline")}</button></form></div></>)}
         </div>))}
     </div>
-    <p className="t-xs muted">Appear in something without being asked? Use <a href="/removal" style={{ fontWeight: 600 }}>{t("byrequest.app/removal")}</a>.</p>
+    <p className="t-xs muted">{t("Appear in something without being asked? Use")} <a href="/removal" style={{ fontWeight: 600 }}>{t("byrequest.app/removal")}</a>.</p>
   </div></div>);
 }

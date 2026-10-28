@@ -19,8 +19,8 @@ export default async function Tax({ searchParams }: { searchParams: Promise<{ e?
     <Link href="/onboarding" className="back"><I n="left" c="sm" />{t("Creator setup")}</Link>
     <span className="eyebrow">{t("Tax details")}</span>
     <h1 className="t-h1">{t("For the yearly platform report")}</h1>
-    <p className="muted">EU rules (DAC7) require platforms to report what sellers earned to the tax authority once a year: in Belgium the FOD Financiën, in the Netherlands the Belastingdienst. We need these details before we can pay you out. They are stored encrypted, never shown on your profile and only used for this report.</p>
-    {sp.ok || done ? <p className="banner ok" style={{ width: "100%" }}><I n="check" />{t("Saved")}{done ? `: ${done.entity}, ${done.country}` : ""}. You can update them below.</p> : null}
+    <p className="muted">{t("EU rules (DAC7) require platforms to report what sellers earned to the tax authority once a year: in Belgium the FOD Financiën, in the Netherlands the Belastingdienst. We need these details before we can pay you out. They are stored encrypted, never shown on your profile and only used for this report.")}</p>
+    {sp.ok || done ? <p className="banner ok" style={{ width: "100%" }}><I n="check" />{t("Saved")}{done ? `: ${t(done.entity)}, ${done.country}` : ""}. {t("You can update them below.")}</p> : null}
     {sp.e ? <p className="formerr">{sp.e}</p> : null}
     <form className="taxf" action={async (f) => {
       "use server";

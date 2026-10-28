@@ -17,7 +17,7 @@ export default function SignInForm({ demo }: { demo: boolean }) {
     <form action={appeal} className="authstack">
       <div><h2 className="t-h1">{t("This account is closed")}</h2><p className="muted" style={{ marginTop: 8 }}>{s2.reason}</p></div>
       {s4.sent ? <p>{t("Your appeal was received. A person who did not take the first decision reviews it and replies by email.")}</p> : (<>
-        <div className="field"><label htmlFor="ap">Do you disagree? Tell us why</label><textarea id="ap" name="msg" className="input" rows={4} style={{ height: "auto", padding: 14 }} required minLength={10} /></div>
+        <div className="field"><label htmlFor="ap">{t("Do you disagree? Tell us why")}</label><textarea id="ap" name="msg" className="input" rows={4} style={{ height: "auto", padding: 14 }} required minLength={10} /></div>
         {s4.error ? <p className="formerr" role="alert">{s4.error}</p> : null}
         <button className="btn btn-primary btn-lg btn-block" disabled={p4}>{p4 ? "Sending…" : "Send appeal"}</button></>)}
       <p className="t-xs muted">{t("You can also go to an out of court dispute settlement body certified under the Digital Services Act, or to court.")}</p>

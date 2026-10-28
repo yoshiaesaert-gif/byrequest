@@ -154,7 +154,7 @@ function UploadSheet({ p, onClose }: { p: Props; onClose: () => void }) {
     } catch { setErr(tr("Upload failed. Check your connection.")); }
     setBusy(false);
   };
-  return (<div className="scrim" onClick={(e) => e.target === e.currentTarget && !busy && onClose()}><div className="sheet" role="dialog" aria-modal="true" aria-label="Upload delivery">
+  return (<div className="scrim" onClick={(e) => e.target === e.currentTarget && !busy && onClose()}><div className="sheet" role="dialog" aria-modal="true" aria-label={tr("Upload delivery")}>
     <div className="sheet-h"><div><span className="eyebrow">{tr("Deliver to {name}", { name: p.other.handle })}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{p.deal.category === "photos" ? tr("{n} photos", { n: p.deal.amount }) : tr("{n} minutes", { n: p.deal.amount })}</h3></div><button className="icon-btn" onClick={onClose} aria-label={tr("Close")} disabled={busy}><Ico n="x" /></button></div>
     <label className="drop"><input type="file" accept={accept} multiple={p.deal.category === "photos"} onChange={(e) => { setFiles(Array.from(e.target.files ?? [])); setLines(null); setErr(null); }} /><Ico n={p.deal.category === "photos" ? "image" : p.deal.category === "voice" ? "mic" : "video"} c="lg" /><b>{files.length ? tr(files.length > 1 ? "{n} files selected" : "{n} file selected", { n: files.length }) : tr("Choose files")}</b><span className="t-sm muted">{files.map((f) => f.name).join(", ") || tr("Location and device data are removed automatically.")}</span></label>
     <div className="field"><label>{tr("Who appears in this content?")}</label><div className="seg2">

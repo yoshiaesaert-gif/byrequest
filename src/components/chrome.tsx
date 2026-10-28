@@ -52,12 +52,14 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
 /* Quick hide covers the whole screen with a neutral shopping list. */
 function hide() { window.dispatchEvent(new Event("brq:hide")); }
 export function HideButton() {
-  return <button className="icon-btn" onClick={hide} aria-label="Quick hide"><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg></button>;
+  const t = useT();
+  return <button className="icon-btn" onClick={hide} aria-label={t("Quick hide")}><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg></button>;
 }
 
 type Note = { id: string; title: string; body: string; href: string };
 
 export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boolean; neutralTab: boolean }) {
+  const tx = useT();
   const [t, setT] = useState<{ msg: string; kind: string } | null>(null);
   const [note, setNote] = useState<Note | null>(null);
   const [hidden, setHidden] = useState(false);
@@ -106,13 +108,13 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
   return (<>
     <Link href={note?.href ?? "/inbox"} className={"notif" + (note ? " show" : "")} role="status" aria-live="polite" onClick={() => setNote(null)} tabIndex={note ? 0 : -1}>
       <img src="/icon.png" alt="" className="notif-ic" />
-      <span className="notif-t"><b>{discreet || !note ? "ByRequest" : note.title}</b><span>{discreet || !note ? "You have a new message" : note.body}</span></span>
-      <span className="notif-time">now</span>
+      <span className="notif-t"><b>{discreet || !note ? "ByRequest" : tx(note.title)}</b><span>{discreet || !note ? tx("You have a new message") : tx(note.body)}</span></span>
+      <span className="notif-time">{tx("now")}</span>
     </Link>
     {t ? <div className={"toast" + (t.kind === "err" ? " err" : "")} role="status"><svg className="ico" aria-hidden="true"><use href={t.kind === "err" ? "#i-alert" : "#i-check"} /></svg><span>{t.msg}</span></div> : null}
     {hidden ? (
-      <div className="cover-list" onClick={() => setHidden(false)} role="button" tabIndex={0} aria-label="Tap to return">
-        <div><h2>Groceries</h2><ul>{["Oat milk", "Bananas", "Coffee beans", "Pasta", "Tomatoes", "Basil", "Greek yoghurt", "Dish soap"].map((x) => <li key={x}><span />{x}</li>)}</ul><p>Tap anywhere to return</p></div>
+      <div className="cover-list" onClick={() => setHidden(false)} role="button" tabIndex={0} aria-label={tx("Tap to return")}>
+        <div><h2>{tx("Groceries")}</h2><ul>{["Oat milk", "Bananas", "Coffee beans", "Pasta", "Tomatoes", "Basil", "Greek yoghurt", "Dish soap"].map((x) => <li key={x}><span />{tx(x)}</li>)}</ul><p>{tx("Tap anywhere to return")}</p></div>
       </div>
     ) : null}
   </>);

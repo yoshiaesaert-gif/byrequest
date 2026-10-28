@@ -46,8 +46,8 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
     <div className="wizard wrap" style={{ maxWidth: 760 }}>
       <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{i + 1} of {STEPS.length}</span></div>
       <div className="wz-body">
-        {step === "type" && (<><h2>What would you like?</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
-          <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{CAT_LABEL[c.k]}</b><span className="s">{c.sub}</span></div></button>)}
+        {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
+          <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: c.k === "photos" ? 6 : c.k === "voice" ? 2 : 10 }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
             <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>{t("Worn items")}</b><span className="s">{t("Coming soon")}</span></div></button></div></>)}
 
         {step === "details" && (<><h2>{t("Tell creators the details")}</h2><p className="lead">{t("Keep the title short and neutral. Everyone can see it.")}</p>
@@ -55,11 +55,11 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
             <button type="button" onClick={() => set({ amount: Math.max(1, w.amount - 1) })} aria-label={t("Less")}><Ico n="minus" /></button><b className="num">{w.amount}<span style={{ fontSize: "1rem", fontWeight: 600, color: "var(--muted)" }}> {unit}</span></b>
             <button type="button" onClick={() => set({ amount: Math.min(60, w.amount + 1) })} aria-label={t("More")}><Ico n="plus" /></button></div>
             <span className="t-sm muted">{w.category === "photos" ? "The exact number is checked automatically." : "The minimum length is checked automatically. A shorter file cannot be sent."}</span></div>
-          <div className="field"><label htmlFor="wt">{t("Title")}</label><input className="input" id="wt" maxLength={70} placeholder={SUGGEST[w.category][0]} value={w.title} onChange={(e) => set({ title: e.target.value })} /></div>
-          <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: s })}>{s}</button>)}</div>
+          <div className="field"><label htmlFor="wt">{t("Title")}</label><input className="input" id="wt" maxLength={70} placeholder={t(SUGGEST[w.category][0])} value={w.title} onChange={(e) => set({ title: e.target.value })} /></div>
+          <div className="suggest">{SUGGEST[w.category].map((s) => <button key={s} type="button" className="chip" onClick={() => set({ title: t(s) })}>{t(s)}</button>)}</div>
           <div className="field"><label htmlFor="wd">{t("More details, optional")}</label><textarea className="input" id="wd" rows={3} maxLength={600} style={{ height: "auto", padding: 14 }} value={w.details} onChange={(e) => set({ details: e.target.value })} placeholder={t("Mood, light, what to wear. Keep it within the rules.")} /></div></>)}
 
-        {step === "who" && (<><h2>Who are you looking for?</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>
+        {step === "who" && (<><h2>{t("Who are you looking for?")}</h2><p className="lead">{t("Creators decide themselves if they fit.")}</p>
           <div className="field"><label>{t("Creator")}</label><div className="optrow">{opt("who", "Man", "Man")}{opt("who", "Woman", "Woman")}{opt("who", "Anyone", "Anyone")}</div></div>
           <div className="field"><label>{t("Age range")}</label><div className="optrow">{[[18, 25], [20, 30], [25, 35], [30, 45], [18, 99]].map(([a, b]) => <button key={a + "-" + b} type="button" className={"chip" + (w.ageMin === a && w.ageMax === b ? " is-on" : "")} onClick={() => set({ ageMin: a, ageMax: b })}>{b === 99 ? "Any age 18+" : `${a} to ${b}`}</button>)}</div><span className="t-sm muted">{t("Shown on your card instead of any location.")}</span></div>
           <div className="field"><label>{t("Face in the content")}</label><div className="optrow">{opt("face", "not_needed", "Not needed")}{opt("face", "optional", "Optional")}{opt("face", "required", "Required")}</div><span className="t-sm muted">{t("Creators state up front if their face is shown. You see it on every offer.")}</span></div></>)}
@@ -69,7 +69,7 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
           <div className="field"><label>{t("Minimum time in your vault")}</label><div className="optrow">{opt("minVault", "7d", "7 days")}{opt("minVault", "30d", "30 days")}{opt("minVault", "1y", "1 year")}{opt("minVault", "forever", "Forever")}</div><span className="t-sm muted">{t("Creators with a shorter access period cannot make an offer.")}</span></div>
           <div className="field"><label>{t("Keep the request open for")}</label><div className="optrow">{opt("openHours", 6, "6 hours")}{opt("openHours", 24, "24 hours")}{opt("openHours", 72, "3 days")}</div></div></>)}
 
-        {step === "budget" && (<><h2>What is it worth to you?</h2><p className="lead">{t("Creators see this amount. You only pay when you accept an offer.")}</p>
+        {step === "budget" && (<><h2>{t("What is it worth to you?")}</h2><p className="lead">{t("Creators see this amount. You only pay when you accept an offer.")}</p>
           <div className="bd">
             <div className="bd-main">
               <div className="bd-amt"><button type="button" onClick={() => set({ budget: Math.max(10, budget - 5) })} aria-label={t("Lower")}><Ico n="minus" /></button>
@@ -94,7 +94,7 @@ export default function Wizard({ initial, bands }: { initial: { category: Cat; a
             </div>
           </div></>)}
 
-        {step === "review" && (<><h2>Ready to post?</h2><p className="lead">{t("Nothing is charged now. You only pay when you accept an offer.")}</p>
+        {step === "review" && (<><h2>{t("Ready to post?")}</h2><p className="lead">{t("Nothing is charged now. You only pay when you accept an offer.")}</p>
           <div className="card" style={{ padding: "4px 20px" }}><div className="list">
             {[["Type", `${CAT_LABEL[w.category]} · ${amountLabel(w.category, w.amount)}`], ["Title", w.title], ["Looking for", `${w.who}, ${w.ageMax === 99 ? "any age 18+" : `${w.ageMin} to ${w.ageMax}`}`], ["Face", w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"], ["Deliver within", w.dueHours < 72 ? `${w.dueHours} hours` : `${w.dueHours / 24} days`], ["Vault at least", { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]], ["Budget", `${euros(budget * 100)} plus €${(budget * 0.1).toFixed(2)} fee`], ["Card", w.neutral ? "Neutral, number only" : "Mood photo, picked for you"]].map(([k, v]) => (
               <div key={k} className="lrow" style={{ gridTemplateColumns: "140px minmax(0,1fr)" }}><span className="muted">{k}</span><b>{v}</b></div>))}</div></div>

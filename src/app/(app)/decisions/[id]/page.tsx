@@ -27,7 +27,7 @@ export default async function DecisionPage({ params, searchParams }: { params: P
       <div><dt>{t("What it covers")}</dt><dd>{d.scope}</dd></div>
       <div><dt>{t("How it was decided")}</dt><dd>{d.automated ? "Automatically, based on the result of a check" : "By a person on our team"}</dd></div>
     </dl>
-    <h2 className="t-h3">Do you disagree?</h2>
+    <h2 className="t-h3">{t("Do you disagree?")}</h2>
     {appealed || sent ? <p className="muted">{t("Your appeal was received. A person who did not take the first decision reviews it and replies in your inbox.")}</p> : (
       <form className="dec-form" action={async (f) => {
         "use server";

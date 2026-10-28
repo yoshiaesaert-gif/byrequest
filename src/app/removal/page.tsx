@@ -17,7 +17,7 @@ export default async function Removal({ searchParams }: { searchParams: Promise<
     {sp.sent ? <p>{t("Thank you. A person reviews every request. Content is hidden while we look into it, and we reply through the contact you gave.")}</p> : (<>
       <p className="t-sm muted">{t("If you appear in content on ByRequest without your consent, or you want to withdraw consent, tell us here. You do not need an account.")}</p>
       {sp.e ? <p className="formerr">{t("Add a way to reach you and a short description.")}</p> : null}
-      <div className="field"><label htmlFor="c">How can we reach you?</label><input id="c" name="contact" className="input" placeholder={t("Email or phone")} required /></div>
+      <div className="field"><label htmlFor="c">{t("How can we reach you?")}</label><input id="c" name="contact" className="input" placeholder={t("Email or phone")} required /></div>
       <div className="field"><label htmlFor="r">{t("Which content, if you know")}</label><input id="r" name="reference" className="input" placeholder={t("A link, a creator username or a date")} /></div>
       <div className="field"><label htmlFor="d">{t("What happened")}</label><textarea id="d" name="description" className="input" rows={4} style={{ height: "auto", padding: 14 }} required /></div>
       <button className="btn btn-primary btn-lg">{t("Send request")}</button>

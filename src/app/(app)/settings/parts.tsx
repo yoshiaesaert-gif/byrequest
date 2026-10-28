@@ -32,7 +32,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
   const t = useT();
   const [vis, setVis] = useState(p?.visibility ?? "offer_only");
   const [pending, start] = useTransition();
-  const f = (name: keyof P, label: string, ph = "") => <div className="field"><label htmlFor={name}>{label}</label><input id={name} name={name} className="input" defaultValue={(p?.[name] as string) ?? ""} placeholder={ph} /></div>;
+  const f = (name: keyof P, label: string, ph = "") => <div className="field"><label htmlFor={name}>{t(label)}</label><input id={name} name={name} className="input" defaultValue={(p?.[name] as string) ?? ""} placeholder={ph && t(ph)} /></div>;
   return (<form className="upbox" style={{ paddingTop: 16 }} action={(fd) => start(async () => { fd.set("visibility", vis); const r = await saveProfile(fd); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>
     <div className="field"><label>{t("Who sees my profile")}</label><div className="seg2">
       <button type="button" className={vis === "offer_only" ? "on" : ""} onClick={() => setVis("offer_only")}><b>{t("Only with an offer")}</b><span className="t-sm muted">{t("Only buyers you make an offer to, while they choose.")}</span></button>

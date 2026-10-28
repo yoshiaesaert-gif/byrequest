@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/i18n/client";
 
@@ -9,7 +9,7 @@ const STEPS = [
   { k: "ask", title: "A buyer posts a request", text: "What, how long, which budget. The amount is on it from the start, so you know what you earn before you lift a finger." },
   { k: "anon", title: "You see the request, not the person", text: "You don't know who the buyer is. Not even whether it's a man or a woman, and that doesn't matter: it's about the job, not the person. You stay anonymous too." },
   { k: "offer", title: "Make an offer in one tap", text: "Face or not, how long it stays in their vault, when you deliver. The buyer picks one creator and pays right away. The money is secured before you start." },
-  { k: "cash", title: "Deliver and get paid", text: "Upload in the app. After the check and the 24 hour objection window, 80% goes to your account. No profile to keep up, no followers, no DMs. Easy extra money." },
+  { k: "cash", title: "Deliver and get paid", text: "Upload in the app. After the check and the 24 hour objection window, the money lands straight in your account. No profile to keep up, no followers, no DMs. Easy extra money." },
 ] as const;
 
 function Ico({ d }: { d: string }) {
@@ -47,9 +47,10 @@ function Stage({ k }: { k: (typeof STEPS)[number]["k"] }) {
   </div>);
 }
 
-export default function HowItWorks() {
+export default function HowItWorks({ hidden = false }: { hidden?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const [gone, setGone] = useState(hidden);
   const [i, setI] = useState(0);
   const close = useCallback(() => setOpen(false), []);
   useEffect(() => {
@@ -67,16 +68,19 @@ export default function HowItWorks() {
   const last = i === STEPS.length - 1;
 
   return (<>
-    <button type="button" className="hw-ribbon" onClick={() => { setI(0); setOpen(true); }}>
+    {!gone ? <div className="hw-wrap"><button type="button" className="hw-ribbon" onClick={() => { setI(0); setOpen(true); }}>
       <span className="hw-rb-txt"><span className="hw-rb-kick">{t("How it works")}</span><b>{t("One request. One price. Done.")}</b></span>
-      <span className="hw-flow" aria-hidden="true">{STEPS.map((x) => <span key={x.k} className="hw-node"><Ico d={ICONS[x.k]} /></span>)}<span className="hw-dot" /></span>
+      <span className="hw-flow" aria-hidden="true">{STEPS.map((x) => <span key={x.k} className="hw-node"><Ico d={ICONS[x.k]} /></span>)}<span className="hw-fill" /><span className="hw-dot" /></span>
       <span className="hw-play"><span className="hw-play-i"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11l9-5.5z" /></svg></span>{t("See it in 30 seconds")}</span>
     </button>
+      <button type="button" className="hw-hide" aria-label={t("I know how it works, hide this")} title={t("I know how it works, hide this")}
+        onClick={() => { document.cookie = "brq_hw=hide; path=/; max-age=31536000; samesite=lax"; setGone(true); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17" /></svg></button>
+    </div> : null}
     {open ? createPortal(
       <div className="hw-glass" role="dialog" aria-modal="true" aria-label={t("How it works")} onClick={close}>
         <div className="hw-modal" onClick={(e) => e.stopPropagation()}>
           <button type="button" className="hw-x" onClick={close} aria-label={t("Close")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
-          <div className="hw-stage" key={s.k}><Stage k={s.k} /></div>
+          <div className="hw-stage" key={s.k} style={{ "--tut": `url(/img/tut_${i + 1}.webp)` } as CSSProperties}><Stage k={s.k} /></div>
           <div className="hw-copy">
             <span className="hw-step num">{String(i + 1).padStart(2, "0")} <small>/ {String(STEPS.length).padStart(2, "0")}</small></span>
             <h2 key={s.title}>{t(s.title)}</h2>

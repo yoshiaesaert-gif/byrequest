@@ -1,3 +1,4 @@
+import { legalIn } from "@/legal/translations";
 import { getT } from "@/i18n/server";
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
@@ -10,7 +11,7 @@ import Steps from "./steps";
 import { BecomeCreator } from "../settings/parts";
 
 export default async function Onboarding({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const u = await requireUser();
   if (!u.isCreator) return (<div className="wrap"><div className="ob"><div className="card ob-card">
     <h1 className="t-h1">{t("Become a creator")}</h1><p className="muted">{t("Earn by making what buyers ask for. You choose every request yourself. Verify once and keep your profile private.")}</p>
@@ -41,7 +42,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       account={{ done: !!accountDone, terms, privacy }}
       identity={{ status: a.areas.identity, provider: idProvider?.label ?? null, env: idCheck?.env ?? null, reason: idCheck?.reason ?? null }}
       payout={{ status: a.areas.payout, provider: payProvider?.label ?? null, env: a.payout?.env ?? null, missing: a.payout?.missing ?? [], actionUrl: a.payout?.actionUrl ?? null, canReceive: a.payout?.canReceivePayouts ?? false, accountType: o.accountType, country: o.country, identityOk: a.areas.identity === "approved", stepUpFresh: fresh }}
-      agreement={agreementDoc ? { status: a.areas.agreement, id: agreementDoc.id, sha: agreementDoc.sha256, version: agreementDoc.version, title: agreementDoc.title, summary: agreementDoc.summary, draft: agreementDoc.status !== "approved" } : null}
+      agreement={agreementDoc ? { status: a.areas.agreement, id: agreementDoc.id, sha: agreementDoc.sha256, version: agreementDoc.version, title: legalIn(locale, "creator_agreement", agreementDoc.version)?.title ?? agreementDoc.title, summary: legalIn(locale, "creator_agreement", agreementDoc.version)?.summary ?? agreementDoc.summary, draft: agreementDoc.status !== "approved" } : null}
       overview={{ status: a.status, missing: a.missing, areas: a.areas, testOnly: [idCheck?.env, a.payout?.env].includes("test") }}
       countries={PAYOUT_COUNTRIES}
       fieldInfo={FIELDS}

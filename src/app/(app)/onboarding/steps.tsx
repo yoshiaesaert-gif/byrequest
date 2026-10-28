@@ -59,7 +59,7 @@ function Account({ p, next }: { p: Props; next: () => void }) {
     <div><span className="eyebrow">{t("Step A")}</span><h2>{t("Create your account")}</h2></div>
     <div className="checklist">
       <div className="row"><div><b>{t("Email")}</b><div className="t-sm muted">{t("Verified with a code when you signed in.")}</div></div><Status s="approved" /></div>
-      <div className="row"><div><b>{t("Username")}</b><div className="t-sm muted">{p.handle}. This is the only name others see.</div></div><Status s="approved" /></div>
+      <div className="row"><div><b>{t("Username")}</b><div className="t-sm muted">{p.handle}. {t("This is the only name others see.")}</div></div><Status s="approved" /></div>
       <div className="row"><div style={{ display: "flex", gap: 12, alignItems: "center" }}>{p.avatar}<div><b>{t("Avatar or photo")}</b><div className="t-sm muted">{t("An avatar, or a photo you may blur.")}</div></div></div><Link className="btn btn-secondary btn-sm" href="/avatar">{t("Edit")}</Link></div>
     </div>
     <label className="check"><input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} disabled={p.account.terms} /><span>{t("I agree to the")} <Link href="/legal/terms" target="_blank" style={{ fontWeight: 600 }}>{t("Terms of use")}</Link>.</span></label>
@@ -82,14 +82,14 @@ function Identity({ p, next }: { p: Props; next: () => void }) {
       <li><Ico n="check" c="sm" />{t("A quick live selfie, to confirm the document is yours")}</li>
       <li><Ico n="check" c="sm" />{t("Your legal name, date of birth and country come from the check itself. You do not type them twice.")}</li>
     </ul>
-    {s === "approved" ? <><p className="t-sm">{t("Your identity is verified")}{p.identity.env === "test" ? " in the test environment" : ""}.</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
+    {s === "approved" ? <><p className="t-sm">{p.identity.env === "test" ? t("Your identity is verified in the test environment.") : t("Your identity is verified.")}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
       : s === "pending" ? <><b>{t("Your verification is being reviewed.")}</b><p className="t-sm muted">{t("This can take from a few minutes to a day. You get a notification when it is done. You can leave this page.")}</p><button className="btn btn-secondary" onClick={() => location.reload()}>{t("Check again")}</button></>
       : !p.identity.provider ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Identity verification is not available yet. We will notify you.")}</span></div>
       : (<>
         {s === "rejected" || s === "expired" || s === "action_required" ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{s === "expired" ? "Your verification expired. Please verify again." : s === "action_required" ? "The provider needs another try, for example a clearer photo." : `Your verification was not approved${p.identity.reason ? `: ${p.identity.reason}` : ""}.`}</span></div> : null}
         <button className="btn btn-primary btn-lg" disabled={pending} onClick={() => start(async () => { const r = await startIdentity(); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? "Opening…" : s === "not_started" ? "Start verification" : "Verify again"}</button>
         <p className="t-xs muted">{t("You are sent to the verification provider and come back here afterwards.")}</p>
-        {s === "rejected" ? <div className="field"><label htmlFor="ap">Think this is a mistake?</label><textarea id="ap" className="input" rows={3} style={{ height: "auto", padding: 14 }} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={t("Tell support what happened. Do not include ID numbers.")} />
+        {s === "rejected" ? <div className="field"><label htmlFor="ap">{t("Think this is a mistake?")}</label><textarea id="ap" className="input" rows={3} style={{ height: "auto", padding: 14 }} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={t("Tell support what happened. Do not include ID numbers.")} />
           <button className="btn btn-secondary" disabled={pending} onClick={() => start(async () => { const r = await appeal("identity", msg); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); if (r.ok) setMsg(""); })}>{t("Ask for a review")}</button>
           <span className="t-xs muted">{t("Support can explain the decision and ask the provider to look again. Support cannot approve a check the provider declined.")}</span></div> : null}
       </>)}
@@ -119,7 +119,7 @@ function Payouts({ p, next }: { p: Props; next: () => void }) {
       : !editing ? (<>
         <b>{s === "pending" ? "The provider is reviewing your payout account." : "Action needed to enable payouts."}</b>
         {p.payout.missing.length ? <ul className="docsum">{p.payout.missing.map((m) => <li key={m}><Ico n="alert" c="sm" />{p.fieldInfo[m]?.label ?? m}</li>)}</ul> : null}
-        {p.payout.actionUrl ? <><a className="btn btn-primary btn-lg" href={p.payout.actionUrl}>{t("Open")} {p.payout.provider} to finish <Ico n="right" c="sm" /></a><p className="t-xs muted">This opens the payment provider in a new step. Complete it there; the status here updates by itself.</p></> : null}
+        {p.payout.actionUrl ? <><a className="btn btn-primary btn-lg" href={p.payout.actionUrl}>{t("Open {provider} to finish", { provider: p.payout.provider })} <Ico n="right" c="sm" /></a><p className="t-xs muted">{t("This opens the payment provider in a new step. Complete it there; the status here updates by itself.")}</p></> : null}
         <button className="btn btn-secondary" onClick={() => location.reload()}>{t("Check again")}</button>
       </>)
       : !p.payout.stepUpFresh ? (<div className="upbox">
@@ -133,7 +133,7 @@ function Payouts({ p, next }: { p: Props; next: () => void }) {
           <button type="button" className={type === "individual" ? "on" : ""} onClick={() => setType("individual")}><b>{t("Individual")}</b><span className="t-sm muted">{t("In your own name.")}</span></button>
           <button type="button" className={type === "business" ? "on" : ""} onClick={() => setType("business")}><b>{t("Business")}</b><span className="t-sm muted">{t("A company or sole trader.")}</span></button></div></div>
         <div className="field"><label htmlFor="ct">{t("Country of residence")}</label><select id="ct" className="select" value={country} onChange={(e) => setCountry(e.target.value)}>{p.countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
-        <div className="field"><label>How do you want to connect?</label><div className="seg2">
+        <div className="field"><label>{t("How do you want to connect?")}</label><div className="seg2">
           <button type="button" className={mode === "create" ? "on" : ""} onClick={() => setMode("create")}><b>{t("Add a payout account")}</b><span className="t-sm muted">{t("Enter the details the provider asks for.")}</span></button>
           <button type="button" className={mode === "link" ? "on" : ""} onClick={() => setMode("link")}><b>{t("Link an existing account")}</b><span className="t-sm muted">{t("If you already have one at")} {p.payout.provider}.</span></button></div></div>
         {mode === "create" ? fields.map((k) => (<div key={k} className="field"><label htmlFor={k}>{p.fieldInfo[k]?.label ?? k}</label><input id={k} className="input" autoComplete="off" value={vals[k] ?? ""} onChange={(e) => setVals((v) => ({ ...v, [k]: e.target.value }))} />{p.fieldInfo[k]?.help ? <span className="t-sm muted">{p.fieldInfo[k].help}</span> : null}</div>)) : null}
@@ -156,7 +156,7 @@ function Agreement({ p, next }: { p: Props; next: () => void }) {
     <ul className="docsum">{a.summary.map((x) => <li key={x}><Ico n="check" c="sm" />{x}</li>)}</ul>
     <Link href="/legal/creator_agreement" target="_blank" className="btn btn-secondary" style={{ alignSelf: "flex-start" }}>{t("Read the full agreement")}</Link>
     {a.status === "approved" ? <><p className="t-sm">{t("You accepted version")} {a.version}.</p><button className="btn btn-primary btn-lg" onClick={next}>{t("See your overview")}</button></> : (<>
-      <label className="check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>{t("I have read the creator agreement, version")} {a.version}, and I agree to it.</span></label>
+      <label className="check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>{t("I have read the creator agreement, version {v}, and I agree to it.", { v: a.version })}</span></label>
       <button className="btn btn-primary btn-lg" disabled={!ok || pending} onClick={() => start(async () => { const r = await acceptAgreement(a.id, a.sha); if (r.ok) next(); else toast(t(r.error), "err"); })}>{t("I agree")}</button></>)}
   </div>);
 }
@@ -166,7 +166,7 @@ function Overview({ p }: { p: Props }) {
   const active = p.overview.status === "active";
   const rows: [string, string][] = [["Email", p.overview.areas.email], ["Identity", p.overview.areas.identity], ["Payouts", p.overview.areas.payout], ["Creator agreement", p.overview.areas.agreement]];
   return (<div className="card ob-card">
-    {active ? <div className="ready"><span className="big"><Ico n="check" c="lg" /></span><h2>{t("You’re ready to earn.")}</h2><p className="muted">{t("Everything is approved")}{p.overview.testOnly ? " in the test environment" : ""}. Make offers, deliver and get paid.</p><Link href="/for-you" className="btn btn-primary btn-lg">{t("Browse requests")}</Link></div>
+    {active ? <div className="ready"><span className="big"><Ico n="check" c="lg" /></span><h2>{t("You’re ready to earn.")}</h2><p className="muted">{p.overview.testOnly ? t("Everything is approved in the test environment.") : t("Everything is approved.")} {t("Make offers, deliver and get paid.")}</p><Link href="/for-you" className="btn btn-primary btn-lg">{t("Browse requests")}</Link></div>
       : <div><span className="eyebrow">{t("Overview")}</span><h2>{p.overview.status === "pending_verification" ? "Your verification is being reviewed." : p.overview.status === "suspended" ? "Your creator account is suspended." : "Almost there"}</h2><p className="muted" style={{ marginTop: 6 }}>{t("You can prepare your profile already. Offers, uploads and payouts open when everything below is approved.")}</p></div>}
     <div className="checklist">{rows.map(([k, v]) => <div key={k} className="row"><b>{k}</b><Status s={v as Check} /></div>)}
       {p.overview.areas.restriction !== "none" ? <div className="row"><b>{t("Account")}</b><span className="status st-rejected">{p.overview.areas.restriction === "suspended" ? "Suspended" : "Restricted"}</span></div> : null}</div>

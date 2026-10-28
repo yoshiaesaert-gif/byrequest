@@ -39,6 +39,7 @@ const PROMISES = [
 const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout photo set", "Fit check, 5 photos"];
 
 async function BuyerHome({ userId, handle, welcome, board }: { userId: string; handle: string; welcome: boolean; board?: string }) {
+  const hideHow = (await cookies()).get("brq_hw")?.value === "hide";
   const cat = ["video", "photos", "voice", "custom"].includes(board ?? "") ? board : undefined;
   const [mine, myDeals, pulse, rawTop, rawBoard, rawEnding, creators, stats] = await Promise.all([
     q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", category: cat, limit: 20 }),
@@ -95,7 +96,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
         {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{L(live.r.title)}</b> · {t(live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review")}</span><span className="go">{t("Open")} <I n="right" c="sm" /></span></Link> : null}
       </div>) : null}
 
-    <HowItWorks />
+    <HowItWorks hidden={hideHow} />
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
@@ -154,6 +155,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
 }
 
 async function CreatorHome({ userId, handle }: { userId: string; handle: string }) {
+  const hideHow = (await cookies()).get("brq_hw")?.value === "hide";
   const [a, earn, fit, albums, offers] = await Promise.all([access(userId), q.creatorEarnings(userId), q.feed({ viewerId: userId, limit: 6 }), q.albumsForCreator(userId), q.myOffers(userId)]);
   const pts = earn.weeks.length ? earn.weeks.map((w) => w.c) : [0];
   const mx = Math.max(...pts, 1), W = 600, H = 80;
@@ -183,7 +185,7 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
       </div>
     </div>
 
-    <HowItWorks />
+    <HowItWorks hidden={hideHow} />
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
       <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (
