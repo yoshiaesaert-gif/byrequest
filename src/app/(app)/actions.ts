@@ -114,6 +114,10 @@ export async function rate(dealId: string, stars: number): Promise<Result> {
   return guard(async () => { const u = await requireUser(); await deals.rate(u.id, dealId, stars); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for rating." }; });
 }
 
+export async function rateBuyer(dealId: string, stars: number): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await deals.rateBuyer(u.id, dealId, stars); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for rating." }; });
+}
+
 export async function requestAlbum(offerId: string, kind: "looks" | "body" | "intimate"): Promise<Result> {
   return guard(async () => { const u = await requireUser(); await albums.requestAlbum(u.id, offerId, kind); revalidatePath("/c", "layout"); return { ok: true, msg: "Request sent. They decide whether to send it." }; });
 }

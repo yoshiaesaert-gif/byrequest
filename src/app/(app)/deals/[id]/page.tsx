@@ -34,7 +34,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
       <Room
         me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
         other={{ id: other.id, handle: other.handle, publicKey: other.publicKey }}
-        deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, category: x.r.category, amount: x.r.amount }}
+        deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount }}
         delivery={lastDelivery ? { review: lastDelivery.review, onlyCreator: lastDelivery.onlyCreator } : null}
         canUpload={a?.caps.upload ?? false} missing={a?.missing ?? []} payoutHeld={hold?.entry === "payout_on_hold"}
         participants={parts.map((p) => ({ id: p.id, label: p.label, identity: p.identity }))}

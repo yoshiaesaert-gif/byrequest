@@ -5,9 +5,10 @@ import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import { request } from "@/server/queries";
 import { access } from "@/server/onboarding";
-import { BigNum, Chips, Cover, I, leftLabel } from "@/components/ui";
+import { BigNum, BuyerLine, Chips, Cover, I, leftLabel } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
+import { RemoveRequest } from "../../admin/parts";
 import { getT } from "@/i18n/server";
 import { localize } from "@/server/translate";
 import { LANG_NAME, isLocale } from "@/i18n/config";
@@ -28,6 +29,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
     db.query.offers.findFirst({ where: and(eq(schema.offers.requestId, id), eq(schema.offers.creatorId, u.id)) }),
     db.select({ id: schema.offers.id }).from(schema.offers).where(eq(schema.offers.requestId, id)),
   ]);
+  const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
   const profile = u.isCreator ? await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }) : null;
   const m = split(r.dealCents);
   const open = r.status === "open" && r.closesAt > new Date();
@@ -45,13 +47,14 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
             <div className="rd-bottom">
               <div className="rd-title">
                 <span className="rd-cat"><I n={CAT_ICON[r.category]} c="sm" />{t(CAT_LABEL[r.category])} · {open ? leftLabel(r.closesAt, t) : t("closed")}</span>
-                {loc.translated && isLocale(raw.lang) ? <span className="rd-tr">{showOrig ? t("Original in {lang}", { lang: LANG_NAME[locale][raw.lang] }) : t("Automatically translated from {lang}", { lang: LANG_NAME[locale][raw.lang] })} · <Link href={showOrig ? `/requests/${id}` : `/requests/${id}?orig=1`}>{showOrig ? t("Show translation") : t("Show original")}</Link></span> : null}
                 <h1>{r.title}</h1>
               </div>
               <BigNum r={card} t={t} />
             </div>
           </div>
-          {r.details ? <blockquote className="rd-note"><span>{t("From the buyer")}</span>{r.details}</blockquote> : null}
+          {r.details ? <blockquote className="rd-note"><span className="rd-note-h">{t("From the buyer")}<BuyerLine b={r.buyer} t={t} /></span>{r.details}</blockquote> : <p className="rd-buyer">{t("Buyer")} <BuyerLine b={r.buyer} t={t} /></p>}
+          {loc.translated && isLocale(raw.lang) ? <p className="rd-tr">{showOrig ? t("Original text in {lang}", { lang: LANG_NAME[locale][raw.lang] }) : t("Translated from {lang}", { lang: LANG_NAME[locale][raw.lang] })} · <Link href={showOrig ? `/requests/${id}` : `/requests/${id}?orig=1`}>{showOrig ? t("show translation") : t("show original")}</Link></p> : null}
+          {staff && open ? <div className="rd-staff"><span className="t-sm muted">{t("Team")}</span><RemoveRequest id={r.id} /></div> : null}
           {r.house ? <p className="by-brq">{t("Posted by the ByRequest team, with a real budget.")} <Link href="/legal/team-requests">{t("How this works")}</Link></p> : null}
           <dl className="rd-spec">
             <div><dt>{t("Looking for")}</dt><dd>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</dd></div>

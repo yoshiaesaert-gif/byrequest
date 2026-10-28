@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
 import * as q from "@/server/queries";
 import { access } from "@/server/onboarding";
-import { Av, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
+import { Av, BuyerLine, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
 import HeroLive from "@/components/hero-live";
 import { getT } from "@/i18n/server";
 import { localize } from "@/server/translate";
@@ -103,7 +103,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
             <div className="h-feat-in">
               <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
               <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
-              <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span>{feat.translated ? <span className="tr-note" style={{ color: "rgba(255,255,255,.7)" }}>{t("Automatically translated")}</span> : null}<h3>{feat.title}</h3>{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
+              <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span><h3>{feat.title}</h3><BuyerLine b={feat.buyer} t={t} light />{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
                 <div className="h-earn"><span>{t("Earn")}</span><b className="num">{euros(Math.round(feat.dealCents * CREATOR_SHARE))}</b></div></div>
             </div>
           </Link>
@@ -181,7 +181,7 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
       <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (
-        <Link key={r.id} href={`/requests/${r.id}`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{r.title}</b>{r.translated ? <span className="tr-note"> · {t("Automatically translated")}</span> : null}<div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {leftLabel(r.closesAt, t)}</div></div>
+        <Link key={r.id} href={`/requests/${r.id}`} className="lrow"><div className="media"><Cover cover={r.cover} /></div><div style={{ minWidth: 0 }}><b>{r.title}</b><div className="t-sm muted">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)} · {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })} · {leftLabel(r.closesAt, t)}</div></div>
           <div className="r"><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b><span className="t-xs muted">{t("you earn")}</span></div></Link>))}</div></div>
     </section>
   </div>);

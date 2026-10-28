@@ -24,10 +24,23 @@ async function main() {
     // Demo creators do not offer on team requests: only real creators should.
     removedOffers += (await db.delete(S.offers).where(and(inArray(S.offers.creatorId, ids), eq(S.offers.status, "pending"), sql`${S.offers.requestId} in (select r.id from requests r join users u on u.id = r.buyer_id where u.house)`)).returning({ id: S.offers.id })).length;
   }
+  // In the demo, keyboard mash titles (six letters or more and not one vowel) are taken offline.
+  let junk = 0;
+  if (demoMode) {
+    const bad = await db.select({ id: S.requests.id }).from(S.requests).where(and(eq(S.requests.status, "open"), sql`${S.requests.title} !~* '[aeiouy]' and length(regexp_replace(${S.requests.title}, '[^a-z]', '', 'gi')) >= 6`));
+    if (bad.length) {
+      const rid = bad.map((r) => r.id);
+      await db.update(S.offers).set({ status: "declined" }).where(and(inArray(S.offers.requestId, rid), eq(S.offers.status, "pending")));
+      junk = (await db.update(S.requests).set({ status: "closed" }).where(inArray(S.requests.id, rid)).returning({ id: S.requests.id })).length;
+    }
+  }
   await db.execute(sql`update users u set rating_sum = coalesce(x.s, 0), rating_count = coalesce(x.n, 0)
     from (select c.id, sum(d.buyer_rating)::int s, count(d.buyer_rating)::int n from users c left join deals d on d.creator_id = c.id group by c.id) x
     where x.id = u.id and (u.rating_sum <> coalesce(x.s, 0) or u.rating_count <> coalesce(x.n, 0))`);
-  console.log(`Clean demo: ${closed} old demo requests closed, ${removedOffers} demo offers removed, ratings recomputed from real deals.`);
+  await db.execute(sql`update users u set buyer_rating_sum = coalesce(x.s, 0), buyer_rating_count = coalesce(x.n, 0)
+    from (select b.id, sum(d.creator_rating)::int s, count(d.creator_rating)::int n from users b left join deals d on d.buyer_id = b.id group by b.id) x
+    where x.id = u.id and (u.buyer_rating_sum <> coalesce(x.s, 0) or u.buyer_rating_count <> coalesce(x.n, 0))`);
+  console.log(`Clean demo: ${closed} old demo requests closed, ${junk} junk requests offline, ${removedOffers} demo offers removed, ratings recomputed from real deals.`);
   process.exit(0);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

@@ -81,6 +81,21 @@ export async function setBan(staffId: string, userId: string, ban: boolean, reas
   await issueDecision(db, { userId, action: ban ? "account_blocked" : "account_unblocked", ground: "terms", facts: ban ? reason : "After review the account was reopened.", scope: ban ? "Whole account. You cannot sign in, post requests, make offers or open your vault." : "Whole account.", decidedBy: "staff" });
 }
 
+/* Takes a request off the market: it closes, pending offers are declined and the poster gets a
+   statement of reasons they can appeal. Deals already running are not touched. */
+export async function removeRequest(staffId: string, requestId: string, reason: string) {
+  if (reason.trim().length < 5) throw new RuleError("Give a reason.");
+  const r = await db.query.requests.findFirst({ where: eq(S.requests.id, requestId) });
+  if (!r) throw new RuleError("Request not found.");
+  if (r.status !== "open") throw new RuleError("This request is no longer open.");
+  await db.transaction(async (tx) => {
+    await tx.update(S.requests).set({ status: "closed" }).where(eq(S.requests.id, requestId));
+    await tx.update(S.offers).set({ status: "declined" }).where(and(eq(S.offers.requestId, requestId), eq(S.offers.status, "pending")));
+    await log(tx, `staff:${staffId}`, "staff.request_removed", r.buyerId, { request: requestId, reason: reason.slice(0, 300) });
+    await issueDecision(tx, { userId: r.buyerId, action: "request_removed", ground: "terms", facts: reason, scope: `Your request "${r.title.slice(0, 80)}" was taken offline. Your account is not affected.`, decidedBy: "staff" });
+  });
+}
+
 /* ---------- money ---------- */
 export async function moneyView() {
   const d30 = days(30);

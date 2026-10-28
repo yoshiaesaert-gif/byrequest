@@ -4,7 +4,7 @@ import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
-import { BlockAccount, SupportOrgForm } from "../../parts";
+import { BlockAccount, RemoveRequest, SupportOrgForm } from "../../parts";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,7 +37,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
           {!x.deals.length ? <p className="muted t-sm">No deals.</p> : null}</div>
         <h2 className="bo-sh">Requests</h2>
         <div className="bo-list">{x.reqs.map((r) => (
-          <div key={r.id} className="bo-ev"><span><b>{r.title}</b><small>{r.status} · {euros(r.dealCents)}</small></span><time>{when(r.createdAt)}</time></div>))}
+          <div key={r.id} className="bo-ev"><span><b>{r.title}</b><small>{r.status} · {euros(r.dealCents)} · {when(r.createdAt)}</small></span>{r.status === "open" ? <RemoveRequest id={r.id} /> : null}</div>))}
           {!x.reqs.length ? <p className="muted t-sm">No requests.</p> : null}</div>
       </section>
       <section>

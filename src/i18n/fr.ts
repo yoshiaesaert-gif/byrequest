@@ -1,5 +1,13 @@
 /* FR translations of the UI, written by hand. Keys are the English strings. */
 const fr: Record<string, string> = {
+  "Buyer": "Acheteur",
+  "1 deal": "1 deal",
+  "New buyer": "Nouvel acheteur",
+  "Rated by creators": "Noté par les créateurs",
+  "Translated from {lang}": "Traduit du {lang}",
+  "Original text in {lang}": "Texte original en {lang}",
+  "show original": "voir l’original",
+  "show translation": "voir la traduction",
   "Height": "Taille",
   "Build": "Silhouette",
   "Sport": "Sport",

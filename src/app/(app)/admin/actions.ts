@@ -26,6 +26,7 @@ export const answer = async (appealId: string, text: string) => run((s) => A.ans
 export const reveal = async (userId: string, purpose: string) => run((s) => A.revealIdentity(s, userId, purpose), "admin");
 export const removal = async (id: string, status: "content_hidden" | "resolved" | "rejected", deliveryId?: string) => run(async (s) => { if (deliveryId) await hideDelivery(deliveryId, `staff:${s}`); return A.setRemoval(s, id, status); });
 export const block = async (userId: string, ban: boolean, reason: string) => run((s) => B.setBan(s, userId, ban, reason), "admin");
+export const dropRequest = async (id: string, reason: string) => run((s) => B.removeRequest(s, id, reason));
 export const staffRole = async (who: string, role: "none" | "support" | "admin") => run((s) => B.setStaffRole(s, who, role), "admin");
 export const handleR = async (id: string, status: "reviewing" | "actioned" | "passed_to_police" | "rejected", note: string) => run((s) => Rp.handleReport(s, id, status, note));
 export const supportOrg = async (userId: string, org: string | null) => run((s) => Rp.setSupportOrg(s, userId, org), "admin");

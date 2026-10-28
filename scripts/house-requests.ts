@@ -7,7 +7,11 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema as S } from "../src/db";
+import { createHash } from "node:crypto";
 import { chooseFor } from "../src/domain/covers";
+import { TEXTS } from "./house-texts";
+
+const trKey = (to: string, text: string) => createHash("sha256").update(`${to}|${text}`).digest("hex");
 
 const ctx: Record<string, unknown> = { window: {}, Math, JSON, Object, Array, String, Number };
 vm.createContext(ctx);
@@ -57,7 +61,17 @@ async function main() {
   const open = await db.select({ cover: S.requests.cover }).from(S.requests).where(eq(S.requests.status, "open"));
   const usage: Record<string, number> = {}; const recent: string[] = [];
   for (const o of open) if (o.cover) usage[o.cover] = (usage[o.cover] ?? 0) + 1;
-  for (const [i, [handle, country, lang, cat, amount, eur, who, ageMin, ageMax, face, vault, dueHours, title, details]] of LIST.entries()) {
+  let rewritten = 0;
+  for (const [i, [handle, country, lang, cat, amount, eur, who, ageMin, ageMax, face, vault, dueHours, ...orig]] of LIST.entries()) {
+    const tx = TEXTS[handle];
+    const [title, details] = tx ? tx[lang] : orig;
+    // Hand translations go straight into the translation cache, so every language reads natively.
+    if (tx) for (const to of ["nl", "en", "fr"] as const) {
+      if (to === lang) continue;
+      for (const [k, src] of [[0, title], [1, details]] as const)
+        await db.insert(S.translations).values({ key: trKey(to, src), source: lang, target: to, text: tx[to][k], provider: "manual" })
+          .onConflictDoUpdate({ target: S.translations.key, set: { text: tx[to][k], provider: "manual" } });
+    }
     let u = await db.query.users.findFirst({ where: eq(S.users.handle, handle) });
     if (u && !u.house) continue;                       // never take over a real person's username
     if (!u) {
@@ -69,7 +83,10 @@ async function main() {
       people++;
     }
     const has = await db.query.requests.findFirst({ where: and(eq(S.requests.buyerId, u.id), inArray(S.requests.status, ["open", "matched"])) });
-    if (has) continue;
+    if (has) {
+      if (has.status === "open" && (has.title !== title || has.details !== details)) { await db.update(S.requests).set({ title, details }).where(eq(S.requests.id, has.id)); rewritten++; }
+      continue;
+    }
     const cover = chooseFor(cat, title, usage, recent.slice(-3));
     if (cover) { usage[cover] = (usage[cover] ?? 0) + 1; recent.push(cover); }
     const created = new Date(Date.now() - (i * 47 + 13) * 60_000);       // spread over the last day
@@ -79,7 +96,7 @@ async function main() {
     });
     posted++;
   }
-  console.log(`House requests: ${people} team profiles added, ${posted} requests posted.`);
+  console.log(`House requests: ${people} team profiles added, ${posted} requests posted, ${rewritten} rewritten.`);
   process.exit(0);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

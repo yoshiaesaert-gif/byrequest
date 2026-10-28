@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { sendMessage, releaseNow, object, rate } from "../../actions";
+import { sendMessage, releaseNow, object, rate, rateBuyer } from "../../actions";
 import { toast } from "@/components/chrome";
 import { myKeys, seal, open } from "@/components/e2e";
 import { when } from "@/components/ui";
@@ -12,7 +12,7 @@ type Msg = { id: string; kind: "e2e" | "system"; senderId: string | null; nonce:
 type Props = {
   me: { id: string; handle: string; role: "buyer" | "creator" };
   other: { id: string; handle: string; publicKey: string | null };
-  deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; category: string; amount: number };
+  deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; ratedBuyer: boolean; category: string; amount: number };
   delivery: { review: string; onlyCreator: boolean } | null;
   canUpload: boolean; missing: string[]; payoutHeld: boolean;
   participants: { id: string; label: string; identity: string }[];
@@ -81,7 +81,7 @@ export default function Room(p: Props) {
     else if (s === "reviewing") next = { t: p.delivery?.review === "blocked_participants" ? tr("Waiting for participants") : tr("Being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Everyone else who appears must verify and consent through their link first.") : tr("A reviewer checks every delivery before it is made available.") };
     else if (s === "delivered") next = { t: tr("In the buyer's vault"), d: tr("The buyer can object until {time}. Then {amount} is released to you.", { time: when(p.deal.objectUntil!), amount: eur(p.deal.creatorCents) }) };
     else if (s === "disputed") next = { t: tr("The buyer reported a problem"), d: tr("A person reviews the file against the accepted offer. You are paid if it matches.") };
-    else if (s === "released") next = p.payoutHeld ? { t: tr("Action needed to enable payouts"), d: tr("{amount} is waiting until your payout setup is approved.", { amount: eur(p.deal.creatorCents) }), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Open payout setup")}</Link> } : { t: tr("Paid"), d: tr("{amount} was released to your payout account.", { amount: eur(p.deal.creatorCents) }) };
+    else if (s === "released") next = p.payoutHeld ? { t: tr("Action needed to enable payouts"), d: tr("{amount} is waiting until your payout setup is approved.", { amount: eur(p.deal.creatorCents) }), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Open payout setup")}</Link> } : { t: tr("Paid"), d: tr("{amount} was released to your payout account.", { amount: eur(p.deal.creatorCents) }), acts: !p.deal.ratedBuyer ? <RateButtons dealId={p.deal.id} other={p.other.handle} buyer /> : undefined };
     else next = { t: tr("Refunded to the buyer"), d: tr("This deal ended without payment.") };
   }
 
@@ -107,10 +107,10 @@ export default function Room(p: Props) {
   </div>);
 }
 
-function RateButtons({ dealId, other }: { dealId: string; other: string }) {
+function RateButtons({ dealId, other, buyer }: { dealId: string; other: string; buyer?: boolean }) {
   const [pending, start] = useTransition();
   const tr = useT();
-  return <div className="optrow" aria-label={tr("Rate {name}", { name: other })}>{[1, 2, 3, 4, 5].map((n) => <button key={n} className="chip" disabled={pending} onClick={() => start(async () => { const r = await rate(dealId, n); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{"★".repeat(n)}</button>)}</div>;
+  return <div className="optrow" aria-label={tr("Rate {name}", { name: other })}>{[1, 2, 3, 4, 5].map((n) => <button key={n} className="chip" disabled={pending} onClick={() => start(async () => { const r = await (buyer ? rateBuyer : rate)(dealId, n); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{"★".repeat(n)}</button>)}</div>;
 }
 
 function ObjectSheet({ dealId, onClose }: { dealId: string; onClose: () => void }) {

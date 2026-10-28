@@ -115,11 +115,13 @@ const REVIEWS: [number, Lang, string][] = [
   [5, "nl", "Topper. Doet wat je vraagt, met een glimlach"],
 ];
 
+const RENAMED: [string, string][] = [["Morning routine, just woke up", "Hotel room, robe slipping"], ["Rustige avondvideo", "Avond bij kaarslicht"], ["Koffie in bed, geen haast", "Onder de lakens, geen haast"], ["Réveil tranquille", "Après minuit, chemise ouverte"], ["Outfit check, 5 foto's", "Welk setje, 5 foto's"], ["Luie zondag fotoset", "Zondag in alleen een hemd"], ["Fit check for a date", "What's under the dress"], ["Good morning voice note", "Whisper what you'd do"], ["Read me a short story", "Read me something naughty"], ["Iemand die vertelt over zijn dag", "Vertel wat je aanhebt"], ["Cook for me and talk to me", "Cook for me, apron only"], ["Iets grappigs voor een rotdag", "Iets plagerigs voor een rotdag"]];
+
 const TITLES: Record<string, [Lang, string, number][]> = {
-  video: [["nl", "Douche na de training", 10], ["en", "Morning routine, just woke up", 5], ["fr", "Séance de sport à la maison", 8], ["nl", "Rustige avondvideo", 6], ["en", "Gym session, phone on tripod", 10], ["nl", "Koffie in bed, geen haast", 5], ["en", "Slow shower, warm light", 12], ["fr", "Réveil tranquille", 6]],
-  photos: [["nl", "Outfit check, 5 foto's", 5], ["en", "Post workout photo set", 6], ["fr", "Tenue du soir, 8 photos", 8], ["nl", "Luie zondag fotoset", 8], ["en", "Mirror selfies after the gym", 6], ["en", "Fit check for a date", 5]],
-  voice: [["nl", "Slaapwel berichtje met mijn naam", 2], ["en", "Good morning voice note", 2], ["fr", "Message vocal pour m'endormir", 3], ["en", "Read me a short story", 5], ["nl", "Iemand die vertelt over zijn dag", 4]],
-  custom: [["en", "Birthday message, your way", 5], ["nl", "Verras me met je eigen idee", 6], ["fr", "Petite vidéo rien que pour moi", 5], ["en", "Cook for me and talk to me", 6], ["nl", "Iets grappigs voor een rotdag", 3]],
+  video: [["nl", "Douche na de training", 10], ["en", "Hotel room, robe slipping", 5], ["fr", "Séance de sport à la maison", 8], ["nl", "Avond bij kaarslicht", 6], ["en", "Gym session, phone on tripod", 10], ["nl", "Onder de lakens, geen haast", 5], ["en", "Slow shower, warm light", 12], ["fr", "Après minuit, chemise ouverte", 6]],
+  photos: [["nl", "Welk setje, 5 foto's", 5], ["en", "Post workout photo set", 6], ["fr", "Tenue du soir, 8 photos", 8], ["nl", "Zondag in alleen een hemd", 8], ["en", "Mirror selfies after the gym", 6], ["en", "What's under the dress", 5]],
+  voice: [["nl", "Slaapwel berichtje met mijn naam", 2], ["en", "Whisper what you'd do", 2], ["fr", "Message vocal pour m'endormir", 3], ["en", "Read me something naughty", 5], ["nl", "Vertel wat je aanhebt", 4]],
+  custom: [["en", "Birthday message, your way", 5], ["nl", "Verras me met je eigen idee", 6], ["fr", "Petite vidéo rien que pour moi", 5], ["en", "Cook for me, apron only", 6], ["nl", "Iets plagerigs voor een rotdag", 3]],
 };
 
 const NOTES: Record<Lang, string[]> = {
@@ -175,6 +177,9 @@ async function main() {
     }
   }
 
+  // Older demo deals keep up with renamed titles.
+  for (const [from, to] of RENAMED) await db.update(S.requests).set({ title: to }).where(eq(S.requests.title, from));
+
   // 3. Offers on the open requests from creators who fit.
   const open = await db.select().from(S.requests).where(and(eq(S.requests.status, "open"), sql`${S.requests.closesAt} > now()`, sql`${S.requests.buyerId} in (select id from users where house)`));
   let offers = 0;
@@ -195,7 +200,13 @@ async function main() {
     }
   }
 
+  // The creators rate the buyers back, stars only. Mostly 5, now and then a 4 or a 3.
+  await db.execute(sql`update deals set creator_rating = case when ('x' || substr(md5(id::text), 1, 2))::bit(8)::int < 40 then 4 when ('x' || substr(md5(id::text), 1, 2))::bit(8)::int < 48 then 3 else 5 end
+    where payment_ref like 'demo_rev_%' and creator_rating is null`);
   // Ratings and deal counts follow the deals.
+  await db.execute(sql`update users u set buyer_rating_sum = coalesce(x.s, 0), buyer_rating_count = coalesce(x.n, 0)
+    from (select b.id, sum(d.creator_rating)::int s, count(d.creator_rating)::int n from users b left join deals d on d.buyer_id = b.id group by b.id) x
+    where x.id = u.id and (u.buyer_rating_sum <> coalesce(x.s, 0) or u.buyer_rating_count <> coalesce(x.n, 0))`);
   await db.execute(sql`update users u set rating_sum = coalesce(x.s, 0), rating_count = coalesce(x.n, 0)
     from (select c.id, sum(d.buyer_rating)::int s, count(d.buyer_rating)::int n from users c left join deals d on d.creator_id = c.id group by c.id) x where x.id = u.id`);
   console.log(`Demo life: ${hidden.length} creators without a 3D avatar hidden, ${added} reviewed deals added, ${offers} offers added.`);

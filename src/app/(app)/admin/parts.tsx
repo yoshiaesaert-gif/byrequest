@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -57,6 +57,13 @@ export function BlockAccount({ id, blocked }: { id: string; blocked: boolean }) 
   return <div className="bo-inline"><input className="input" placeholder="Reason (logged, no sensitive data)" value={reason} onChange={(e) => setReason(e.target.value)} />
     <button className="btn btn-secondary btn-sm" disabled={p || reason.trim().length < 5} onClick={() => start(async () => say(await block(id, true, reason), "Account blocked and signed out"))}>Block account</button></div>;
 }
+export function RemoveRequest({ id }: { id: string }) {
+  const [reason, setReason] = useState(""); const [p, start] = useTransition(); const [done, setDone] = useState(false);
+  if (done) return <span className="t-sm muted">Removed</span>;
+  return <div className="bo-inline"><input className="input" placeholder="Reason, sent to the poster" value={reason} onChange={(e) => setReason(e.target.value)} />
+    <button className="btn btn-secondary btn-sm" disabled={p || reason.trim().length < 5} onClick={() => start(async () => { const r = await dropRequest(id, reason); say(r, "Request taken offline"); if (r.ok) setDone(true); })}>Take offline</button></div>;
+}
+
 export function TeamAdd() {
   const [who, setWho] = useState(""); const [role, setRole] = useState<"support" | "admin">("support"); const [p, start] = useTransition();
   return <div className="bo-inline"><input className="input" placeholder="Username or email of an existing account" value={who} onChange={(e) => setWho(e.target.value)} />

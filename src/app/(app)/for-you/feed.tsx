@@ -6,8 +6,9 @@ import { toggleSave } from "../actions";
 import { toast } from "@/components/chrome";
 import { CAT_LABEL, CREATOR_SHARE, amountLabel, euros, type Category } from "@/domain/rules";
 import { useT } from "@/i18n/client";
+import { BuyerLine, type BuyerStat } from "@/components/ui";
 
-type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; saved: boolean; house?: boolean; translated?: boolean };
+type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; saved: boolean; house?: boolean; translated?: boolean; buyer?: BuyerStat };
 const VAULT: Record<string, string> = { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
@@ -33,8 +34,8 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
               {r.cover ? <><img className="cimg" src={`/img/${r.cover}.webp`} alt="" /><span className="cscrim" />{frost ? <span className="frost" aria-hidden="true" /> : null}</> : <span className="neutralbg" />}
               <div className="top"><span className={"fpill" + ((new Date(r.closesAt).getTime() - now) / 3600_000 <= 6 ? " hot" : "")}><Ico n="clock" />{left(r.closesAt, now, t)}</span></div>
               <div className="mid">
-                <div className="fhead"><span className="eyb">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}</span>{r.translated ? <div className="tr-note" style={{ color: "rgba(255,255,255,.7)" }}>{t("Automatically translated")}</div> : null}<div className="t">{r.title}</div>
-                  <div className="fmeta"><span>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</span><span>{t(r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required")}</span><span>{t("Vault")} {t(VAULT[r.minVault])}</span></div>{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>{t("by ByRequest")}</div> : null}</div>
+                <div className="fhead"><span className="eyb">{t(CAT_LABEL[r.category])} · {amountLabel(r.category, r.amount, t)}</span><div className="t">{r.title}</div>
+                  <div className="fmeta"><span>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</span><span>{t(r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required")}</span><span>{t("Vault")} {t(VAULT[r.minVault])}</span></div><BuyerLine b={r.buyer} t={t} light />{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>{t("by ByRequest")}</div> : null}</div>
                 <div className="fdeal"><div className="fearn"><span className="lbl">{t("You earn")}</span><b className="num">{euros(Math.round(r.dealCents * CREATOR_SHARE))}</b></div>
                   <Link className="btn btn-white fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}>{t("Make an offer")}<Ico n="right" c="sm" /></Link></div>
               </div>

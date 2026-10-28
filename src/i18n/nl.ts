@@ -1,5 +1,13 @@
 /* NL translations of the UI, written by hand. Keys are the English strings. */
 const nl: Record<string, string> = {
+  "Buyer": "Koper",
+  "1 deal": "1 deal",
+  "New buyer": "Nieuwe koper",
+  "Rated by creators": "Beoordeeld door creators",
+  "Translated from {lang}": "Vertaald uit het {lang}",
+  "Original text in {lang}": "Originele tekst in het {lang}",
+  "show original": "toon origineel",
+  "show translation": "toon vertaling",
   "Height": "Lengte",
   "Build": "Bouw",
   "Sport": "Sport",

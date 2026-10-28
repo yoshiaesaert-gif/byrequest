@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   prefs: jsonb("prefs").$type<Prefs>().notNull().default({ frost: true, discreetPush: true, neutralTab: false }),
   ratingSum: integer("rating_sum").notNull().default(0),
   ratingCount: integer("rating_count").notNull().default(0),
+  buyerRatingSum: integer("buyer_rating_sum").notNull().default(0),   // stars this person got as a buyer
+  buyerRatingCount: integer("buyer_rating_count").notNull().default(0),
   country: text("country").notNull().default("BE"),                 // for VAT and tax reporting, ISO 3166 alpha 2
   ageVerifiedAt: timestamp("age_verified_at", { withTimezone: true }), // buyer age check passed at the provider
   sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
@@ -134,7 +136,8 @@ export const deals = pgTable("deals", {
   objectUntil: timestamp("object_until", { withTimezone: true }),
   settledAt: timestamp("settled_at", { withTimezone: true }),
   buyerRating: integer("buyer_rating"),
-  reviewText: text("review_text"),                    // optional words with the rating, written by the buyer
+  reviewText: text("review_text"),
+  creatorRating: integer("creator_rating"),          // the creator rates the buyer, stars only                    // optional words with the rating, written by the buyer
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("deals_due").on(t.status, t.objectUntil)]);
 

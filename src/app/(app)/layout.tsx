@@ -10,6 +10,7 @@ import { MenuButton, HideButton, Live } from "@/components/chrome";
 import NavLinks from "@/components/navlinks";
 import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
+import LangSwitch from "@/components/lang-switch";
 import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav className="mainnav" aria-label="Main"><NavLinks items={nav} /></nav>
         <form className="navsearch" action="/for-you"><I n="search" c="sm" /><input name="q" placeholder={t("Search requests")} aria-label={t("Search requests")} /></form>
         <div className="navright">
+          <LangSwitch className="navlang" />
           {buy ? <Link href="/post" className="btn btn-primary btn-sm"><I n="plus" c="sm" />{t("Post a request")}</Link> : <span className="mode-pill">{t("Creating")}</span>}
           {inboxBtn}
           <MenuButton handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />

@@ -191,6 +191,17 @@ export async function rate(buyerId: string, dealId: string, stars: number) {
   });
 }
 
+/* The other direction: the creator rates the buyer, stars only, once per released deal. */
+export async function rateBuyer(creatorId: string, dealId: string, stars: number) {
+  const d = await db.query.deals.findFirst({ where: eq(deals.id, dealId) });
+  if (!d || d.creatorId !== creatorId || d.status !== "released" || d.creatorRating) throw new RuleError("You cannot rate this deal.");
+  const s = Math.max(1, Math.min(5, Math.round(stars)));
+  await db.transaction(async (tx) => {
+    await tx.update(deals).set({ creatorRating: s }).where(eq(deals.id, dealId));
+    await tx.update(users).set({ buyerRatingSum: sql`${users.buyerRatingSum} + ${s}`, buyerRatingCount: sql`${users.buyerRatingCount} + 1` }).where(eq(users.id, d.buyerId));
+  });
+}
+
 /* ---------- trust and safety ---------- */
 export async function resolveDispute(disputeId: string, outcome: "upheld" | "rejected", reviewer: string) {
   const dp = await db.query.disputes.findFirst({ where: eq(disputes.id, disputeId) });
