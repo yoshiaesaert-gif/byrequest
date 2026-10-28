@@ -1558,5 +1558,8 @@ const nl: Record<string, string> = {
   "Oiling up slowly, everywhere, finish on camera": "Traag insmeren met olie, overal, klaarkomen op camera",
   "Oil yourself up, everywhere": "Smeer jezelf in met olie, overal",
   "Dim light, warm oil. Rub it in slowly, everywhere, let the skin shine. Take your time and finish on camera.": "Gedimd licht, warme olie. Wrijf het traag in, overal, laat je huid glanzen. Neem je tijd en kom klaar op camera.",
+  "open requests now": "open requests nu",
+  "in budgets on the board": "aan budgetten op het bord",
+  "Compare candidates: face or not, vault time, rating.": "Vergelijk kandidaten: gezicht of niet, vaulttijd, sterren.",
 };
 export default nl;

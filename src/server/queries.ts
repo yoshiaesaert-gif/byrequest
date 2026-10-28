@@ -211,3 +211,9 @@ export async function topBudgets(limit = 6) {
   return db.select({ id: requests.id, title: requests.title, category: requests.category, amount: requests.amount, dealCents: requests.dealCents })
     .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()))).orderBy(desc(requests.dealCents)).limit(limit);
 }
+
+/* Live totals of the board: open requests and the budget waiting in them. */
+export async function boardTotals() {
+  const [r] = await db.select({ n: count(), cents: sql<number>`coalesce(sum(${requests.dealCents}),0)::int` }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
+  return { open: r.n, cents: r.cents };
+}

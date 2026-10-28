@@ -1558,5 +1558,8 @@ const fr: Record<string, string> = {
   "Oiling up slowly, everywhere, finish on camera": "S'huiler lentement, partout, finir face caméra",
   "Oil yourself up, everywhere": "Huile toi, partout",
   "Dim light, warm oil. Rub it in slowly, everywhere, let the skin shine. Take your time and finish on camera.": "Lumière tamisée, huile chaude. Fais pénétrer lentement, partout, laisse la peau briller. Prends ton temps et finis face caméra.",
+  "open requests now": "demandes ouvertes",
+  "in budgets on the board": "de budgets sur le tableau",
+  "Compare candidates: face or not, vault time, rating.": "Compare les candidats : visage ou non, durée du coffre, étoiles.",
 };
 export default fr;

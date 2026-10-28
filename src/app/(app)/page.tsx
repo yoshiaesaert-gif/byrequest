@@ -73,7 +73,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     })),
   } : null;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid] = await Promise.all([q.themeCounts(), q.topBudgets(6)]);
+  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
@@ -129,8 +129,9 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
           <li key={x.id}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{TL(x.title)}</b><span>{t(CAT_LABEL[x.category])} · {amountLabel(x.category, x.amount, t)}</span></div><b className="h-top-eur num">{euros(x.dealCents)}</b><Link href={`/requests/${x.id}`} aria-label={TL(x.title)}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
         <div className="h-step"><span className="num">1</span><div><b>{t("Ask")}</b><p>{t("Type, length, who, budget. Paid when posted, held until delivery.")}</p></div></div>
-        <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare offers: face or not, vault time, rating.")}</p></div></div>
+        <div className="h-step"><span className="num">2</span><div><b>{t("Choose")}</b><p>{t("Compare candidates: face or not, vault time, rating.")}</p></div></div>
         <div className="h-step"><span className="num">3</span><div><b>{t("Enjoy")}</b><p>{t("Checked, reviewed, in your private vault.")}</p></div></div>
+        <div className="h-stats"><div><b className="num">{totals.open}</b><span>{t("open requests now")}</span></div><div><b className="num">{euros(totals.cents)}</b><span>{t("in budgets on the board")}</span></div></div>
         <Link href="/post" className="btn btn-white btn-lg">{t("Post a request")}</Link></div>
     </section>
 
@@ -165,7 +166,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
   const [feat, ...rest] = items;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid] = await Promise.all([q.themeCounts(), q.topBudgets(6)]);
+  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
   const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
@@ -244,6 +245,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
         <div className="h-step"><span className="num">1</span><div><b>{t("Pick")}</b><p>{t("Only requests you like. The amount is on it.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Make")}</b><p>{t("In your own time, face or not.")}</p></div></div>
         <div className="h-step"><span className="num">3</span><div><b>{t("Get paid")}</b><p>{t("After the check, straight to your account.")}</p></div></div>
+        <div className="h-stats"><div><b className="num">{totals.open}</b><span>{t("open requests now")}</span></div><div><b className="num">{euros(totals.cents)}</b><span>{t("in budgets on the board")}</span></div></div>
         <Link href="/for-you" className="btn btn-white btn-lg">{t("Open the board")}</Link></div>
     </section>
   </div>);
