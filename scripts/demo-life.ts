@@ -6,6 +6,9 @@
    3. The open requests get offers from creators who fit. */
 import "dotenv/config";
 import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { DEMO_I18N } from "./demo-i18n";
+import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { db, schema as S } from "../src/db";
 
 if (process.env.BRQ_PROVIDER_ENV === "live" || process.env.BRQ_DEMO === "0") { console.log("Demo life: skipped, not a demo environment."); process.exit(0); }
@@ -115,6 +118,8 @@ const REVIEWS: [number, Lang, string][] = [
   [5, "nl", "Topper. Doet wat je vraagt, met een glimlach"],
 ];
 
+const BUYER_LOOKS = ["nightowl", "ops", "j_m", "k_22", "lou", "rook", "sam_x", "tide"];
+
 const RENAMED: [string, string][] = [["Morning routine, just woke up", "Hotel room, robe slipping"], ["Rustige avondvideo", "Avond bij kaarslicht"], ["Koffie in bed, geen haast", "Onder de lakens, geen haast"], ["Réveil tranquille", "Après minuit, chemise ouverte"], ["Outfit check, 5 foto's", "Welk setje, 5 foto's"], ["Luie zondag fotoset", "Zondag in alleen een hemd"], ["Fit check for a date", "What's under the dress"], ["Good morning voice note", "Whisper what you'd do"], ["Read me a short story", "Read me something naughty"], ["Iemand die vertelt over zijn dag", "Vertel wat je aanhebt"], ["Cook for me and talk to me", "Cook for me, apron only"], ["Iets grappigs voor een rotdag", "Iets plagerigs voor een rotdag"]];
 
 const TITLES: Record<string, [Lang, string, number][]> = {
@@ -175,6 +180,21 @@ async function main() {
       });
       added++;
     }
+  }
+
+  // Profile texts, tags and reviews read natively in every language.
+  const LANGS = ["nl", "en", "fr"] as const;
+  const rows = DEMO_I18N.flatMap((tri) => LANGS.flatMap((to, ti) => LANGS.map((_, fi) => fi).filter((fi) => fi !== ti && tri[fi] !== tri[ti])
+    .map((fi) => ({ key: createHash("sha256").update(`${to}|${tri[fi]}`).digest("hex"), source: LANGS[fi], target: to, text: tri[ti], provider: "manual" }))));
+  const seen = new Set<string>();
+  const uniq = rows.filter((x) => !seen.has(x.key) && seen.add(x.key));
+  for (let i = 0; i < uniq.length; i += 200)
+    await db.insert(S.translations).values(uniq.slice(i, i + 200)).onConflictDoUpdate({ target: S.translations.key, set: { text: sql`excluded.text`, provider: "manual" } });
+
+  // Demo buyers get a plain initial until their own 3D avatar is in public/av (see docs/avatar-prompts-buyers.md).
+  for (const h of BUYER_LOOKS) {
+    const look = `b_${h.replace(/[^a-z0-9]/g, "")}`;
+    await db.update(S.users).set({ avatar: existsSync(`public/av/${look}.webp`) ? { kind: "3d", look } : null }).where(and(eq(S.users.handle, h), like(S.users.email, "%@demo.byrequest.app")));
   }
 
   // Older demo deals keep up with renamed titles.

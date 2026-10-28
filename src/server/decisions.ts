@@ -15,6 +15,7 @@ export const ACTION_LABEL: Record<string, string> = {
   creator_restriction_lifted: "The restriction on your creator account was lifted",
   content_rejected: "A delivery was not approved",
   age_closed: "Your account was closed because you are under 18",
+  request_removed: "Your request was taken offline",
 };
 
 export async function issueDecision(tx: Tx | typeof db, d: Decision) {

@@ -8,7 +8,7 @@ import { toast } from "@/components/chrome";
 export function Toggle({ k, on, b, s }: { k: "frost" | "discreetPush" | "neutralTab"; on: boolean; b: string; s: string }) {
   const t = useT();
   const [v, setV] = useState(on);
-  return <div className="setrow"><div><b>{b}</b><span className="s">{s}</span></div><button className={"toggle" + (v ? " is-on" : "")} role="switch" aria-checked={v} aria-label={b} onClick={async () => { setV(!v); await setPref(k, !v); }} /></div>;
+  return <div className="setrow"><div><b>{t(b)}</b><span className="s">{t(s)}</span></div><button className={"toggle" + (v ? " is-on" : "")} role="switch" aria-checked={v} aria-label={t(b)} onClick={async () => { setV(!v); await setPref(k, !v); }} /></div>;
 }
 
 export function Marketing({ on }: { on: boolean }) {

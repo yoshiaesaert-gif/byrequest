@@ -17,12 +17,12 @@ export default async function Studio() {
     <div className="pulse" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
       <div className="card"><span>{t("This month")}</span><b className="num">{euros(earn.monthCents)}</b><span>{t("paid out")}</span></div>
       <div className="card"><span>{t("In progress")}</span><b className="num">{euros(earn.pendingCents)}</b><span>{t("released after review and 24 hours")}</span></div>
-      <div className="card"><span>{t("Payouts")}</span><b>{a.caps.receivePayouts ? "Enabled" : "Not enabled"}</b><span>{a.caps.receivePayouts ? "every Friday, through the payment partner" : earn.heldCents ? `${euros(earn.heldCents)} waiting for payout setup` : "finish payout setup"}</span></div>
+      <div className="card"><span>{t("Payouts")}</span><b>{t(a.caps.receivePayouts ? "Enabled" : "Not enabled")}</b><span>{a.caps.receivePayouts ? t("every Friday, through the payment partner") : earn.heldCents ? t("{amount} waiting for payout setup", { amount: euros(earn.heldCents) }) : t("finish payout setup")}</span></div>
     </div>
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Preview requests")}</h2></div>
       {albums.length ? <div className="card" style={{ padding: "4px 16px" }}><div className="list">{albums.map((x) => <AlbumAnswer key={x.a.id} id={x.a.id} buyer={x.buyer} kind={x.a.kind} canUpload={a.caps.upload} />)}</div></div>
-        : <Empty icon="eye" title={t("No preview requests")} text="Buyers who are choosing between offers can ask for a view once preview. You always decide." />}
+        : <Empty icon="eye" title={t("No preview requests")} text={t("Buyers who are choosing between offers can ask for a view once preview. You always decide.")} />}
     </section>
 
     <section className="sec" id="participants"><div className="sec-h"><h2 className="t-h2">{t("People in your content")}</h2></div>

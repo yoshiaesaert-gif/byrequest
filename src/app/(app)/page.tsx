@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HowItWorks from "@/components/how-it-works";
 import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
 import * as q from "@/server/queries";
@@ -6,7 +7,7 @@ import { access } from "@/server/onboarding";
 import { Av, BuyerLine, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
 import HeroLive from "@/components/hero-live";
 import { getT } from "@/i18n/server";
-import { localize } from "@/server/translate";
+import { localize, textsIn } from "@/server/translate";
 import Ask from "@/components/ask";
 import { parseAsk as parseAskHref } from "@/components/ask-parse";
 import { PromiseIcon } from "@/components/promise-icons";
@@ -46,6 +47,7 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
   const { t, locale } = await getT();
   const [top, boardItems, ending] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale), localize(rawEnding, locale)]);
   const openMine = mine.find((m) => m.r.status === "open");
+  const L = await textsIn([...mine.map((m) => m.r.title), ...myDeals.map((d) => d.r.title)], locale);
   const live = myDeals.find((d) => d.d.buyerId === userId && ["held", "reviewing", "delivered", "disputed"].includes(d.d.status));
   // Every request shows once on the page: hero, board and closing soon never repeat each other.
   const fan = top.filter((r) => !r.mine).slice(0, 3);
@@ -89,9 +91,11 @@ async function BuyerHome({ userId, handle, welcome, board }: { userId: string; h
 
     {openMine || live ? (
       <div className="h-mine">
-        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="livedot" /><span className="tx"><b>{t("{n} offers", { n: openMine.offers })}</b> {t("on")} “{openMine.r.title}”</span><span className="go">{t("Review")} <I n="right" c="sm" /></span></Link> : null}
-        {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{live.r.title}</b> · {t(live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review")}</span><span className="go">{t("Open")} <I n="right" c="sm" /></span></Link> : null}
+        {openMine ? <Link href={`/requests/${openMine.r.id}/offers`}><span className="livedot" /><span className="tx"><b>{t("{n} offers", { n: openMine.offers })}</b> {t("on")} “{L(openMine.r.title)}”</span><span className="go">{t("Review")} <I n="right" c="sm" /></span></Link> : null}
+        {live ? <Link href={`/deals/${live.d.id}`}><I n="lock" c="sm" /><span className="tx"><b>{L(live.r.title)}</b> · {t(live.d.status === "held" ? "being made" : live.d.status === "reviewing" ? "being reviewed" : live.d.status === "delivered" ? "in your vault" : "under review")}</span><span className="go">{t("Open")} <I n="right" c="sm" /></span></Link> : null}
       </div>) : null}
+
+    <HowItWorks />
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
@@ -178,6 +182,8 @@ async function CreatorHome({ userId, handle }: { userId: string; handle: string 
         {albums.length ? albums.slice(0, 3).map((x) => <div key={x.a.id} className="term"><span className="muted">{x.buyer} · {x.a.kind}</span><Link href="/studio" className="btn btn-secondary btn-sm">{t("Answer")}</Link></div>) : <div className="term"><span className="muted">{t("No requests right now")}</span><b>{t("All clear")}</b></div>}
       </div>
     </div>
+
+    <HowItWorks />
 
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("Requests for you")}</h2><Link href="/for-you">{t("Open feed")} <I n="right" c="sm" /></Link></div>
       <div className="card" style={{ padding: "4px 16px" }}><div className="list">{fitL.filter((r) => !r.mine).map((r) => (

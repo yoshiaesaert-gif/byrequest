@@ -91,7 +91,7 @@ export default function Room(p: Props) {
     <div className="card chatbox">
       <div className="msgs" ref={box}>
         {p.msgs.map((m) => {
-          if (m.kind === "system") return <span key={m.id} className="sysmsg"><Ico n="check" c="sm" />{m.body}</span>;
+          if (m.kind === "system") return <span key={m.id} className="sysmsg"><Ico n="check" c="sm" />{sys(m.body, tr)}</span>;
           const mine = m.senderId === p.me.id;
           const t = plain[m.id];
           return <div key={m.id} className={"bub " + (mine ? "me" : "them") + (t ? "" : " locked")}>{t ?? (kp ? tr("Encrypted on another device") : tr("Decrypting…"))}</div>;
@@ -105,6 +105,12 @@ export default function Room(p: Props) {
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
     {sheet === "upload" ? <UploadSheet p={p} onClose={() => setSheet(null)} /> : null}
   </div>);
+}
+
+/* System lines are stored in English; amounts become a variable so the line translates as a whole. */
+function sys(body: string, tr: (s: string, v?: Record<string, string | number>) => string) {
+  const amount = body.match(/€\d+(?:\.\d{2})?/)?.[0];
+  return amount ? tr(body.replace(amount, "{amount}"), { amount }) : tr(body);
 }
 
 function RateButtons({ dealId, other, buyer }: { dealId: string; other: string; buyer?: boolean }) {

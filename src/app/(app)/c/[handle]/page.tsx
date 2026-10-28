@@ -8,6 +8,7 @@ import { euros } from "@/domain/rules";
 import AlbumAsk from "./album-ask";
 import { contactCreator } from "@/server/reports";
 import { redirect } from "next/navigation";
+import { cached } from "@/server/translate";
 
 const ago = (d: Date, t: (s: string, v?: Record<string, string | number>) => string) => {
   const days = Math.max(0, Math.round((Date.now() - d.getTime()) / 86_400_000));
@@ -15,7 +16,7 @@ const ago = (d: Date, t: (s: string, v?: Record<string, string | number>) => str
 };
 
 export default async function Creator({ params }: { params: Promise<{ handle: string }> }) {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const { handle } = await params;
   const me = await requireUser();
   const r = await profileFor(decodeURIComponent(handle), me.id);
@@ -24,7 +25,11 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
     <span className="empty-i"><I n="lock" c="lg" /></span><b className="t-h3">{t("This profile is private")}</b>
     <p className="muted t-sm">{t("This creator shows their profile only to buyers they make an offer to.")}</p><Link href="/post" className="btn btn-primary">{t("Post a request")}</Link></div></div>);
   const { u, p, reason, offerId, album, reviews, dealsDone } = r;
-  const fact = (k: string, v: string | number | null | undefined) => (v ? <div><dt>{t(k)}</dt><dd>{v}</dd></div> : null);
+  // What the creator wrote reads in the viewer's language when a translation is cached.
+  const own = [p.bio, p.build, p.sport, p.work, p.languages, p.hair, p.eyes, p.body, p.tattoos, ...p.makes, ...p.never, ...reviews.map((x) => x.text)].filter((x): x is string => !!x);
+  const tr = await cached(own, locale);
+  const L = <T extends string | null | undefined>(s: T) => (s ? tr.get(s) ?? s : s);
+  const fact = (k: string, v: string | number | null | undefined) => (v ? <div><dt>{t(k)}</dt><dd>{typeof v === "string" ? L(v) : v}</dd></div> : null);
   // Same count as the home row and the offers list, so a creator never reads as "4.9 stars, 0 deals".
   const deals = Math.max(dealsDone, u.ratingCount);
   const replies = p.replyMinutes < 60 ? t("Replies in {n} min", { n: p.replyMinutes }) : t("Replies in {n}h", { n: Math.round(p.replyMinutes / 60) });
@@ -40,19 +45,19 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
         <div className="cp-vis"><I n={reason === "public" ? "users" : "lock"} c="sm" />{reason === "public" ? t("Public creator profile") : reason === "self" ? t("This is how buyers see your profile.") : t(reason === "deal" ? "Private profile. You see it because {name} has a deal with you." : "Private profile. You see it because {name} made you an offer.", { name: u.handle })}</div>
       </div></div>
       <div className="cp-main">
-        <section className="cp-sec"><span className="eyebrow">{t("About")}</span>{p.bio ? <p className="cp-bio">{p.bio}</p> : null}
+        <section className="cp-sec"><span className="eyebrow">{t("About")}</span>{p.bio ? <p className="cp-bio">{L(p.bio)}</p> : null}
           <dl className="cp-spec">{fact("Age", u.age)}{fact("Height", p.heightCm ? `${(p.heightCm / 100).toFixed(2)} m` : null)}{fact("Build", p.build)}{fact("Sport", p.sport)}{fact("Work", p.work)}{fact("Languages", p.languages)}{fact("Hair", p.hair)}{fact("Eyes", p.eyes)}{fact("Body", p.body)}{fact("Tattoos", p.tattoos)}</dl></section>
         {offerId ? <AlbumAsk offerId={offerId} handle={u.handle} album={album ? { id: album.id, status: album.status } : null} /> : null}
         <section className="cp-sec"><span className="eyebrow">{t("Makes")}</span>
-          <div className="optrow" style={{ marginTop: 10 }}>{p.makes.map((d) => <span key={d} className="chip is-on" style={{ pointerEvents: "none" }}>{d}</span>)}</div>
-          {p.never.length ? <p className="cp-never"><b>{t("Never")}</b> {p.never.map((d) => d.toLowerCase()).join(", ")}</p> : null}
+          <div className="optrow" style={{ marginTop: 10 }}>{p.makes.map((d) => <span key={d} className="chip is-on" style={{ pointerEvents: "none" }}>{L(d)}</span>)}</div>
+          {p.never.length ? <p className="cp-never"><b>{t("Never")}</b> {p.never.map((d) => L(d).toLowerCase()).join(", ")}</p> : null}
           <div className="list" style={{ marginTop: 14 }}>{[["Short video, 5 min", p.fromCents + 2000], ["Photo set, 6 photos", p.fromCents], ["Voice note, 2 min", Math.max(2000, p.fromCents - 1500)]].map(([l, c]) => (
             <div key={l as string} className="lrow" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}><span>{t(l as string)}</span><b className="num">{t("From")} {euros(c as number)}</b></div>))}</div></section>
         {me.supportOrg ? <section className="cp-sec"><span className="eyebrow">{t("Support organisation")}</span>
           <form className="bo-inline" style={{ marginTop: 10 }} action={async (f) => { "use server"; const m = await requireUser(); await contactCreator(m.id, u.handle, String(f.get("msg") ?? "")); redirect(`/c/${u.handle}?sent=1`); }}>
-            <input className="input" name="msg" placeholder={`Write to ${u.handle} as ${me.supportOrg}`} required minLength={10} /><button className="btn btn-primary btn-sm">{t("Send")}</button></form></section> : null}
+            <input className="input" name="msg" placeholder={t("Write to {name} as {org}", { name: u.handle, org: me.supportOrg })} required minLength={10} /><button className="btn btn-primary btn-sm">{t("Send")}</button></form></section> : null}
         <section className="cp-sec"><span className="eyebrow">{t("Reviews")}</span>
-          {reviews.length ? reviews.map((x, i) => <div key={i} className="cp-rev"><div><b>{x.by}</b><span className="star">{"★★★★★".slice(0, x.stars ?? 5)}<span className="cp-rev-off">{"★★★★★".slice(x.stars ?? 5)}</span></span><span className="cp-rev-m">{t("Verified deal")}{x.at ? ` · ${ago(x.at, t)}` : ""}</span></div>{x.text ? <p>{x.text}</p> : null}</div>)
+          {reviews.length ? reviews.map((x, i) => <div key={i} className="cp-rev"><div><b>{x.by}</b><span className="star">{"★★★★★".slice(0, x.stars ?? 5)}<span className="cp-rev-off">{"★★★★★".slice(x.stars ?? 5)}</span></span><span className="cp-rev-m">{t("Verified deal")}{x.at ? ` · ${ago(x.at, t)}` : ""}</span></div>{x.text ? <p>{L(x.text)}</p> : null}</div>)
             : <p className="t-sm muted" style={{ marginTop: 8 }}>{t("No reviews yet. Every creator verifies their identity before their first offer.")}</p>}</section>
       </div>
     </div>

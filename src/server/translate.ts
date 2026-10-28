@@ -34,6 +34,12 @@ export async function localize<T extends { title: string; details?: string; lang
   });
 }
 
+/* A lookup for loose texts (titles in lists, deal rooms): cached translation or the original. */
+export async function textsIn(texts: (string | null | undefined)[], to: Locale) {
+  const m = await cached(texts.filter((x): x is string => !!x), to);
+  return <T extends string | null | undefined>(s: T): T => (s ? (m.get(s) as T) ?? s : s);
+}
+
 const DEEPL_LANG: Record<Locale, string> = { nl: "NL", en: "EN-GB", fr: "FR" };
 
 async function deepl(text: string, from: Locale, to: Locale) {
