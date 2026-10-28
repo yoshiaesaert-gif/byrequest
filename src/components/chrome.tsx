@@ -29,9 +29,9 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
       </button>
       {open ? (
         <div className="menu" role="menu" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setOpen(false); }}>
-          <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? t("Buying") : t("Creating")}{isCreator ? (verified ? ` · ${t("Verified creator")}` : ` · ${t("Setup not finished")}`) : ""}</div></div></div>
+          <div className="who">{big}<div><b>{handle}</b><div className="t-sm muted">{buy ? t("Buyer") : t("Creator")}{isCreator ? (verified ? ` · ${t("Verified creator")}` : ` · ${t("Setup not finished")}`) : ""}</div></div></div>
           {isCreator
-            ? <button className="mi switch" onClick={async () => { await setMode(buy ? "sell" : "buy"); setOpen(false); toast(buy ? t("You are now creating") : t("You are now buying")); router.push("/"); }}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? t("Switch to creating") : t("Switch to buying")}</button>
+            ? <a className="mi switch" href={`/mode?to=${buy ? "sell" : "buy"}`}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? t("Switch to creator") : t("Switch to buyer")}</a>
             : <Link className="mi switch" href="/earn"><svg className="ico" aria-hidden="true"><use href="#i-money" /></svg>{t("Start creating, earn money")}</Link>}
           <hr />
           <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>{t("Profile and privacy")}</Link>

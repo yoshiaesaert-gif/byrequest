@@ -1315,5 +1315,7 @@ const fr: Record<string, string> = {
   "Ask for a tax identification number": "Demander un numéro fiscal",
   "Reject: account holder does not match": "Refuser : le titulaire ne correspond pas",
   "Your result was sent to ByRequest. You can close this page and go back.": "Votre résultat a été envoyé à ByRequest. Vous pouvez fermer cette page et revenir.",
+  "Switch to creator": "Passer en mode créateur",
+  "Switch to buyer": "Passer en mode acheteur",
 };
 export default fr;

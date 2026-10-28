@@ -1315,5 +1315,7 @@ const nl: Record<string, string> = {
   "Ask for a tax identification number": "Vraag een fiscaal nummer",
   "Reject: account holder does not match": "Weigeren: rekeninghouder klopt niet",
   "Your result was sent to ByRequest. You can close this page and go back.": "Je resultaat is naar ByRequest gestuurd. Je kunt deze pagina sluiten en teruggaan.",
+  "Switch to creator": "Overschakelen naar creator",
+  "Switch to buyer": "Overschakelen naar koper",
 };
 export default nl;
