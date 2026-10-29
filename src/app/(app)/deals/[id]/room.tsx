@@ -86,25 +86,26 @@ export default function Room(p: Props) {
 
   let next: { t: string; d: string; acts?: React.ReactNode };
   if (buyer) {
-    if (s === "held") next = { t: tr("{name} is making it", { name: p.other.handle }), d: tr("Expected by {time}. No delivery in time means a full refund.", { time: when(p.deal.dueAt) }) };
+    if (s === "held") next = { t: tr("{name} is making it", { name: p.other.handle }), d: tr("Expected by {time}. No delivery in time means a full refund.", { time: when(p.deal.dueAt, locale) }) };
     else if (s === "reviewing") next = { t: tr("Delivered, being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Waiting for verification and consent of everyone who appears. Then it reaches your vault.") : tr("It passed the file check. A reviewer checks it before it reaches your vault.") };
-    else if (s === "delivered") next = { t: tr("In your vault, your turn"), d: tr("Not what you agreed? Object before {time}. Otherwise the payment is released automatically.", { time: when(p.deal.objectUntil!) }), acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>{tr("Report a problem")}</button><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{tr("Release payment")}</button></> };
+    else if (s === "delivered") next = { t: tr("In your vault, your turn"), d: tr("Not what you agreed? Object before {time}. Otherwise the payment is released automatically.", { time: when(p.deal.objectUntil!, locale) }), acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>{tr("Report a problem")}</button><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{tr("Release payment")}</button></> };
     else if (s === "disputed") next = { t: tr("Under review"), d: tr("A person compares the file with the terms of the accepted offer. The money stays held until then.") };
     else if (s === "released") next = { t: tr("Deal completed"), d: tr("It stays in your vault for the agreed period."), acts: <><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link>{!p.deal.rated ? <RateButtons dealId={p.deal.id} other={p.other.handle} /> : null}</> };
     else next = { t: tr("Refunded"), d: tr("The full amount goes back to you through the payment partner.") };
   } else {
     if (s === "held") next = p.canUpload
-      ? { t: tr("Deliver by {time}", { time: when(p.deal.dueAt) }), d: tr("Upload here. We check length and format, remove location and device data, and review it before it reaches the buyer."), acts: <button className="btn btn-brand" onClick={() => setSheet("upload")}>{tr("Upload delivery")}</button> }
+      ? { t: tr("Deliver by {time}", { time: when(p.deal.dueAt, locale) }), d: tr("Upload here. We check length and format, remove location and device data, and review it before it reaches the buyer."), acts: <button className="btn btn-brand" onClick={() => setSheet("upload")}>{tr("Upload delivery")}</button> }
       : { t: tr("Finish your setup to upload"), d: p.missing.map((m) => tr(m)).join(" · "), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Continue setup")}</Link> };
     else if (s === "reviewing") next = { t: p.delivery?.review === "blocked_participants" ? tr("Waiting for participants") : tr("Being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Everyone else who appears must verify and consent through their link first.") : tr("A reviewer checks every delivery before it is made available.") };
-    else if (s === "delivered") next = { t: tr("In the buyer's vault"), d: tr("The buyer can object until {time}. Then {amount} is released to you.", { time: when(p.deal.objectUntil!), amount: eur(p.deal.creatorCents) }) };
+    else if (s === "delivered") next = { t: tr("In the buyer's vault"), d: tr("The buyer can object until {time}. Then {amount} is released to you.", { time: when(p.deal.objectUntil!, locale), amount: eur(p.deal.creatorCents) }) };
     else if (s === "disputed") next = { t: tr("The buyer reported a problem"), d: tr("A person reviews the file against the accepted offer. You are paid if it matches.") };
     else if (s === "released") next = p.payoutHeld ? { t: tr("Action needed to enable payouts"), d: tr("{amount} is waiting until your payout setup is approved.", { amount: eur(p.deal.creatorCents) }), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Open payout setup")}</Link> } : { t: tr("Paid"), d: tr("{amount} was released to your payout account.", { amount: eur(p.deal.creatorCents) }), acts: !p.deal.ratedBuyer ? <RateButtons dealId={p.deal.id} other={p.other.handle} buyer /> : undefined };
     else next = { t: tr("Refunded to the buyer"), d: tr("This deal ended without payment.") };
   }
 
   return (<div>
-    <div className="stepper">{steps.map((l, i) => <div key={l} className={"stp " + (i < cur ? "done" : i === cur ? "cur" : "")}><i />{l}</div>)}</div>
+    <div className="stepper">{steps.map((l, i) => <div key={l} className={"stp " + (i < cur ? "done" : i === cur ? "cur" : "")}><i /><span>{l}</span></div>)}</div>
+    <p className="stp-now">{tr("Step {n} of {total}", { n: Math.min(cur + 1, steps.length), total: steps.length })} · <b>{steps[Math.min(cur, steps.length - 1)]}</b></p>
     <div className={"next is-" + s}><div style={{ minWidth: 0 }}><b className="t-h3">{next.t}</b><p className="t-sm muted" style={{ marginTop: 4 }}>{next.d}</p></div>{next.acts ? <div className="acts">{next.acts}</div> : null}</div>
     <div className="card chatbox">
       <div className="msgs" ref={box} aria-live="polite">

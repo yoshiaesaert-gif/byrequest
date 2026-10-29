@@ -35,7 +35,8 @@ export function Cover({ cover, frost }: { cover: string | null; frost?: boolean 
 
 /** One time format for server and client, so a deadline reads the same everywhere. */
 export const TZ = "Europe/Brussels";
-export function when(d: Date | string) { return new Date(d).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ }); }
+const LOCALE_TAG: Record<string, string> = { nl: "nl-BE", fr: "fr-BE", en: "en-GB" };
+export function when(d: Date | string, locale = "en") { return new Date(d).toLocaleString(LOCALE_TAG[locale] ?? "en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: TZ }); }
 
 export function hoursLeft(d: Date) { return Math.max(0, (d.getTime() - Date.now()) / 3600_000); }
 type Tr = (s: string, v?: Record<string, string | number>) => string;

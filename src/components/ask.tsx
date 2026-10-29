@@ -11,8 +11,8 @@ export default function Ask() {
   return (
     <form className="ask" onSubmit={(e) => { e.preventDefault(); router.push(parseAsk(q, t)); }}>
       <svg className="ico lg" aria-hidden="true"><use href="#i-spark" /></svg>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("For example: a 10 minute shower video for €80")} aria-label={t("Describe your request")} />
-      <button className="btn btn-primary">{t("Start")}</button>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("E.g. a 10 minute shower video")} aria-label={t("Describe your request")} />
+      <button className="btn btn-primary">{t("Go")}</button>
     </form>
   );
 }

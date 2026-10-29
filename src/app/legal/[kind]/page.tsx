@@ -21,8 +21,11 @@ export default async function Legal({ params, searchParams }: { params: Promise<
   return (<div className="wrap"><article className="doc">
     <img src="/logo.png" alt="byrequest" style={{ height: 40, marginBottom: 24 }} />
     {html}
-    {tr ? <p className="t-xs muted" style={{ marginTop: 28 }}>{t("Translation of version {v}. The recorded text is the English original.", { v: d.version })} <a href={`?${d.current ? "" : `v=${d.version}&`}orig=1`}>{t("Read the original")}</a></p> : null}
-    <p className="t-xs muted" style={{ marginTop: tr ? 6 : 28 }}>{t("Version {v} · published {date}", { v: d.version, date: d.publishedAt.toISOString().slice(0, 10) })} · SHA-256 {d.sha256}{d.status !== "approved" ? ` · ${t("draft pending legal and payment partner review")}` : ""}</p>
-    {all.length > 1 ? <p className="t-xs muted">{t("Other versions:")} {all.filter((x) => x.id !== d.id).map((x) => <a key={x.id} href={`?v=${x.version}`} style={{ marginRight: 8 }}>{x.version}</a>)}</p> : null}
+    <footer className="doc-meta">
+      {tr ? <p>{t("Translation of version {v}. The recorded text is the English original.", { v: d.version })} <a href={`?${d.current ? "" : `v=${d.version}&`}orig=1`}>{t("Read the original")}</a></p> : null}
+      <p>{t("Version {v} · published {date}", { v: d.version, date: d.publishedAt.toISOString().slice(0, 10) })}{d.status !== "approved" ? ` · ${t("draft pending legal and payment partner review")}` : ""}</p>
+      <p className="doc-hash">SHA-256 <code>{d.sha256}</code></p>
+      {all.length > 1 ? <div className="doc-vers"><span>{t("Other versions:")}</span>{all.filter((x) => x.id !== d.id).map((x) => <a key={x.id} href={`?v=${x.version}`}>{x.version}</a>)}</div> : null}
+    </footer>
   </article></div>);
 }

@@ -8,9 +8,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import Viewer from "./viewer";
+import { textsIn } from "@/server/translate";
 
 export default async function View({ params }: { params: Promise<{ id: string }> }) {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const { id } = await params;
   const u = await requireUser();
   if (BUYER_AGE_CHECK && !(await isAgeVerified(u.id))) redirect(`/verify-age?next=${encodeURIComponent("/vault")}`);
@@ -22,5 +23,5 @@ export default async function View({ params }: { params: Promise<{ id: string }>
   const r = d && await db.query.requests.findFirst({ where: eq(schema.requests.id, d.requestId) });
   const c = d && await db.query.users.findFirst({ where: eq(schema.users.id, d.creatorId), columns: { handle: true } });
   if (v.availableUntil && v.availableUntil < new Date()) return <div className="wrap"><div className="card empty" style={{ maxWidth: 480, margin: "40px auto" }}><b className="t-h3">{t("Access ended")}</b><p className="muted t-sm">{t("The creator set a vault period, and it is over.")}</p><Link href="/vault" className="btn btn-secondary">{t("Back to vault")}</Link></div></div>;
-  return <Viewer items={siblings} start={Math.max(0, siblings.findIndex((s) => s.id === id))} title={r?.title ?? ""} by={c?.handle ?? ""} handle={u.handle} until={v.availableUntil?.toISOString() ?? null} />;
+  return <Viewer items={siblings} start={Math.max(0, siblings.findIndex((s) => s.id === id))} title={(await textsIn([r?.title], locale))(r?.title) ?? ""} by={c?.handle ?? ""} handle={u.handle} until={v.availableUntil?.toISOString() ?? null} />;
 }

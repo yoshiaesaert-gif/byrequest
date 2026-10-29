@@ -274,6 +274,7 @@ p{margin:0}
 .live{display:inline-flex;align-items:center;gap:8px;font-size:.8125rem;font-weight:600;color:var(--ok)}
 .live i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px var(--ok-soft)}
 .sec{margin-bottom:48px}
+* + .sec{margin-top:40px}
 .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:16px}
 .sec-h a{font-weight:600;font-size:.875rem;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px}
 .cats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}

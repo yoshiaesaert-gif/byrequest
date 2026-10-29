@@ -14,7 +14,7 @@ export default async function Studio() {
   const [a, albums, parts, earn] = await Promise.all([access(u.id), albumsForCreator(u.id), listFor(u.id), creatorEarnings(u.id)]);
   return (<div className="wrap">
     <div className="page-h"><div><h1 className="t-h1">{t("Studio")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Earnings, preview requests and the people who appear in your content.")}</p></div><Link href="/onboarding" className="btn btn-secondary">{t("Creator setup")}</Link></div>
-    <div className="pulse" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
+    <div className="pulse pulse-3">
       <div className="card"><span>{t("This month")}</span><b className="num">{euros(earn.monthCents)}</b><span>{t("paid out")}</span></div>
       <div className="card"><span>{t("In progress")}</span><b className="num">{euros(earn.pendingCents)}</b><span>{t("released after review and 24 hours")}</span></div>
       <div className="card"><span>{t("Payouts")}</span><b>{t(a.caps.receivePayouts ? "Enabled" : "Not enabled")}</b><span>{a.caps.receivePayouts ? t("right after each delivery, through the payment partner") : earn.heldCents ? t("{amount} waiting for payout setup", { amount: euros(earn.heldCents) }) : t("finish payout setup")}</span></div>

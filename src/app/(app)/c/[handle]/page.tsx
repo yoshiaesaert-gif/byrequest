@@ -28,7 +28,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
   // What the creator wrote reads in the viewer's language when a translation is cached.
   const own = [p.bio, p.build, p.sport, p.work, p.languages, p.hair, p.eyes, p.body, p.tattoos, ...p.makes, ...p.never, ...reviews.map((x) => x.text)].filter((x): x is string => !!x);
   const tr = await cached(own, locale);
-  const L = <T extends string | null | undefined>(s: T) => (s ? tr.get(s) ?? s : s);
+  const L = <T extends string | null | undefined>(s: T) => (s ? tr.get(s) ?? (t(s) as T) : s);
   const fact = (k: string, v: string | number | null | undefined) => (v ? <div><dt>{t(k)}</dt><dd>{typeof v === "string" ? L(v) : v}</dd></div> : null);
   // Same count as the home row and the offers list, so a creator never reads as "4.9 stars, 0 deals".
   const deals = Math.max(dealsDone, u.ratingCount);

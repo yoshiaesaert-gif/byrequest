@@ -23,14 +23,14 @@ export default function Viewer({ items, start, title, by, handle, until }: { ite
   const wm = Array.from({ length: 48 }, (_, k) => <span key={k}>{handle} · {it.id.slice(0, 4).toUpperCase()}</span>);
   return (
     <div className="scrim" style={{ position: "fixed" }} onClick={(e) => e.target === e.currentTarget && router.push("/vault")}>
-      <div className="viewer media" role="dialog" aria-modal="true" aria-label={`Viewing ${title}`} onContextMenu={(e) => e.preventDefault()} style={{ background: "#000" }}>
+      <div className="viewer media" role="dialog" aria-modal="true" aria-label={title} onContextMenu={(e) => e.preventDefault()} style={{ background: "#000" }}>
         {it.mime.startsWith("image/") ? <img key={it.id} className="vimg" src={`/api/media/${it.id}`} alt="" draggable={false} />
           : it.mime.startsWith("video/") ? <video key={it.id} className="vplayer" src={`/api/media/${it.id}`} controls controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture playsInline />
           : <audio key={it.id} src={`/api/media/${it.id}`} controls controlsList="nodownload" style={{ position: "absolute", left: 16, right: 16, top: "45%", zIndex: 2, width: "calc(100% - 32px)" }} />}
         <div className="wm">{wm}</div>
-        <div className="vt"><span className="badge glass"><Ico n="clock" c="sm" />{days === null ? "Forever" : days <= 1 ? "Last day" : `${days} days left`}</span>
+        <div className="vt"><span className="badge glass"><Ico n="clock" c="sm" />{days === null ? t("Forever") : days <= 1 ? t("Last day") : t("{n} days left", { n: days })}</span>
           <button className="icon-btn" onClick={() => router.push("/vault")} aria-label={t("Close")} style={{ color: "#fff", background: "rgba(255,255,255,.16)" }}><Ico n="x" /></button></div>
-        <div className="vb"><div><b style={{ fontSize: "1.25rem", letterSpacing: "-.02em" }}>{title}</b><div className="t-sm" style={{ opacity: 0.8 }}>{t("from")} {by}{items.length > 1 ? ` · ${i + 1} of ${items.length}` : ""}</div></div>
+        <div className="vb"><div><b style={{ fontSize: "1.25rem", letterSpacing: "-.02em" }}>{title}</b><div className="t-sm" style={{ opacity: 0.8 }}>{t("from")} {by}{items.length > 1 ? ` · ${t("{n} of {total}", { n: i + 1, total: items.length })}` : ""}</div></div>
           <div className="optrow">{items.length > 1 ? <><button className="badge glass" onClick={() => setI(Math.max(0, i - 1))} aria-label={t("Previous")}><Ico n="left" c="sm" /></button><button className="badge glass" onClick={() => setI(Math.min(items.length - 1, i + 1))} aria-label={t("Next")}><Ico n="right" c="sm" /></button></> : null}
             <span className="badge glass"><Ico n="lock" c="sm" />{t("No download")}</span><span className="badge glass"><Ico n="shield" c="sm" />{t("Watermarked for you")}</span></div></div>
       </div>

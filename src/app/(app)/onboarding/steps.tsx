@@ -41,7 +41,7 @@ export default function Steps(p: Props) {
   return (<>
     <div className="ob-steps" role="list">{S.map((x, i) => (
       <button key={x.k} role="listitem" className={"ob-step " + (x.s === "approved" ? "done" : ["action_required", "rejected", "expired"].includes(x.s) ? "warn" : "") + (step === x.k ? " cur" : "")} onClick={() => go(x.k)} aria-current={step === x.k ? "step" : undefined}>
-        <i />{String.fromCharCode(65 + i)}. {x.l}</button>))}</div>
+        <i />{String.fromCharCode(65 + i)}. {t(x.l)}</button>))}</div>
     {step === "account" ? <Account p={p} next={() => go("identity")} /> : null}
     {step === "identity" ? <Identity p={p} next={() => go("payouts")} /> : null}
     {step === "payouts" ? <Payouts p={p} next={() => go("agreement")} /> : null}
@@ -166,10 +166,10 @@ function Overview({ p }: { p: Props }) {
   const rows: [string, string][] = [["Email", p.overview.areas.email], ["Identity", p.overview.areas.identity], ["Payouts", p.overview.areas.payout], ["Creator agreement", p.overview.areas.agreement]];
   return (<div className="card ob-card">
     {active ? <div className="ready"><span className="big"><Ico n="check" c="lg" /></span><h2>{t("You’re ready to earn.")}</h2><p className="muted">{t("Everything is approved.")} {t("Make offers, deliver and get paid.")}</p><Link href="/for-you" className="btn btn-primary btn-lg">{t("Browse requests")}</Link></div>
-      : <div><span className="eyebrow">{t("Overview")}</span><h2>{p.overview.status === "pending_verification" ? "Your verification is being reviewed." : p.overview.status === "suspended" ? "Your creator account is suspended." : "Almost there"}</h2><p className="muted" style={{ marginTop: 6 }}>{t("You can prepare your profile already. Offers, uploads and payouts open when everything below is approved.")}</p></div>}
-    <div className="checklist">{rows.map(([k, v]) => <div key={k} className="row"><b>{k}</b><Status s={v as Check} /></div>)}
-      {p.overview.areas.restriction !== "none" ? <div className="row"><b>{t("Account")}</b><span className="status st-rejected">{p.overview.areas.restriction === "suspended" ? "Suspended" : "Restricted"}</span></div> : null}</div>
-    {!active && p.overview.missing.length ? <div><b>{t("Still missing")}</b><ul className="docsum" style={{ marginTop: 8 }}>{p.overview.missing.map((m) => <li key={m}><Ico n="alert" c="sm" />{m.includes("DAC7") ? <Link href="/tax">{m}</Link> : m}</li>)}</ul></div> : null}
+      : <div><span className="eyebrow">{t("Overview")}</span><h2>{t(p.overview.status === "pending_verification" ? "Your verification is being reviewed." : p.overview.status === "suspended" ? "Your creator account is suspended." : "Almost there")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("You can prepare your profile already. Offers, uploads and payouts open when everything below is approved.")}</p></div>}
+    <div className="checklist">{rows.map(([k, v]) => <div key={k} className="row"><b>{t(k)}</b><Status s={v as Check} /></div>)}
+      {p.overview.areas.restriction !== "none" ? <div className="row"><b>{t("Account")}</b><span className="status st-rejected">{t(p.overview.areas.restriction === "suspended" ? "Suspended" : "Restricted")}</span></div> : null}</div>
+    {!active && p.overview.missing.length ? <div><b>{t("Still missing")}</b><ul className="docsum" style={{ marginTop: 8 }}>{p.overview.missing.map((m) => <li key={m}><Ico n="alert" c="sm" />{m.includes("DAC7") ? <Link href="/tax">{t(m)}</Link> : t(m)}</li>)}</ul></div> : null}
     {p.appeals.length ? <div><b>{t("Your requests to support")}</b>{p.appeals.map((x, i) => <p key={i} className="t-sm muted">{x.area}: {x.status === "answered" ? x.answer : "waiting for a reply"}</p>)}</div> : null}
     <Link href="/settings#profile" className="btn btn-secondary" style={{ alignSelf: "flex-start" }}>{t("Prepare your public profile")}</Link>
   </div>);

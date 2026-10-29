@@ -1,6 +1,7 @@
 /* English overrides. English strings are the keys, so this only holds wording that changed
    after the key was written: creators apply for a request at its fixed price, they do not bid. */
 const en: Record<string, string> = {
+  "Go": "Start",
   "A person decides on objections. If your delivery matches the offer, you are paid.": "A person decides on objections. If your delivery matches what was agreed, you are paid.",
   "Post a request with your budget. Creators make you an offer, you choose.": "Post a request with your budget. Creators apply, you choose.",
   "Creators make you an offer": "Creators apply",

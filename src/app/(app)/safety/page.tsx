@@ -27,6 +27,7 @@ export default async function Safety() {
       <Link key={href} href={href} className="card safe-card"><span className="safe-ic"><I n={icon} /></span><div><b>{t(title)}</b><p>{t(text)}</p></div><I n="right" c="sm" /></Link>))}</div>
     <section className="sec"><div className="sec-h"><h2 className="t-h2">{t("What we always do")}</h2></div>
       <div className="safe-promises">{PROMISES.map(([h, d]) => <div key={h} className="card"><b>{t(h)}</b><p className="t-sm muted">{t(d)}</p></div>)}</div></section>
-    <p className="t-sm muted" style={{ marginTop: 24 }}>{t("In immediate danger? Call 112.")} <Link href="/legal/terms">{t("Terms of use")}</Link> · <Link href="/legal/privacy">{t("Privacy statement")}</Link> · <Link href="/legal/creator_agreement">{t("Creator agreement")}</Link></p>
+    <div className="safe-foot"><p><I n="alert" c="sm" />{t("In immediate danger? Call 112.")}</p>
+      <nav aria-label={t("Legal")}><Link href="/legal/terms">{t("Terms of use")}</Link><Link href="/legal/privacy">{t("Privacy statement")}</Link><Link href="/legal/creator_agreement">{t("Creator agreement")}</Link></nav></div>
   </div>);
 }
