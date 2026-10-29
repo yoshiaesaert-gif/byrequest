@@ -2179,5 +2179,13 @@ const nl: Record<string, string> = {
   "That did not work. Try again or use your email code.": "Dat lukte niet. Probeer opnieuw of gebruik je mailcode.",
   "Remove": "Verwijderen",
   "This device": "Dit toestel",
+  "Will anyone know it is me?": "Weet iemand dat ik het ben?",
+  "No name, no face needed. Buyers only see your username and avatar. Keep logos, team kit and rooms people recognise out of the shot.": "Geen naam, geen gezicht nodig. Kopers zien enkel je gebruikersnaam en avatar. Hou logo's, clubkledij en herkenbare ruimtes uit beeld.",
+  "Where does my video end up?": "Waar belandt mijn video?",
+  "Only with the buyer who paid, in a private vault. No download button, and their name is woven into every view, so a leak leads straight back to them.": "Enkel bij de koper die betaalde, in een privé vault. Geen downloadknop, en de naam van de koper zit in elke weergave verwerkt, dus een lek leidt meteen naar die koper terug.",
+  "Will I get my money?": "Krijg ik mijn geld?",
+  "The buyer pays before you start. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "De koper betaalt voor je begint. ByRequest houdt het vast en betaalt je automatisch uit, uiterlijk 24 uur na levering.",
+  "Who is on the other side?": "Wie zit er aan de andere kant?",
+  "Every creator is ID checked, every buyer confirms 18+. You never share your number or socials, and you can block anyone in one tap.": "Elke creator is gecontroleerd met ID, elke koper bevestigt 18+. Je deelt nooit je nummer of socials, en je blokkeert iemand met één tik.",
 };
 export default nl;

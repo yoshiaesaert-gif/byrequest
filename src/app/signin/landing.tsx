@@ -1,4 +1,5 @@
 "use client";
+import Reassure from "@/components/reassure";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n/client";
 import LangSwitch from "@/components/lang-switch";
@@ -67,7 +68,7 @@ export default function Landing({ initial, year, invite }: { initial?: "buy" | "
           {invite ? <div className="invited" role="status"><span className="invited-ic"><Ico n="gift" /></span><div><b>{t("A friend invited you")}</b>
             <span>{earn ? (invite.welcomePct ? t("Sign up as a creator: you get {pct}% extra on your first deal, from ByRequest. Your friend never sees what you do.", { pct: invite.welcomePct }) : t("Sign up as a creator and start earning. Your friend never sees what you do.")) : invite.buyerGift ? t("Your first service fee is on us.") : t("Welcome to ByRequest.")}</span></div></div> : null}
           <SignInForm intent={side} refCode={invite?.code} />
-          <ul className="ld-trust">{([["shield", "Adults only, ID checked"], ["lock", "Encrypted chat"], ["eyeoff", "No nudity in feeds"], ["vault", "Private vault"]] as const).map(([i, l]) => <li key={l}><span><Ico n={i} c="sm" /></span>{t(l)}</li>)}</ul>
+          {earn ? <Reassure /> : <ul className="ld-trust">{([["shield", "Adults only, ID checked"], ["lock", "Encrypted chat"], ["eyeoff", "No nudity in feeds"], ["vault", "Private vault"]] as const).map(([i, l]) => <li key={l}><span><Ico n={i} c="sm" /></span>{t(l)}</li>)}</ul>}
         </div>
         <footer className="lp-legal">
           <nav aria-label={t("Legal")}>{LEGAL.map(([h, l]) => <a key={h} href={h}>{t(l)}</a>)}</nav>

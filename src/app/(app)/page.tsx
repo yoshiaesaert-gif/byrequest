@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { moodsNow, shuffled } from "@/content/themes";
+import Reassure from "@/components/reassure";
 import ScrollRow from "@/components/scroll-row";
 import Orbit from "@/components/orbit";
 import HowItWorks from "@/components/how-it-works";
@@ -208,6 +209,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
           const body = <><span className="c-path-n">{done ? <I n="check" c="sm" /> : i + 1}</span><span className="c-path-tx"><b>{title}</b><span>{sub}</span></span>{href && !done ? <I n="right" c="sm" /> : null}</>;
           return <li key={i} className={(done ? "done" : "") + (i === next ? " now" : "")}>{href && !done ? <Link href={href}>{body}</Link> : <div>{body}</div>}</li>; })}</ol>
       </section>); })()}
+    {a.status === "active" ? <Reassure variant="strip" /> : null}
 
     <div className="earn-hero">
       <div className="card earn-card">

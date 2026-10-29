@@ -2179,5 +2179,13 @@ const fr: Record<string, string> = {
   "That did not work. Try again or use your email code.": "Ça n'a pas marché. Réessaie ou utilise ton code e-mail.",
   "Remove": "Supprimer",
   "This device": "Cet appareil",
+  "Will anyone know it is me?": "Est ce que quelqu'un saura que c'est moi ?",
+  "No name, no face needed. Buyers only see your username and avatar. Keep logos, team kit and rooms people recognise out of the shot.": "Pas de nom, pas besoin de visage. Les acheteurs ne voient que ton pseudo et ton avatar. Garde les logos, les tenues d'équipe et les lieux reconnaissables hors du cadre.",
+  "Where does my video end up?": "Où finit ma vidéo ?",
+  "Only with the buyer who paid, in a private vault. No download button, and their name is woven into every view, so a leak leads straight back to them.": "Uniquement chez l'acheteur qui a payé, dans un coffre privé. Pas de bouton de téléchargement, et son nom est intégré à chaque affichage : une fuite remonte directement à lui.",
+  "Will I get my money?": "Est ce que je serai payé ?",
+  "The buyer pays before you start. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "L'acheteur paie avant que tu commences. ByRequest garde l'argent et te paie automatiquement, au plus tard 24 heures après la livraison.",
+  "Who is on the other side?": "Qui est de l'autre côté ?",
+  "Every creator is ID checked, every buyer confirms 18+. You never share your number or socials, and you can block anyone in one tap.": "Chaque créateur est vérifié avec sa pièce d'identité, chaque acheteur confirme avoir 18 ans. Tu ne partages jamais ton numéro ni tes réseaux, et tu bloques quelqu'un en un geste.",
 };
 export default fr;
