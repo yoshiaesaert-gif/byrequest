@@ -724,7 +724,7 @@ const nl: Record<string, string> = {
   "Delivered, being reviewed": "Geleverd, wordt nagekeken",
   "Delivered. It is being reviewed.": "Geleverd. Het wordt nagekeken.",
   "Delivery and access": "Levering en toegang",
-  "Describe it in a few words, like a 10 minute shower video": "Beschrijf het in een paar woorden, bijvoorbeeld een douchevideo van 10 minuten",
+  "For example: a 10 minute shower video for €80": "Bijvoorbeeld: douchevideo van 10 min voor €80",
   "Describe your request": "Beschrijf je request",
   "Development code:": "Ontwikkelcode:",
   "Done": "Klaar",
@@ -1134,7 +1134,7 @@ const nl: Record<string, string> = {
   "To report illegal content or abuse, with or without an account:": "Om illegale content of misbruik te melden, met of zonder account:",
   "Top rated": "Best beoordeeld",
   "Total, VAT included": "Totaal, inclusief btw",
-  "Trust and safety": "Trust and safety",
+  "Trust and safety": "Veiligheid en vertrouwen",
   "Type DELETE": "Typ DELETE",
   "Type DELETE to confirm. This cannot be undone.": "Typ DELETE om te bevestigen. Dit kan niet ongedaan gemaakt worden.",
   "Under review": "In behandeling",
@@ -1603,5 +1603,6 @@ const nl: Record<string, string> = {
   "In immediate danger? Call 112.": "In direct gevaar? Bel 112.",
   "This page is not available": "Deze pagina is niet beschikbaar",
   "It may have been closed, removed, or it belongs to another account.": "Ze is misschien gesloten, verwijderd, of hoort bij een ander account.",
+  "made for you": "op maat gemaakt",
 };
 export default nl;

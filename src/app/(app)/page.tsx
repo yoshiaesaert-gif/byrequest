@@ -27,6 +27,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
   return sell ? <CreatorHome userId={u.id} handle={u.handle} board={sp.board} /> : <BuyerHome userId={u.id} handle={u.handle} welcome={!!sp.welcome} creator={u.isCreator} />;
 }
 
+const lookOf = (u: { avatar: unknown }) => ((u.avatar as { look?: string } | null)?.look ?? "");
 const PROMISES = [
   { i: "held", t: "Money held until it matches", d: "Our payment partner holds it. You pay only for what was agreed, checked and reviewed." },
   { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted on your device. Not even ByRequest can open them." },
@@ -75,7 +76,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     })),
   } : null;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid, totals, verified] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals(), q.verifiedCreators()]);
+  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
@@ -119,8 +120,6 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
           <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · start yours", { n: x.n }) : t("Start yours")} <I n="right" c="sm" /></span></div></Link>))}</ScrollRow>
     </section>
 
-    <Orbit count={verified} t={t} />
-
     <section className="h-promise">
       <div className="h-promise-head"><span className="h-kick">{t("Our promises")}</span><h2>{t("Private by design.")}<br />{t("Safe by default.")}</h2><p>{t("Everything that matters happens inside ByRequest, so everyone is protected from the first offer to the last view.")}</p></div>
       <div className="h-promise-grid">{PROMISES.map((x) => <div key={x.t} className="h-pr"><PromiseIcon name={x.i} /><b>{t(x.t)}</b><p>{t(x.d)}</p></div>)}</div>
@@ -139,9 +138,11 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
         <Link href="/post" className="btn btn-white btn-lg">{t("Post a request")}</Link></div>
     </section>
 
+    <Orbit t={t} />
+
     {creators.length ? (
       <section className="h-sec"><div className="h-head"><div><span className="h-kick dark">{t("Open profiles")}</span><h2>{t("Creators you can ask directly")}</h2></div><span className="t-sm muted">{t("Others only show when they make you an offer")}</span></div>
-        <div className="creators">{shuffled(creators).map(({ u: c, p }) => (
+        <div className="creators">{[...shuffled(creators.filter((x) => /^p\d\d$/.test(lookOf(x.u)))), ...shuffled(creators.filter((x) => !/^p\d\d$/.test(lookOf(x.u))))].map(({ u: c, p }) => (
           <Link key={c.id} href={`/c/${c.handle}`} className="cr"><div className="media avfill"><Av a={c.avatar} name={c.handle} size={300} square /><div className="top"><span className="badge glass">{p.showsFace ? t("Face shown") : t("No face")}</span></div></div>
             <div><div className="row"><b>{c.handle}</b><span className="t-sm"><Stars sum={c.ratingSum} count={c.ratingCount} t={t} /></span></div><div className="m">{c.ratingCount ? `${t("{n} deals", { n: c.ratingCount })} · ` : ""}{t("from {amount}", { amount: euros(p.fromCents) })}</div></div></Link>))}</div>
       </section>) : null}

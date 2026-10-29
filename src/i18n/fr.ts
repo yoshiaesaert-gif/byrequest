@@ -724,7 +724,7 @@ const fr: Record<string, string> = {
   "Delivered, being reviewed": "Livré, en cours de contrôle",
   "Delivered. It is being reviewed.": "Livré. Le contenu est en cours de contrôle.",
   "Delivery and access": "Livraison et accès",
-  "Describe it in a few words, like a 10 minute shower video": "Décrivez-le en quelques mots, par exemple une vidéo douche de 10 minutes",
+  "For example: a 10 minute shower video for €80": "Par exemple : vidéo douche de 10 min pour 80 €",
   "Describe your request": "Décrivez votre demande",
   "Development code:": "Code de développement :",
   "Done": "Terminé",
@@ -1603,5 +1603,6 @@ const fr: Record<string, string> = {
   "In immediate danger? Call 112.": "En danger immédiat ? Appelle le 112.",
   "This page is not available": "Cette page n'est pas disponible",
   "It may have been closed, removed, or it belongs to another account.": "Elle a peut être été fermée, supprimée, ou elle appartient à un autre compte.",
+  "made for you": "fait pour toi",
 };
 export default fr;
