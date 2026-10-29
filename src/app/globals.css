@@ -875,3 +875,4 @@ p{margin:0}
 .world-note button{margin-left:auto;flex:0 0 auto;width:28px;height:28px;border-radius:999px;border:0;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer}
 .h-world{margin:6px 0 0;font-size:.875rem;color:var(--muted,#6B7079)}
 .ft-ck{display:block}
+.req{color:#D2353F;font-weight:700}

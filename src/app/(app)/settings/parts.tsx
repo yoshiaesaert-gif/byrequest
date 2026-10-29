@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { setPref, becomeCreator, saveProfile, setMarketing } from "../actions";
 import { toast } from "@/components/chrome";
-import { GENDER, BODY_HAIR, PUBIC, SIZE, CUT, CUP, LABEL, type Detail } from "@/domain/looks-detail";
+import { GENDER, BODY_HAIR, PUBIC, SIZE, CUT, CUP, LABEL, BUILD, HAIR, EYES, TATTOOS, HEIGHTS, type Detail } from "@/domain/looks-detail";
 
 export function Toggle({ k, on, b, s }: { k: "frost" | "discreetPush" | "neutralTab"; on: boolean; b: string; s: string }) {
   const t = useT();
@@ -41,22 +41,25 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
   const t = useT();
   const [vis, setVis] = useState(p?.visibility ?? "offer_only");
   const [det, setDet] = useState<Detail>(p?.detail ?? {});
-  const sel = (k: keyof Detail, label: string, list: readonly string[]) => <div className="field"><label htmlFor={"d-" + k}>{t(label)}</label>
+  const sel = (k: keyof Detail, label: string, list: readonly string[], req = false) => <div className="field"><label htmlFor={"d-" + k}>{t(label)}{req ? <span className="req" aria-hidden="true"> *</span> : null}</label>
     <select id={"d-" + k} className="select" value={det[k] ?? ""} onChange={(e) => setDet({ ...det, [k]: e.target.value || undefined })}><option value="">{t("Not shown")}</option>{list.map((v) => <option key={v} value={v}>{t(LABEL[v])}</option>)}</select></div>;
   const [pending, start] = useTransition();
+  const pick = (name: keyof P, label: string, list: readonly (string | number)[], req = true, unit = "") => { const cur = (p?.[name] as string | number | null) ?? ""; const opts = cur !== "" && !list.includes(cur) ? [cur, ...list] : list;
+    return <div className="field"><label htmlFor={name}>{t(label)}{req ? <span className="req" aria-hidden="true"> *</span> : null}</label><select id={name} name={name} className="select" defaultValue={String(cur)}><option value="">{t("Choose")}</option>{opts.map((v) => <option key={v} value={v}>{typeof v === "number" ? `${v}${unit}` : t(v)}</option>)}</select></div>; };
   const f = (name: keyof P, label: string, ph = "") => <div className="field"><label htmlFor={name}>{t(label)}</label><input id={name} name={name} className="input" defaultValue={(p?.[name] as string) ?? ""} placeholder={ph && t(ph)} /></div>;
-  return (<form className="upbox" style={{ paddingTop: 16 }} action={(fd) => start(async () => { fd.set("visibility", vis); for (const [k, v] of Object.entries(det)) if (v) fd.set("d_" + k, v); const r = await saveProfile(fd); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>
+  return (<form className="upbox" style={{ paddingTop: 16 }} onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); start(async () => { fd.set("visibility", vis); for (const [k, v] of Object.entries(det)) if (v) fd.set("d_" + k, v); const r = await saveProfile(fd); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); }); }}>
     <div className="field"><label>{t("Who sees my profile")}</label><div className="seg2">
       <button type="button" className={vis === "offer_only" ? "on" : ""} onClick={() => setVis("offer_only")}><b>{t("Only with an offer")}</b><span className="t-sm muted">{t("Only buyers you make an offer to, while they choose.")}</span></button>
       <button type="button" className={vis === "public" ? "on" : ""} onClick={() => setVis("public")}><b>{t("Public")}</b><span className="t-sm muted">{t("Anyone signed in can find you and send a private request.")}</span></button></div></div>
-    <div className="field"><label htmlFor="bio">{t("Short bio")}</label><textarea id="bio" name="bio" className="input" rows={3} maxLength={400} style={{ height: "auto", padding: 14 }} defaultValue={p?.bio ?? ""} placeholder={t("What you do, what you are like, what you make.")} /></div>
+    <p className="t-xs muted">{t("Fields with * are needed before you can apply. Buyers choose on them.")}</p>
+    <div className="field"><label htmlFor="bio">{t("Short bio")}<span className="req" aria-hidden="true"> *</span></label><textarea id="bio" name="bio" className="input" rows={3} maxLength={400} style={{ height: "auto", padding: 14 }} defaultValue={p?.bio ?? ""} placeholder={t("What you do, what you are like, what you make.")} /></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>
-      <div className="field"><label htmlFor="heightCm">{t("Height in cm")}</label><input id="heightCm" name="heightCm" className="input" inputMode="numeric" defaultValue={p?.heightCm ?? ""} /></div>
-      {f("build", "Build", "Athletic")}{f("sport", "Sport", "Football, gym")}{f("work", "Work", "Student")}{f("languages", "Languages", "English, Dutch")}{f("hair", "Hair")}{f("eyes", "Eyes")}{f("body", "Distinctive features", "Piercings, freckles, a scar")}{f("tattoos", "Tattoos")}
+      {pick("heightCm", "Height", HEIGHTS, true, " cm")}{pick("build", "Build", BUILD)}{pick("hair", "Hair", HAIR)}{pick("eyes", "Eyes", EYES)}{pick("tattoos", "Tattoos", TATTOOS, false)}
+      {f("sport", "Sport", "Football, gym")}{f("work", "Work", "Student")}{f("languages", "Languages", "English, Dutch")}{f("body", "Distinctive features", "Piercings, freckles, a scar")}
     </div>
     <div className="field det-sec"><label>{t("How you look")}</label><p className="t-xs muted">{t("Buyers choose with this. Gender shows on your profile. The intimate details only show to buyers you applied to, never publicly.")}</p></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>
-      {sel("gender", "Gender", GENDER)}{sel("bodyHair", "Body hair", BODY_HAIR)}{sel("pubic", "Pubic hair", PUBIC)}
+      {sel("gender", "Gender", GENDER, true)}{sel("bodyHair", "Body hair", BODY_HAIR, true)}{sel("pubic", "Pubic hair", PUBIC, true)}
       {det.gender !== "woman" ? <>{sel("size", "Size", SIZE)}{sel("cut", "Circumcised", CUT)}</> : null}
       {det.gender !== "man" ? sel("cup", "Cup size", CUP) : null}
     </div>
