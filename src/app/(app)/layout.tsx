@@ -17,14 +17,15 @@ import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const u = await requireUser();
-  const hasKey = (await listPasskeys(u.id)).length > 0;
-  const { t } = await getT();
-  // Last seen, kept coarse (every few hours) and only used for the "we miss you" email.
-  if (!u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 3 * 3600_000) await db.update(schema.users).set({ lastSeenAt: new Date() }).where(eq(schema.users.id, u.id));
   const mode = u.isCreator && (await cookies()).get("brq_mode")?.value === "sell" ? "sell" : "buy";
-  const n = await unread(u.id);
-  const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
-  const active = u.isCreator ? (await access(u.id)).status === "active" : false;
+  // All at once: every page waits for this.
+  const [keys, { t }, n, staff, acc] = await Promise.all([
+    listPasskeys(u.id), getT(), unread(u.id), db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) }), u.isCreator ? access(u.id) : null,
+    // Last seen, kept coarse (every few hours) and only used for the "we miss you" email.
+    !u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 3 * 3600_000 ? db.update(schema.users).set({ lastSeenAt: new Date() }).where(eq(schema.users.id, u.id)) : null,
+  ]);
+  const hasKey = keys.length > 0;
+  const active = acc ? acc.status === "active" : false;
   const buy = mode === "buy";
   const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Applications")], ["/studio", t("Studio")]];
   const tabs = buy

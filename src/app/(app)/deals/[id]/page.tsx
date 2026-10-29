@@ -16,16 +16,16 @@ import { textsIn } from "@/server/translate";
 
 export default async function DealPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ accepted?: string; from?: string }> }) {
   const { id } = await params;
-  const u = await requireUser();
-  const { t, locale } = await getT();
+  const [u, { t, locale }] = await Promise.all([requireUser(), getT()]);
   const x = await deal(id, u.id);
-  const L = await textsIn([x?.r.title], locale);
   if (!x) notFound();
   const buyer = x.d.buyerId === u.id;
   const other = buyer ? x.creator : x.buyer;
-  await markChatRead(id, u.id, buyer);
   const otherReadAt = buyer ? x.d.creatorReadAt : x.d.buyerReadAt;
-  const [a, parts, lastDelivery, hold] = await Promise.all([
+  // Everything else at once: a chat has to open instantly.
+  const [L, , a, parts, lastDelivery, hold] = await Promise.all([
+    textsIn([x.r.title], locale),
+    markChatRead(id, u.id, buyer),
     buyer ? null : access(u.id),
     buyer ? [] : listFor(u.id),
     db.query.deliveries.findFirst({ where: eq(schema.deliveries.dealId, id), orderBy: desc(schema.deliveries.createdAt) }),

@@ -118,12 +118,12 @@ export default function Room(p: Props) {
       : (!p.deal.ratedBuyer ? <CreatorReview dealId={p.deal.id} name={p.other.handle} /> : null)) : null}
     <ReviewDone stars={p.deal.stars} tipCents={buyer ? p.deal.tipCents : p.deal.tipCreatorCents} name={p.other.handle} buyer={buyer} />
     <div className="card chatbox">
+      <div className="chat-bar"><span className="chat-lock"><Ico n="lock" c="sm" />{tr("End to end encrypted")}</span><span className="chat-acts"><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
       <div className="msgs" ref={box} aria-live="polite">
+        <p className="chat-e2e">{tr("Only you and {name} can read this chat. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}</p>
         {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
         {!chat && !pendingMsgs.length && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
       </div>
-      <div className="safety-note"><Ico n="lock" c="sm" /><b>{tr("End to end encrypted.")}</b>&nbsp;{tr("Only you and {name} can read this chat. Meeting in person, paying outside ByRequest and sharing contact details are not allowed.", { name: p.other.handle })} <Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report this chat")}</Link>
-        <span className="safe-row" style={{ marginTop: 6 }}>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
       {warned ? <p className="chat-warn" role="alert"><Ico n="alert" c="sm" />{tr("This looks like contact details, a payment outside ByRequest or a meeting. That is not allowed and removes your protection: no review, no refund, no help. Send anyway only if it is something else.")}</p> : null}
       {p.blocked ? <div className="chat-closed" role="status"><Ico n="block" c="sm" /><div><b>{tr("This chat is closed")}</b><span>{p.blocked === "me" ? tr("You blocked {name}. The deal stays protected: delivery, review and refund work as usual.", { name: p.other.handle }) : tr("New messages are not possible. The deal stays protected: delivery, review and refund work as usual.")}</span></div>{p.blocked === "me" ? <UnblockButton handle={p.other.handle} /> : null}</div>
       : <>      <form className="composer" onSubmit={send}>

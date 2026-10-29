@@ -2247,5 +2247,6 @@ const fr: Record<string, string> = {
   "Penis length": "Longueur du pénis",
   "For example 17": "Par exemple 17",
   "Erect, measured on top from the base to the tip.": "En érection, mesurée sur le dessus de la base jusqu'au bout.",
+  "Only you and {name} can read this chat. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.": "Seuls toi et {name} pouvez lire cette discussion. Payer hors ByRequest, partager ses coordonnées et se rencontrer ne sont pas autorisés.",
 };
 export default fr;
