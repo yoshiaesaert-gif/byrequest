@@ -812,3 +812,27 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .nf-card h1{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:14px 0 8px}
 .nf-card p{color:var(--muted)}
 .nf-acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+
+/* Applied: a calm, unmistakable receipt in place of the form. */
+.applied{display:flex;flex-direction:column;gap:14px;text-align:center;align-items:stretch}
+.applied-ic{align-self:center;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#34c77b,#16a35a);box-shadow:0 12px 30px -10px rgba(22,163,90,.55);animation:applied-pop .6s cubic-bezier(.2,1.4,.4,1) both}
+.applied-ic .ico{width:34px;height:34px;stroke-width:2.6}
+.applied.is-lost .applied-ic{background:linear-gradient(145deg,#a1a1aa,#71717a);box-shadow:none}
+.applied-h{font-size:clamp(22px,5.4vw,26px);line-height:1.15;letter-spacing:-.02em;font-weight:800}
+.applied-sub{margin-top:-6px;color:var(--muted);font-size:14px}
+.applied-sum{margin:4px 0 0;display:grid;gap:0;border-radius:16px;background:var(--sunk);padding:4px 16px;text-align:left}
+.applied-sum>div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.applied-sum>div:last-child{border-bottom:0}
+.applied-sum dt{color:var(--muted);font-size:14px}
+.applied-sum dd{margin:0;font-weight:600;font-size:14px;text-align:right;overflow-wrap:anywhere}
+.applied-next{list-style:none;margin:0;padding:0;display:grid;gap:10px;text-align:left}
+.applied-next li{display:flex;gap:12px;align-items:center;font-size:14px;line-height:1.4}
+.applied-next span{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:#e8f7ef;color:#138a4c}
+@keyframes applied-pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.applied-ic{animation:none}}
+.applied-flag{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:14px;background:#e8f7ef;color:#0f6e3d;font-weight:600;font-size:14px;margin-bottom:16px}
+.applied-flag .ico{color:#16a35a}
+.applied-flag .applied-go{margin-left:auto;text-decoration:underline;text-underline-offset:3px}
+.applied-flag{text-decoration:none}
+.fcard .fgo.is-applied{background:#16a35a;color:#fff;justify-content:flex-start;gap:12px;padding:0 24px 0 8px}
+.fcard .fgo.is-applied i{background:rgba(255,255,255,.22);color:#fff}

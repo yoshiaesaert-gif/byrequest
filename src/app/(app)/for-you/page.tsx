@@ -5,6 +5,8 @@ import { feed, savedIds } from "@/server/queries";
 import Feed from "./feed";
 import { getLocale } from "@/i18n/server";
 import { localize } from "@/server/translate";
+import { db, schema } from "@/db";
+import { eq } from "drizzle-orm";
 
 export default async function ForYou({ searchParams }: { searchParams: Promise<{ tab?: string; c?: string; q?: string; theme?: string }> }) {
   const u = await requireUser();
@@ -16,6 +18,8 @@ export default async function ForYou({ searchParams }: { searchParams: Promise<{
   if (th) items = items.filter((r) => th.match.test(`${r.title} ${r.details ?? ""}`));
   if (sp.q) { const t = sp.q.toLowerCase(); items = items.filter((r) => r.title.toLowerCase().includes(t)); }
   const saved = await savedIds(u.id);
+  // Requests this creator already applied for keep a clear mark, so nobody wonders whether it went through.
+  const applied = new Set(u.isCreator ? (await db.select({ id: schema.offers.requestId }).from(schema.offers).where(eq(schema.offers.creatorId, u.id))).map((o) => o.id) : []);
   const shown = await localize(items, await getLocale());
-  return <Feed items={shown.filter((r) => !r.mine).map((r) => ({ ...r, saved: saved.has(r.id) }))} tab={tab} sell={sell} frost={u.prefs.frost} />;
+  return <Feed items={shown.filter((r) => !r.mine).map((r) => ({ ...r, saved: saved.has(r.id), applied: applied.has(r.id) }))} tab={tab} sell={sell} frost={u.prefs.frost} />;
 }

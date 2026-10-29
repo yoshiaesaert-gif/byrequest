@@ -41,6 +41,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   return (<div className="wrap">
     <Link href="/for-you" className="back"><I n="left" c="sm" />{t("Requests")}</Link>
     {unpublished ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{r.status === "in_review" ? t("Not published: waiting for review") : t("Not published: rejected")}</b><div className="t-sm">{t("Only the team and the buyer see this page.")}</div></div><Link href={`/admin/requests/${id}`} className="btn btn-primary btn-sm">{t("Review in back office")}</Link></div> : null}
+    {mine && mine.status === "pending" ? <a href="#offer" className="applied-flag"><I n="check" />{t("You applied for this request")}<span className="applied-go">{t("View")}</span></a> : null}
     <div className="two">
       <div>
         <div className="rd">
@@ -88,7 +89,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
               <ul className="docsum">{a!.missing.map((x) => <li key={x}><I n="alert" c="sm" />{t(x)}</li>)}</ul>
               {a!.status !== "suspended" ? <Link href="/onboarding" className="btn btn-primary btn-block">{t("Continue setup")}</Link> : null}
             </>)
-            : <OfferForm requestId={r.id} minVault={r.minVault} faceRequired={r.face === "required"} dueHours={r.dueHours} existing={mine ? { showsFace: mine.showsFace, vault: mine.vault, etaHours: mine.etaHours, note: mine.note, status: mine.status } : null} defaults={{ showsFace: profile?.showsFace ?? false, vault: profile?.defaultVault ?? "30d" }} />}
+            : <OfferForm requestId={r.id} minVault={r.minVault} faceRequired={r.face === "required"} dueHours={r.dueHours} existing={mine ? { showsFace: mine.showsFace, vault: mine.vault, etaHours: mine.etaHours, note: mine.note, status: mine.status, at: mine.createdAt.toISOString() } : null} rivals={offers.length - (mine ? 1 : 0)} defaults={{ showsFace: profile?.showsFace ?? false, vault: profile?.defaultVault ?? "30d" }} />}
           <div className="protect"><span><I n="shield" c="sm" />{t("The buyer’s payment is secured before you start")}</span><span><I n="lock" c="sm" />{t("Chat is end to end encrypted")}</span><span><I n="eyeoff" c="sm" />{t("Buyers see your username and avatar only")}</span></div>
         </div>
       </aside>

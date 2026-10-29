@@ -8,7 +8,7 @@ import { CAT_LABEL, CREATOR_SHARE, amountLabel, euros, type Category } from "@/d
 import { useT } from "@/i18n/client";
 import { BuyerLine, type BuyerStat } from "@/components/ui";
 
-type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; saved: boolean; house?: boolean; translated?: boolean; buyer?: BuyerStat };
+type Item = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; closesAt: Date; cover: string | null; offers: number; applied?: boolean; saved: boolean; house?: boolean; translated?: boolean; buyer?: BuyerStat };
 const VAULT: Record<string, string> = { "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
@@ -49,7 +49,8 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
                   <div className="fmeta"><span>{t(r.who)}, {t("{a} to {b}", { a: r.ageMin, b: r.ageMax })}</span><span>{t(r.face === "not_needed" ? "No face" : r.face === "optional" ? "Face optional" : "Face required")}</span><span>{t("Vault")} {t(VAULT[r.minVault])}</span></div><BuyerLine b={r.buyer} t={t} light />{r.house ? <div className="by-brq" style={{ color: "rgba(255,255,255,.75)" }}>{t("by ByRequest")}</div> : null}</div>
                 <div className="fdeal">
                   <div className="fearn"><span className="lbl">{t("Budget")}</span><b className="num">{euros(r.dealCents)}</b>{sell ? <span className="ffix">{t("You get {amount} · fixed price", { amount: euros(Math.round(r.dealCents * CREATOR_SHARE)) })}</span> : null}</div>
-                  <Link className="fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>
+                  {r.applied ? <Link className="fgo is-applied" href={`/requests/${r.id}#offer`}><i><Ico n="check" c="sm" /></i><span>{t("Applied")}</span></Link>
+                    : <Link className="fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>}
                 </div>
               </div>
             </article>

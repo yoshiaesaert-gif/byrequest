@@ -29,10 +29,11 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
   if (!vaultAtLeast(input.vault, r.minVault)) throw new RuleError("The buyer asked for a longer vault period.");
   if (r.face === "required" && !input.showsFace) throw new RuleError("The buyer asked for the face to be shown.");
   if (input.etaHours > r.dueHours) throw new RuleError(`The buyer needs it within ${r.dueHours} hours.`);
+  // One application per request, and it stays as sent: the buyer compares what each creator promised.
+  const before = await db.query.offers.findFirst({ where: and(eq(offers.requestId, r.id), eq(offers.creatorId, creatorId)), columns: { id: true } });
+  if (before) throw new RuleError("You already applied for this request.");
   return db.transaction(async (tx) => {
-    const [o] = await tx.insert(offers).values({ ...input, creatorId, note: input.note.slice(0, 140) })
-      .onConflictDoUpdate({ target: [offers.requestId, offers.creatorId], set: { showsFace: input.showsFace, vault: input.vault, etaHours: input.etaHours, note: input.note.slice(0, 140), status: "pending" } })
-      .returning();
+    const [o] = await tx.insert(offers).values({ ...input, creatorId, note: input.note.slice(0, 140) }).returning();
     await notify(tx, r.buyerId, "New offer", "You have a new offer on your request.", `/requests/${r.id}/offers`);
     return o;
   });
