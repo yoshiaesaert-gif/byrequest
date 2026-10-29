@@ -1156,3 +1156,9 @@ i.td{background:#4434E6}i.yd{background:#A7ABB3}i.lw{background:#D9A21B}
 .sk-av{width:52px;height:52px;border-radius:999px}.sk-l{width:140px;height:12px}.sk-xl{width:260px;height:26px}
 .sk-chat{display:flex;flex-direction:column;gap:12px;padding:24px;min-height:420px}.sk-msg{height:40px;border-radius:18px}.sk-msg.r{align-self:flex-end}
 .sk-side{display:flex;flex-direction:column;gap:12px;padding:0 0 20px;overflow:hidden}.sk-img{height:220px;border-radius:0}.sk-side .sk-l{margin:0 20px}
+/* Avatar picker: square tiles that hold in every browser (no aspect-ratio inside a scroll box) */
+.looks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:auto;align-items:start;gap:10px}
+.look{position:relative;display:block;width:100%;height:0;padding:0 0 100%!important;margin:0;border:0;background:var(--sunk);aspect-ratio:auto;-webkit-appearance:none;appearance:none;cursor:pointer}
+.look img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.join .looks{max-height:none;overflow:visible;padding:4px;margin:-4px}
+.join .looks{max-height:272px;overflow-y:auto;overscroll-behavior:contain;padding:6px;margin:-6px;scrollbar-width:thin}
