@@ -8,6 +8,7 @@ import { access } from "@/server/onboarding";
 import { BigNum, BuyerLine, Chips, Cover, I, leftLabel } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
+import { profileMissing } from "@/domain/looks-detail";
 import { BlockButton } from "@/components/block-button";
 import { blockedEither } from "@/server/blocks";
 import { RemoveRequest } from "../../admin/parts";
@@ -51,7 +52,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
           <div className="rd-media">
             <Cover cover={r.cover} />
             <span className="rd-shade" />
-            <div className="rd-top"><Chips r={card} t={t} />{offers.length ? <span className="mc">{t(offers.length === 1 ? "{n} offer" : "{n} offers", { n: offers.length })}</span> : null}</div>
+            <div className="rd-top"><Chips r={card} t={t} />{r.buyerId === u.id && offers.length ? <span className="mc">{t(offers.length === 1 ? "{n} offer" : "{n} offers", { n: offers.length })}</span> : null}</div>
             <div className="rd-bottom">
               <div className="rd-title">
                 <span className="rd-cat"><I n={CAT_ICON[r.category]} c="sm" />{t(CAT_LABEL[r.category])} · {open ? leftLabel(r.closesAt, t) : t("closed")}</span>
@@ -91,6 +92,12 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
               <b className="t-h3">{t(a!.status === "pending_verification" ? "Your verification is being reviewed." : a!.areas.payout !== "approved" && a!.areas.identity === "approved" ? "Action needed to enable payouts." : "Finish your setup to make offers")}</b>
               <ul className="docsum">{a!.missing.map((x) => <li key={x}><I n="alert" c="sm" />{t(x)}</li>)}</ul>
               {a!.status !== "suspended" ? <Link href="/onboarding" className="btn btn-primary btn-block">{t("Continue setup")}</Link> : null}
+            </>)
+            : !mine && profileMissing(profile).length ? (<>
+              <b className="t-h3">{t("Complete your public profile to apply")}</b>
+              <p className="t-sm muted">{t("Buyers choose on how you look. Fill in these few details once; they stay private until you apply.")}</p>
+              <ul className="docsum">{profileMissing(profile).map((x) => <li key={x}><I n="alert" c="sm" />{t(x)}</li>)}</ul>
+              <Link href="/settings#creator" className="btn btn-primary btn-block">{t("Complete my profile")}</Link>
             </>)
             : <OfferForm requestId={r.id} minVault={r.minVault} faceRequired={r.face === "required"} dueHours={r.dueHours} existing={mine ? { showsFace: mine.showsFace, vault: mine.vault, etaHours: mine.etaHours, note: mine.note, status: mine.status, at: mine.createdAt.toISOString() } : null} rivals={offers.length - (mine ? 1 : 0)} defaults={{ showsFace: profile?.showsFace ?? false, vault: profile?.defaultVault ?? "30d" }} />}
           <div className="protect"><span><I n="shield" c="sm" />{t("The buyer’s payment is secured before you start")}</span><span><I n="lock" c="sm" />{t("Chat is end to end encrypted")}</span><span><I n="eyeoff" c="sm" />{t("Buyers see your username and avatar only")}</span></div>

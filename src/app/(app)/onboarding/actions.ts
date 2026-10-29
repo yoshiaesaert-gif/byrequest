@@ -30,7 +30,7 @@ export async function acceptAccountDocs(): Promise<R> {
 export async function startIdentity(): Promise<R> {
   return run(async () => {
     const u = await requireUser(); await ob.ensure(u.id);
-    const url = await ob.startIdentity(u.id, `${appUrl()}/onboarding?step=identity`);
+    const url = await ob.startIdentity(u.id, `${appUrl()}/verified`);
     redirect(url);
   });
 }
@@ -67,7 +67,7 @@ export async function submitPayout(input: z.input<typeof Payout>): Promise<R> {
     const r = await ob.startPayout(u.id, { ...p.data, returnUrl: `${appUrl()}/onboarding?step=payouts` });
     revalidatePath("/onboarding");
     if (p.data.mode === "link" && r.actionUrl) redirect(r.actionUrl);
-    return { ok: true, msg: r.status === "action_required" ? "Saved. The provider needs a few more details." : "Sent to the payment provider for review." };
+    return { ok: true, msg: r.status === "action_required" ? "Saved. A few more details are needed." : "Payout account saved." };
   });
 }
 

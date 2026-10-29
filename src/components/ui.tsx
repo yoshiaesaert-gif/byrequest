@@ -81,7 +81,7 @@ export function RequestCard({ r, frost = true, t = same, budget }: { r: CardReq;
         <Cover cover={r.cover} frost={frost} />
         <div className="ov"><div><Chips r={r} t={t} /><BigNum r={r} t={t} /></div><Earn cents={r.dealCents} t={t} budget={budget} /></div>
       </div>
-      <div><div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)} · {t("{n} offers", { n: r.offers })}</div><BuyerLine b={r.buyer} t={t} />{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
+      <div><div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)}{budget ? ` · ${t("{n} offers", { n: r.offers })}` : ""}</div><BuyerLine b={r.buyer} t={t} />{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
     </Link>
   );
 }

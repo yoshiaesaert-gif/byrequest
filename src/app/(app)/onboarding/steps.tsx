@@ -65,7 +65,7 @@ function Account({ p, next }: { p: Props; next: () => void }) {
     <label className="check"><input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} disabled={p.account.terms} /><span>{t("I agree to the")} <Link href="/legal/terms" target="_blank" style={{ fontWeight: 600 }}>{t("Terms of use")}</Link>.</span></label>
     <label className="check"><input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} disabled={p.account.privacy} /><span>{t("I have read the")} <Link href="/legal/privacy" target="_blank" style={{ fontWeight: 600 }}>{t("Privacy statement")}</Link>.</span></label>
     <p className="t-xs muted">{t("Marketing messages are a separate, optional choice in Settings. They are never part of these agreements.")}</p>
-    <button className="btn btn-primary btn-lg" disabled={pending || !terms || !privacy} onClick={() => start(async () => { const r = await acceptAccountDocs(); if (r.ok) next(); else toast(t(r.error), "err"); })}>{p.account.done ? "Continue" : "Save and continue"}</button>
+    <button className="btn btn-primary btn-lg" disabled={pending || !terms || !privacy} onClick={() => start(async () => { const r = await acceptAccountDocs(); if (r.ok) next(); else toast(t(r.error), "err"); })}>{t(p.account.done ? "Continue" : "Save and continue")}</button>
   </div>);
 }
 
@@ -87,7 +87,7 @@ function Identity({ p, next }: { p: Props; next: () => void }) {
       : !p.identity.provider ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Identity verification is not available yet. We will notify you.")}</span></div>
       : (<>
         {s === "rejected" || s === "expired" || s === "action_required" ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{s === "expired" ? "Your verification expired. Please verify again." : s === "action_required" ? "The provider needs another try, for example a clearer photo." : `Your verification was not approved${p.identity.reason ? `: ${p.identity.reason}` : ""}.`}</span></div> : null}
-        <button className="btn btn-primary btn-lg" disabled={pending} onClick={() => start(async () => { const r = await startIdentity(); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? "Opening…" : s === "not_started" ? "Start verification" : "Verify again"}</button>
+        <button className="btn btn-primary btn-lg" disabled={pending} onClick={() => start(async () => { const r = await startIdentity(); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? t("Opening…") : t(s === "not_started" ? "Start verification" : "Verify again")}</button>
         <p className="t-xs muted">{t("You are sent to the verification provider and come back here afterwards.")}</p>
         {s === "rejected" ? <div className="field"><label htmlFor="ap">{t("Think this is a mistake?")}</label><textarea id="ap" className="input" rows={3} style={{ height: "auto", padding: 14 }} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder={t("Tell support what happened. Do not include ID numbers.")} />
           <button className="btn btn-secondary" disabled={pending} onClick={() => start(async () => { const r = await appeal("identity", msg); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); if (r.ok) setMsg(""); })}>{t("Ask for a review")}</button>
@@ -100,7 +100,7 @@ function Payouts({ p, next }: { p: Props; next: () => void }) {
   const t = useT();
   const [type, setType] = useState<"individual" | "business">((p.payout.accountType as "individual") ?? "individual");
   const [country, setCountry] = useState(p.payout.country ?? "BE");
-  const [mode, setMode] = useState<"create" | "link">("create");
+  const mode = "create" as const;
   const [fields, setFields] = useState<string[]>([]);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [code, setCode] = useState("");
@@ -112,7 +112,7 @@ function Payouts({ p, next }: { p: Props; next: () => void }) {
   const editing = s === "not_started" || s === "rejected";
   return (<div className="card ob-card">
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><span className="eyebrow">{t("Step C")}</span><h2>{t("Set up payouts")}</h2></div><Status s={s} env={p.payout.env} /></div>
-    <div className="why"><Ico n="wallet" /><div><b>{t("How you get paid")}</b><br />{t("Payouts are handled by")} {p.payout.provider ?? "our payment partner"}. They check that the account belongs to you. Bank and tax details go straight to them; we keep only a reference and the status.</div></div>
+    <div className="why"><Ico n="wallet" /><div><b>{t("Where your earnings go")}</b><br />{t("After every deal your share is paid to this bank account, automatically, 24 hours after delivery. The account must be in your own name, the name on your ID. Your bank details go straight to our payment partner; ByRequest only keeps a reference.")}</div></div>
     {!p.payout.identityOk ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Verify your identity first.")}</span></div>
       : !p.payout.provider ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Payout setup is not available yet. We will notify you.")}</span></div>
       : s === "approved" ? <><p className="t-sm">{p.payout.canReceive ? "Payouts are enabled." : "Your account is approved, but the provider has not enabled payouts yet."}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
@@ -133,12 +133,9 @@ function Payouts({ p, next }: { p: Props; next: () => void }) {
           <button type="button" className={type === "individual" ? "on" : ""} onClick={() => setType("individual")}><b>{t("Individual")}</b><span className="t-sm muted">{t("In your own name.")}</span></button>
           <button type="button" className={type === "business" ? "on" : ""} onClick={() => setType("business")}><b>{t("Business")}</b><span className="t-sm muted">{t("A company or sole trader.")}</span></button></div></div>
         <div className="field"><label htmlFor="ct">{t("Country of residence")}</label><select id="ct" className="select" value={country} onChange={(e) => setCountry(e.target.value)}>{p.countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}</select></div>
-        <div className="field"><label>{t("How do you want to connect?")}</label><div className="seg2">
-          <button type="button" className={mode === "create" ? "on" : ""} onClick={() => setMode("create")}><b>{t("Add a payout account")}</b><span className="t-sm muted">{t("Enter the details the provider asks for.")}</span></button>
-          <button type="button" className={mode === "link" ? "on" : ""} onClick={() => setMode("link")}><b>{t("Link an existing account")}</b><span className="t-sm muted">{t("If you already have one at")} {p.payout.provider}.</span></button></div></div>
-        {mode === "create" ? fields.map((k) => (<div key={k} className="field"><label htmlFor={k}>{p.fieldInfo[k]?.label ?? k}</label><input id={k} className="input" autoComplete="off" value={vals[k] ?? ""} onChange={(e) => setVals((v) => ({ ...v, [k]: e.target.value }))} />{p.fieldInfo[k]?.help ? <span className="t-sm muted">{p.fieldInfo[k].help}</span> : null}</div>)) : null}
-        <p className="t-xs muted">{t("Only the fields")} {p.payout.provider} needs for {p.countries.find((c) => c.code === country)?.name} and this account type are shown. They may ask for more later, for example tax details.</p>
-        <button className="btn btn-primary btn-lg" disabled={pending || (mode === "create" && fields.some((k) => !p.fieldInfo[k]?.optional && !vals[k]))} onClick={() => start(async () => { const r = await submitPayout({ mode, country, accountType: type, fields: mode === "create" ? vals : {} }); if (r && r.ok) { toast(r.msg ?? "Saved"); location.reload(); } else if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? "Sending…" : mode === "link" ? `Continue to ${p.payout.provider}` : "Send to the provider"}</button>
+        {mode === "create" ? fields.map((k) => (<div key={k} className="field"><label htmlFor={k}>{p.fieldInfo[k]?.label ?? k}</label><input id={k} className="input" autoComplete="off" value={vals[k] ?? ""} onChange={(e) => { const x = p.fieldInfo[k]?.type === "iban" ? e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 34).replace(/(.{4})/g, "$1 ").trim() : e.target.value; setVals((v) => ({ ...v, [k]: x })); }} placeholder={p.fieldInfo[k]?.type === "iban" ? "BE68 5390 0754 7034" : undefined} spellCheck={false} />{p.fieldInfo[k]?.help ? <span className="t-sm muted">{p.fieldInfo[k].help}</span> : null}</div>)) : null}
+        <p className="t-xs muted">{t("No BIC or SWIFT code needed: within Europe the IBAN is enough. We may ask for tax details later, as the law requires.")}</p>
+        <button className="btn btn-primary btn-lg" disabled={pending || (mode === "create" && fields.some((k) => !p.fieldInfo[k]?.optional && !vals[k]))} onClick={() => start(async () => { const r = await submitPayout({ mode, country, accountType: type, fields: Object.fromEntries(Object.entries(vals).map(([k, v]) => [k, p.fieldInfo[k]?.type === "iban" ? v.replace(/\s/g, "") : v])) }); if (r && r.ok) { toast(r.msg ?? "Saved"); location.reload(); } else if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? t("Saving…") : t("Save payout account")}</button>
       </>)}
   </div>);
 }
@@ -151,11 +148,11 @@ function Agreement({ p, next }: { p: Props; next: () => void }) {
   const a = p.agreement;
   if (!a) return <div className="card ob-card"><h2>{t("Creator agreement")}</h2><p className="muted">{t("The agreement is not published yet.")}</p></div>;
   return (<div className="card ob-card">
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><span className="eyebrow">{t("Step D")}</span><h2>{a.title}</h2><span className="t-sm muted">{t("Version")} {a.version}</span></div><Status s={a.status as Check} /></div>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}><div><span className="eyebrow">{t("Step D")}</span><h2>{a.title}</h2></div><Status s={a.status as Check} /></div>
     <ul className="docsum">{a.summary.map((x) => <li key={x}><Ico n="check" c="sm" />{x}</li>)}</ul>
     <Link href="/legal/creator_agreement" target="_blank" className="btn btn-secondary" style={{ alignSelf: "flex-start" }}>{t("Read the full agreement")}</Link>
-    {a.status === "approved" ? <><p className="t-sm">{t("You accepted version")} {a.version}.</p><button className="btn btn-primary btn-lg" onClick={next}>{t("See your overview")}</button></> : (<>
-      <label className="check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>{t("I have read the creator agreement, version {v}, and I agree to it.", { v: a.version })}</span></label>
+    {a.status === "approved" ? <><p className="t-sm">{t("You accepted the creator agreement.")}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("See your overview")}</button></> : (<>
+      <label className="check"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>{t("I have read the creator agreement and I agree to it.")}</span></label>
       <button className="btn btn-primary btn-lg" disabled={!ok || pending} onClick={() => start(async () => { const r = await acceptAgreement(a.id, a.sha); if (r.ok) next(); else toast(t(r.error), "err"); })}>{t("I agree")}</button></>)}
   </div>);
 }

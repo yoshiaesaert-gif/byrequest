@@ -734,3 +734,21 @@ p{margin:0}
 .hc-still{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 .hc-search input::-webkit-search-cancel-button{display:none}
 @media (max-width:600px){.hc-cats{grid-template-columns:1fr 1fr}.hc-cat{padding:14px}}
+
+/* Confirmations: one clear card in the middle of the screen, the page behind turns to glass */
+.toast-glass{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:24px;background:rgba(14,16,19,.18);-webkit-backdrop-filter:blur(10px) saturate(1.2);backdrop-filter:blur(10px) saturate(1.2);cursor:pointer}
+.toast-glass .toast{position:static;transform:none;flex-direction:column;text-align:center;gap:12px;padding:26px 28px;min-width:min(320px,100%);max-width:420px;border-radius:24px;background:var(--paper,#fff);color:var(--ink);font-size:1.0625rem;font-weight:600;line-height:1.4;box-shadow:0 30px 80px rgba(14,16,19,.28)}
+.toast-glass .toast-i{width:52px;height:52px;border-radius:999px;display:grid;place-items:center;background:#E3F7EC;color:#16804A}
+.toast-glass .toast.err .toast-i{background:#FDECEC;color:#E5484D}
+.toast-glass .toast .ico{color:inherit;width:26px;height:26px}
+@media (prefers-reduced-motion:no-preference){.toast-glass{animation:tg .2s ease}.toast-glass .toast{animation:tgc .3s cubic-bezier(.2,.8,.2,1)}@keyframes tg{from{opacity:0}}@keyframes tgc{from{transform:scale(.94);opacity:0}}}
+
+/* Creator home: one inviting hero, and a clear nudge until the public profile is complete */
+.c-hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;margin:8px 0 28px}
+.c-hero-top{display:flex;flex-direction:column;gap:6px;padding:22px 24px;border-radius:24px;background:linear-gradient(140deg,#1B1446,#3A2CC9);color:#fff;min-width:240px;text-decoration:none}
+.c-hero-top .eyebrow{color:rgba(255,255,255,.72)}
+.c-hero-top b{font-size:2.6rem;letter-spacing:-.03em;line-height:1}
+.c-hero-top span{opacity:.85}.c-hero-top .h-link{color:#fff;margin-top:6px}
+.pf-nudge{display:flex;gap:14px;align-items:center;padding:18px 20px;border-radius:20px;background:#FFF4D6;border:1px solid #F2D48A;margin-bottom:20px}
+.pf-nudge-i{width:44px;height:44px;border-radius:14px;background:#fff;display:grid;place-items:center;flex:0 0 auto}
+@media (max-width:760px){.c-hero{grid-template-columns:1fr}.pf-nudge{flex-wrap:wrap}.pf-nudge .btn{width:100%}}

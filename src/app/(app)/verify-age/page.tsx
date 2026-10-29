@@ -21,7 +21,7 @@ export default async function VerifyAge({ searchParams }: { searchParams: Promis
     "use server";
     const me = await requireUser();
     (await cookies()).set("brq_next", next, { httpOnly: true, sameSite: "lax", maxAge: 1800, path: "/" });
-    redirect(await startBuyerAge(me.id, `${appUrl()}/verify-age?back=1`));
+    redirect(await startBuyerAge(me.id, `${appUrl()}/verified?to=age`));
   }
   return (<div className="wrap"><div className="va">
     <span className="eyebrow">{t("One time check")}</span>

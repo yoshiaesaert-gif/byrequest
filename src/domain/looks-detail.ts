@@ -20,3 +20,17 @@ const pick = <T extends readonly string[]>(list: T, v: unknown) => (typeof v ===
 export function cleanDetail(v: Record<string, unknown>): Detail {
   return { gender: pick(GENDER, v.gender), bodyHair: pick(BODY_HAIR, v.bodyHair), pubic: pick(PUBIC, v.pubic), size: pick(SIZE, v.size), cut: pick(CUT, v.cut), cup: pick(CUP, v.cup) };
 }
+
+/* What a buyer needs to picture a creator before choosing. Without these, applying is not possible. */
+export type ProfileBasics = { bio?: string | null; heightCm?: number | null; build?: string | null; hair?: string | null; eyes?: string | null; detail?: Detail | null };
+export function profileMissing(p: ProfileBasics | null | undefined): string[] {
+  const m: string[] = [];
+  if (!p?.bio || p.bio.trim().length < 20) m.push("A short bio");
+  if (!p?.detail?.gender) m.push("Gender");
+  if (!p?.heightCm) m.push("Height");
+  if (!p?.build?.trim()) m.push("Build");
+  if (!p?.hair?.trim()) m.push("Hair");
+  if (!p?.eyes?.trim()) m.push("Eyes");
+  if (!p?.detail?.bodyHair) m.push("Body hair");
+  return m;
+}

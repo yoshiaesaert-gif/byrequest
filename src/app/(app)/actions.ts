@@ -249,6 +249,13 @@ export async function becomeCreator(): Promise<Result> {
   });
 }
 
+/* Opening a notification marks it read, wherever it is opened. */
+export async function markNoteRead(id: string) {
+  const u = await requireUser();
+  await db.update(schema.notifications).set({ readAt: new Date() }).where(and(eq(schema.notifications.id, id), eq(schema.notifications.userId, u.id), isNull(schema.notifications.readAt)));
+  revalidatePath("/", "layout");
+}
+
 export async function markAllRead() {
   const u = await requireUser();
   await db.update(schema.notifications).set({ readAt: new Date() }).where(and(eq(schema.notifications.userId, u.id), isNull(schema.notifications.readAt)));

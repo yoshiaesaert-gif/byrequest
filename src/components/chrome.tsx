@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setMode, setPublicKey, forceNewKey } from "@/app/(app)/actions";
+import { setMode, setPublicKey, forceNewKey, markNoteRead } from "@/app/(app)/actions";
 import { myKeys, pub } from "@/components/e2e";
 import { signOut } from "@/app/signin/actions";
 
@@ -71,7 +71,7 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
   const lastEsc = useRef(0);
 
   useEffect(() => {
-    const onToast = (e: Event) => { setT((e as CustomEvent).detail); window.clearTimeout((onToast as unknown as { h: number }).h); (onToast as unknown as { h: number }).h = window.setTimeout(() => setT(null), 2800); };
+    const onToast = (e: Event) => { setT((e as CustomEvent).detail); window.clearTimeout((onToast as unknown as { h: number }).h); (onToast as unknown as { h: number }).h = window.setTimeout(() => setT(null), 2600); };
     const onHide = () => setHidden(true);
     const onKey = (e: KeyboardEvent) => { if (e.key !== "Escape") return; const now = Date.now(); if (now - lastEsc.current < 500) setHidden(true); lastEsc.current = now; };
     window.addEventListener("brq:toast", onToast); window.addEventListener("brq:hide", onHide); window.addEventListener("keydown", onKey);
@@ -125,12 +125,12 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
   }, [router]);
 
   return (<>
-    <Link href={note?.href ?? "/inbox"} className={"notif" + (note ? " show" : "")} role="status" aria-live="polite" onClick={() => setNote(null)} tabIndex={note ? 0 : -1}>
+    <Link href={note?.href ?? "/inbox"} className={"notif" + (note ? " show" : "")} role="status" aria-live="polite" onClick={() => { if (note) markNoteRead(note.id).catch(() => {}); setNote(null); }} tabIndex={note ? 0 : -1}>
       <img src="/icon.png" alt="" className="notif-ic" />
       <span className="notif-t"><b>{discreet || !note ? "ByRequest" : tx(note.title)}</b><span>{discreet || !note ? tx("You have a new message") : tx(note.body)}</span></span>
       <span className="notif-time">{tx("now")}</span>
     </Link>
-    {t ? <div className={"toast" + (t.kind === "err" ? " err" : "")} role="status"><svg className="ico" aria-hidden="true"><use href={t.kind === "err" ? "#i-alert" : "#i-check"} /></svg><span>{t.msg}</span></div> : null}
+    {t ? <div className="toast-glass" onClick={() => setT(null)}><div className={"toast" + (t.kind === "err" ? " err" : "")} role="status" aria-live="polite"><span className="toast-i"><svg className="ico" aria-hidden="true"><use href={t.kind === "err" ? "#i-alert" : "#i-check"} /></svg></span><span>{t.msg}</span></div></div> : null}
     {hidden ? (
       <div className="cover-list" onClick={() => setHidden(false)} role="button" tabIndex={0} aria-label={tx("Tap to return")}>
         <div><h2>{tx("Groceries")}</h2><ul>{["Oat milk", "Bananas", "Coffee beans", "Pasta", "Tomatoes", "Basil", "Greek yoghurt", "Dish soap"].map((x) => <li key={x}><span />{tx(x)}</li>)}</ul><p>{tx("Tap anywhere to return")}</p></div>

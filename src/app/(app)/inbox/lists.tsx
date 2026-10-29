@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { markNoteRead } from "../actions";
 import { useSyncExternalStore } from "react";
 import { useLocale, useT } from "@/i18n/client";
 
@@ -38,7 +39,7 @@ export function NoteList({ notes }: { notes: Note[] }) {
   for (const n of notes) {
     const h = client ? group(n.at) : "";
     if (h !== g) { g = h; if (h) out.push(<div key={"g" + n.id} className="nl-h">{h}</div>); }
-    out.push(<Link key={n.id} href={n.href} className={"nl-row" + (n.unread ? " unread" : "")}>
+    out.push(<Link key={n.id} href={n.href} onClick={() => { if (n.unread) markNoteRead(n.id); }} className={"nl-row" + (n.unread ? " unread" : "")}>
       <span className="nl-ic"><Ico n={ICON.find(([r]) => r.test(n.title + " " + n.body))?.[1] ?? "spark"} /></span>
       <span className="nl-main"><b>{t(n.title)}</b><span>{withAmount(n.body)}</span></span>
       <span className="nl-r"><time>{short(n.at)}</time>{n.unread ? <i aria-label={t("Unread")} /> : null}</span>

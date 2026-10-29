@@ -5,6 +5,9 @@ import Orbit from "@/components/orbit";
 import HowItWorks from "@/components/how-it-works";
 import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
+import { db, schema } from "@/db";
+import { eq } from "drizzle-orm";
+import { profileMissing } from "@/domain/looks-detail";
 import * as q from "@/server/queries";
 import { access } from "@/server/onboarding";
 import { Av, BuyerLine, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
@@ -163,6 +166,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const mx = Math.max(...pts, 1), W = 600, H = 80;
   const d = pts.map((v, i) => `${i ? "L" : "M"}${((i * W) / Math.max(pts.length - 1, 1)).toFixed(1)} ${(H - 6 - (v / mx) * (H - 16)).toFixed(1)}`).join(" ");
   const pendingOffers = offers.filter((o) => o.o.status === "pending").length;
+  const missing = profileMissing(await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, userId) }));
   const { t, locale } = await getT();
   const [boardItems, ending] = await Promise.all([localize(rawBoard, locale), localize(rawEnding, locale)]);
   // Every request shows once: board first, then closing soon without repeats.
@@ -188,7 +192,9 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
             return <li key={k} className={done ? "done" : wait ? "wait" : ""}><span className="cs-n">{done ? "✓" : i + 1}</span><div><b>{t(l)}</b><span>{done ? t("Done") : wait ? t("Being checked") : t(d)}</span></div></li>; })}</ol>
         </section>}
 
-    <div className="hello"><div><span className="eyebrow">{t("Hi {name}", { name: handle })}</span><h1 className="t-display" style={{ marginTop: 10 }}>{t("{n} requests are open now", { n: fit.length })}</h1></div><Link href="/for-you" className="btn btn-primary"><I n="foryou" c="sm" />{t("Browse requests")}</Link></div>
+    {missing.length ? <section className="pf-nudge"><div className="pf-nudge-i"><I n="user" /></div><div className="grow"><b>{t("Buyers cannot picture you yet")}</b><p className="t-sm">{t("Complete your public profile to apply. It takes two minutes: {list}.", { list: missing.map((m) => t(m).toLowerCase()).join(", ") })}</p></div><Link href="/settings#creator" className="btn btn-brand">{t("Complete my profile")}</Link></section> : null}
+    <section className="c-hero"><div><span className="eyebrow">{t("Made by you, paid by them")}</span><h1 className="t-display" style={{ marginTop: 10 }}>{t("Make it with your phone. Get paid within a day.")}</h1><p className="muted" style={{ marginTop: 10, maxWidth: 520 }}>{t("Pick a request that fits you, make it in your own time and keep 80%. Paid automatically 24 hours after delivery.")}</p><div className="optrow" style={{ marginTop: 18 }}><Link href="/for-you" className="btn btn-primary btn-lg"><I n="foryou" c="sm" />{t("Find your request")}</Link><Link href="/studio#album" className="btn btn-secondary btn-lg">{t("Your preview album")}</Link></div></div>
+      {topPaid[0] ? <Link href={`/requests/${topPaid[0].id}`} className="c-hero-top"><span className="eyebrow">{t("Top budget right now")}</span><b className="num">{euros(topPaid[0].dealCents)}</b><span>{t("You get {amount}", { amount: euros(Math.round(topPaid[0].dealCents * CREATOR_SHARE)) })}</span><span className="h-link">{t("See the request")} <I n="right" c="sm" /></span></Link> : null}</section>
 
     <div className="earn-hero">
       <div className="card earn-card">
@@ -212,7 +218,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
           <Link href={`/requests/${feat.id}`} className="h-feat media">
             <Cover cover={feat.cover} frost />
             <div className="h-feat-in">
-              <div className="h-feat-top"><span className="h-chip">{t("New")} · {t("{n} offers", { n: feat.offers })}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
+              <div className="h-feat-top"><span className="h-chip">{t("New")}</span><span className="h-chip">{leftLabel(feat.closesAt, t)}</span></div>
               <div className="h-feat-num num">{feat.amount}<small>{t(feat.category === "photos" ? "PHOTOS" : feat.category === "voice" ? "MIN VOICE" : feat.category === "custom" ? "MIN CUSTOM" : "MIN VIDEO")}</small></div>
               <div className="h-feat-b"><div><span className="h-kick">{t(CAT_LABEL[feat.category])} · {t(feat.who)}, {t("{a} to {b}", { a: feat.ageMin, b: feat.ageMax })}</span><h3>{feat.title}</h3><BuyerLine b={feat.buyer} t={t} light />{feat.house ? <span className="by-brq" style={{ color: "rgba(255,255,255,.7)" }}>{t("by ByRequest")}</span> : null}</div>
                 <div className="h-earn"><span>{t("Budget")}</span><b className="num">{euros(feat.dealCents)}</b><small>{t("You get {amount}", { amount: euros(Math.round(feat.dealCents * CREATOR_SHARE)) })}</small></div></div>
@@ -227,7 +233,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
       <div className="h-head"><div><span className="h-kick dark">{t("Hot right now")}</span><h2>{t("Moods people are into")}</h2></div></div>
       <ScrollRow className="h-drops">{hot.map((x) => (
         <Link key={x.k} href={`/for-you?theme=${x.k}`} className="h-drop media"><Cover cover={x.cover} />
-          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{x.n ? t("{n} open · see them", { n: x.n }) : t("See the board")} <I n="right" c="sm" /></span></div></Link>))}</ScrollRow>
+          <div className="h-drop-in"><span className="h-kick">{t(x.title)}</span><h3>{t(x.line)}</h3><p>{t(x.sub)}</p><span className="h-drop-cta">{t("See requests")} <I n="right" c="sm" /></span></div></Link>))}</ScrollRow>
     </section>
 
     <section className="h-sec">

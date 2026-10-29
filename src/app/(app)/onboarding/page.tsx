@@ -39,8 +39,8 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       handle={u.handle}
       avatar={<Av a={u.avatar} name={u.handle} size={56} />}
       account={{ done: !!accountDone, terms, privacy }}
-      identity={{ status: a.areas.identity, provider: idProvider?.label ?? null, env: idCheck?.env ?? null, reason: idCheck?.reason ?? null }}
-      payout={{ status: a.areas.payout, provider: payProvider?.label ?? null, env: a.payout?.env ?? null, missing: a.payout?.missing ?? [], actionUrl: a.payout?.actionUrl ?? null, canReceive: a.payout?.canReceivePayouts ?? false, accountType: o.accountType, country: o.country, identityOk: a.areas.identity === "approved", stepUpFresh: fresh }}
+      identity={{ status: a.areas.identity, provider: idProvider ? (idProvider.env === "test" ? t("our verification partner") : idProvider.label) : null, env: idCheck?.env ?? null, reason: idCheck?.reason ?? null }}
+      payout={{ status: a.areas.payout, provider: payProvider ? (payProvider.env === "test" ? t("our payment partner") : payProvider.label) : null, env: a.payout?.env ?? null, missing: a.payout?.missing ?? [], actionUrl: a.payout?.actionUrl ?? null, canReceive: a.payout?.canReceivePayouts ?? false, accountType: o.accountType, country: o.country, identityOk: a.areas.identity === "approved", stepUpFresh: fresh }}
       agreement={agreementDoc ? { status: a.areas.agreement, id: agreementDoc.id, sha: agreementDoc.sha256, version: agreementDoc.version, title: legalIn(locale, "creator_agreement", agreementDoc.version)?.title ?? agreementDoc.title, summary: legalIn(locale, "creator_agreement", agreementDoc.version)?.summary ?? agreementDoc.summary, draft: agreementDoc.status !== "approved" } : null}
       overview={{ status: a.status, missing: a.missing, areas: a.areas, testOnly: [idCheck?.env, a.payout?.env].includes("test") }}
       countries={PAYOUT_COUNTRIES}

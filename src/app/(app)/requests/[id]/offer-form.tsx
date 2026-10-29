@@ -11,7 +11,7 @@ const hours = (t: ReturnType<typeof useT>, h: number) => (h < 72 ? t("{n} hours"
 
 /* Once applied, the form makes way for a clear receipt: what was sent, when, and what happens next.
    An application is final, so the buyer compares exactly what each creator promised. */
-function Applied({ o, rivals }: { o: Sent; rivals: number }) {
+function Applied({ o }: { o: Sent }) {
   const t = useT();
   const locale = useLocale();
   const when = new Date(o.at).toLocaleString(locale === "nl" ? "nl-BE" : locale === "fr" ? "fr-BE" : "en-GB", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
@@ -20,7 +20,7 @@ function Applied({ o, rivals }: { o: Sent; rivals: number }) {
     <div className={"applied" + (lost ? " is-lost" : "")} role="status">
       <span className="applied-ic" aria-hidden="true"><svg className="ico lg"><use href={lost ? "#i-x" : "#i-check"} /></svg></span>
       <b className="applied-h">{lost ? t("The buyer chose someone else") : t("You applied for this request")}</b>
-      <p className="applied-sub" suppressHydrationWarning>{t("Sent on {date}", { date: when })}{!lost && rivals > 0 ? " · " + t("{n} other creators applied", { n: rivals }) : ""}</p>
+      <p className="applied-sub" suppressHydrationWarning>{t("Sent on {date}", { date: when })}</p>
       <dl className="applied-sum">
         <div><dt>{t("Your face")}</dt><dd>{o.showsFace ? t("Face shown") : t("No face")}</dd></div>
         <div><dt>{t("In their vault")}</dt><dd>{t(VAULT_LABEL[o.vault])}</dd></div>
@@ -53,7 +53,7 @@ export default function OfferForm({ requestId, minVault, faceRequired, dueHours,
   const [note, setNote] = useState("");
   const [pending, start] = useTransition();
   const [sent, setSent] = useState<Sent | null>(existing);
-  if (sent) return <Applied o={sent} rivals={rivals} />;
+  if (sent) return <Applied o={sent} />;
 
   return (
     <form className="upbox" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await makeOffer({ requestId, showsFace: face, vault, etaHours: eta, note }); if (r.ok) { setSent({ showsFace: face, vault, etaHours: eta, note: note.trim(), status: "pending", at: new Date().toISOString() }); window.scrollTo({ top: 0, behavior: "smooth" }); toast(t("You applied for this request")); } else toast(t(r.error), "err"); }); }}>
