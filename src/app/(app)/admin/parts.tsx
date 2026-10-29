@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal, teamSend } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -130,4 +130,12 @@ export function MailTest({ kind, lang }: { kind: string; lang: string }) {
 export function InternalToggle({ id, internal }: { id: string; internal: boolean }) {
   const [p, start] = useTransition();
   return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => { await setInternal(id, !internal); })}>{internal ? "Mark as external" : "Mark as internal"}</button>;
+}
+
+export function TeamComposer({ dealId, as }: { dealId: string; as: string }) {
+  const [text, setText] = useState("");
+  const [p, start] = useTransition();
+  return (<form className="tc-form" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await teamSend(dealId, text); if (r.ok) setText(""); else toast(r.error, "err"); }); }}>
+    <textarea className="input" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={`Write as ${as}`} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); } }} />
+    <button className="btn btn-primary" disabled={p || !text.trim()}>{p ? "Sending…" : "Send"}</button></form>);
 }

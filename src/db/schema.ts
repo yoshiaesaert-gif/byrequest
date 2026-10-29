@@ -44,6 +44,7 @@ export const users = pgTable("users", {
   supportOrg: text("support_org"),
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
   internal: boolean("internal").notNull().default(false),        // created by the ByRequest team (tests, demo, staff); new sign ups are external
+  chatKey: text("chat_key"),                                       // team profiles only: their chat secret key, sealed, so staff can answer as them
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
   freeFees: integer("free_fees").notNull().default(0),               // service fees ByRequest pays for this buyer (referral gift)

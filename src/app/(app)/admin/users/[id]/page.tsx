@@ -4,12 +4,13 @@ import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
-import { BlockAccount, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
+import { BlockAccount, HouseAccept, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
+import { applicationsOf } from "@/server/teamchat";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
-  const x = await userDetail(id);
+  const [x, apps] = await Promise.all([userDetail(id), applicationsOf(id)]);
   if (!x) notFound();
   const { u } = x;
   const spent = x.deals.filter((d) => d.d.buyerId === u.id && d.d.status !== "refunded").reduce((s, d) => s + d.d.dealCents + d.d.feeCents, 0);
@@ -35,6 +36,14 @@ export default async function Account({ params }: { params: Promise<{ id: string
         <div className="bo-list">{x.deals.map(({ d, title }) => (
           <div key={d.id} className="bo-ev"><span><b>{title}</b><small>{d.buyerId === u.id ? "as buyer" : "as creator"} · {d.status} · {euros(d.dealCents)}</small></span><time>{when(d.createdAt)}</time></div>))}
           {!x.deals.length ? <p className="muted t-sm">No deals.</p> : null}</div>
+        <h2 className="bo-sh">Applications ({apps.length})</h2>
+        <div className="bo-apps">{apps.map((a) => (<div key={a.o.id} className="bo-app">
+          <div className="bo-app-h"><Link href={`/admin/requests/${a.requestId}`}><b>{a.title}</b></Link><span className={`crm-pill${a.o.status === "accepted" ? " s-external" : ""}`}>{a.o.status}</span></div>
+          <small>to {a.author}{a.authorHouse ? " · team profile" : ""} · {euros(a.dealCents)} · request {a.reqStatus} · sent {when(a.o.createdAt)}</small>
+          <small>Delivers within {a.o.etaHours} h · {a.o.showsFace ? "shows face" : "no face"} · vault {a.o.vault}</small>
+          {a.o.note ? <p className="bo-app-note">“{a.o.note}”</p> : null}
+          {a.authorHouse ? <div className="bo-app-act">{a.dealId ? <Link className="btn btn-primary btn-sm" href={`/admin/chat/${a.dealId}`}>Chat as {a.author}</Link> : a.o.status === "pending" && a.reqStatus === "open" ? <HouseAccept id={a.o.id} /> : null}{a.dealId ? <span className="t-xs muted">deal {a.dealStatus}</span> : a.o.status === "pending" ? <span className="t-xs muted">Accept as {a.author} to start the deal and the chat</span> : null}</div> : null}
+        </div>))}{!apps.length ? <p className="muted t-sm">No applications.</p> : null}</div>
         <h2 className="bo-sh">Requests</h2>
         <div className="bo-list">{x.reqs.map((r) => (
           <div key={r.id} className="bo-ev"><span><b>{r.title}</b><small>{r.status} · {euros(r.dealCents)} · {when(r.createdAt)}</small></span>{r.status === "open" ? <RemoveRequest id={r.id} /> : null}</div>))}

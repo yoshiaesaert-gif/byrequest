@@ -7,6 +7,7 @@ import * as A from "@/server/admin";
 import * as B from "@/server/backoffice";
 import * as Rp from "@/server/reports";
 import * as H from "@/server/house";
+import * as TC from "@/server/teamchat";
 import * as M from "@/server/moderation";
 import * as Ref from "@/server/referrals";
 import type { RefConfig } from "@/domain/referral";
@@ -36,6 +37,7 @@ export const dropRequest = async (id: string, reason: string) => run((s) => B.re
 export const staffRole = async (who: string, role: "none" | "support" | "admin") => run((s) => B.setStaffRole(s, who, role), "admin");
 export const handleR = async (id: string, status: "reviewing" | "actioned" | "passed_to_police" | "rejected", note: string) => run((s) => Rp.handleReport(s, id, status, note));
 export const supportOrg = async (userId: string, org: string | null) => run((s) => Rp.setSupportOrg(s, userId, org), "admin");
+export const teamSend = async (dealId: string, text: string) => run((s) => TC.teamSend(s, dealId, text));
 export const houseAccept = async (offerId: string) => run((s) => H.houseAccept(s, offerId));
 export const houseRate = async (dealId: string, stars: number) => run((s) => H.houseRate(s, dealId, stars));
 export const houseBudget = async (euros: number) => run((s) => H.setHouseBudget(s, euros), "admin");

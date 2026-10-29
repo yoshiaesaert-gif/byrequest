@@ -1,4 +1,5 @@
 import "server-only";
+import { ensureTeamKeys } from "./teamchat";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { acceptOffer, rate } from "./deals";
@@ -43,6 +44,7 @@ export async function houseAccept(staffId: string, offerId: string) {
   if (!o || !r || !buyer?.house) throw new RuleError("Not a team request.");
   const b = await houseBudget();
   if (r.dealCents > b.left) throw new RuleError(`Over budget: €${Math.round(b.left / 100)} left. Raise the budget first.`);
+  await ensureTeamKeys();   // so the creator can chat with the team profile straight away
   // The team is not a consumer, but the deal is created the same way as any other.
   const d = await acceptOffer(buyer.id, offerId, { withdrawalWaiver: true });
   await log(db, `staff:${staffId}`, "house.offer_accepted", o.creatorId, { dealId: d.id, requestId: r.id, cents: r.dealCents });
