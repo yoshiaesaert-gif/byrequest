@@ -2058,5 +2058,15 @@ const nl: Record<string, string> = {
   "All topics": "Alle onderwerpen",
   "Help centre": "Helpcentrum",
   "Help and FAQ": "Help en veelgestelde vragen",
+  "Locker room shower": "Kleedkamerdouche",
+  "Three guys. One shower.": "Drie gasten. Eén douche.",
+  "Showering together after the match, soaping up and getting hands on": "Samen douchen na de match, inzepen en aan elkaar zitten",
+  "Locker room shower with the team": "Kleedkamerdouche met de ploeg",
+  "Two or three guys in the shower after training. Soap each other up, joke around and let it get heated. Everyone verified, faces optional.": "Twee of drie gasten onder de douche na de training. Elkaar inzepen, wat dollen en het laten uit de hand lopen. Iedereen geverifieerd, gezicht optioneel.",
+  "Smell my socks": "Ruik aan mijn sokken",
+  "Worn all day. Breathe in.": "De hele dag gedragen. Adem in.",
+  "Socks worn all day, sniffed slowly and close to the camera": "Sokken die de hele dag gedragen zijn, traag en dicht bij de camera besnuffeld",
+  "Smell your worn socks for me": "Ruik aan je gedragen sokken voor mij",
+  "Socks you wore all day or at the gym. Take them off slowly, bring them to your face and breathe them in, close to the camera. Talk dirty about how they smell. Face optional.": "Sokken die je de hele dag of in de gym droeg. Trek ze traag uit, breng ze naar je gezicht en adem ze in, dicht bij de camera. Vertel vuil hoe ze ruiken. Gezicht optioneel.",
 };
 export default nl;

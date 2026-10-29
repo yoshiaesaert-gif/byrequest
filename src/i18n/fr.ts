@@ -2058,5 +2058,15 @@ const fr: Record<string, string> = {
   "All topics": "Tous les thèmes",
   "Help centre": "Centre d'aide",
   "Help and FAQ": "Aide et FAQ",
+  "Locker room shower": "Douche au vestiaire",
+  "Three guys. One shower.": "Trois mecs. Une douche.",
+  "Showering together after the match, soaping up and getting hands on": "Se doucher ensemble après le match, se savonner et passer aux mains",
+  "Locker room shower with the team": "Douche au vestiaire avec l'équipe",
+  "Two or three guys in the shower after training. Soap each other up, joke around and let it get heated. Everyone verified, faces optional.": "Deux ou trois mecs sous la douche après l'entraînement. Se savonner, rigoler et laisser monter la chaleur. Tout le monde vérifié, visage facultatif.",
+  "Smell my socks": "Renifle mes chaussettes",
+  "Worn all day. Breathe in.": "Portées toute la journée. Respire.",
+  "Socks worn all day, sniffed slowly and close to the camera": "Des chaussettes portées toute la journée, reniflées lentement, près de la caméra",
+  "Smell your worn socks for me": "Renifle tes chaussettes portées pour moi",
+  "Socks you wore all day or at the gym. Take them off slowly, bring them to your face and breathe them in, close to the camera. Talk dirty about how they smell. Face optional.": "Des chaussettes portées toute la journée ou à la salle. Enlève les lentement, porte les à ton visage et respire les, près de la caméra. Dis crûment comment elles sentent. Visage facultatif.",
 };
 export default fr;
