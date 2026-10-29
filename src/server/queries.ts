@@ -107,8 +107,8 @@ export async function profileFor(handle: string, viewerId: string) {
     offerId = o?.id ?? null;
   }
   const album = offerId ? await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.offerId, offerId) }) : null;
-  const reviews = await db.select({ stars: deals.buyerRating, at: deals.settledAt, by: users.handle, text: deals.reviewText }).from(deals)
-    .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(desc(deals.settledAt)).limit(12);
+  const reviews = await db.select({ stars: deals.buyerRating, at: sql<Date | null>`coalesce(${deals.settledAt}, ${deals.deliveredAt})`.mapWith(deals.settledAt), by: users.handle, text: deals.reviewText, extra: sql<boolean>`coalesce((${deals.buyerScores}->>'overDelivered')::boolean, false)` }).from(deals)
+    .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(sql`coalesce(${deals.settledAt}, ${deals.deliveredAt}) desc nulls last`).limit(12);
   const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
   return { hidden: false as const, blocked: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
 }

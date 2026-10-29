@@ -4,8 +4,8 @@ import { euros } from "@/domain/rules";
 import { when } from "@/components/ui";
 import { PROVIDERS } from "@/config/compliance";
 
-const ENTRY: Record<string, string> = { buyer_charge: "Charged to buyers", escrow_hold: "Held by the partner", creator_payout: "Paid to creators", payout_on_hold: "Payouts on hold", platform_revenue: "Platform revenue", buyer_refund: "Refunded to buyers", vat_payable: "VAT due (deemed supplier)" };
-const ORDER = ["buyer_charge", "escrow_hold", "creator_payout", "payout_on_hold", "platform_revenue", "vat_payable", "buyer_refund"];
+const ENTRY: Record<string, string> = { buyer_charge: "Charged to buyers", escrow_hold: "Held by the partner", creator_payout: "Paid to creators", payout_on_hold: "Payouts on hold", referral_payout: "Invite bonuses paid", referral_on_hold: "Invite bonuses on hold", fee_gift: "Service fees gifted", tip_charge: "Tips charged", tip_payout: "Tips paid to creators", tip_on_hold: "Tips on hold", platform_revenue: "Platform revenue", buyer_refund: "Refunded to buyers", vat_payable: "VAT due (deemed supplier)" };
+const ORDER = ["buyer_charge", "escrow_hold", "creator_payout", "payout_on_hold", "platform_revenue", "vat_payable", "buyer_refund", "referral_payout", "referral_on_hold", "fee_gift", "tip_charge", "tip_payout", "tip_on_hold"];
 const STATUS = ["held", "reviewing", "delivered", "disputed", "released", "refunded"];
 
 export default async function Money() {

@@ -1,4 +1,5 @@
 "use client";
+import { giftFee } from "@/domain/referral";
 import { useT } from "@/i18n/client";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
@@ -35,7 +36,7 @@ const DRAFT = "brq_post_draft";
 
 type Draft = { category: Cat; amount: number; title: string; details: string; callMe: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
-export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string }) {
+export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean }) {
   const t = useT();
   const [waived, setWaived] = useState(false);
   const [i, setI] = useState(initial.title ? 1 : 0);
@@ -56,7 +57,8 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
   const priceOf = (p: Partial<Draft>) => suggestPrice({ category: w.category, amount: w.amount, face: w.face, minVault: w.minVault, dueHours: w.dueHours, ...p } as Parameters<typeof suggestPrice>[0]);
   const suggested = priceOf({});
   const price = w.price ?? suggested;
-  const q = quote(price * 100, vatBp);   // the budget is what creators see; service fee and VAT come on top
+  const base = quote(price * 100, vatBp);   // the budget is what creators see; service fee and VAT come on top
+  const q = freeFee ? giftFee(base) : { ...base, giftCents: 0 };   // a free service fee from the invite programme
   const preview = COVERS[w.category][w.title.length % COVERS[w.category].length];
   const zone = price < suggested * 0.85 ? "low" : price > suggested * 1.2 ? "high" : "mid";
   const canNext = step === "details" ? w.title.trim().length >= TITLE_MIN && w.details.trim().length >= DETAILS_MIN : true;
@@ -88,7 +90,8 @@ export default function Wizard({ initial, vatBp, ageOk, waiver }: { initial: { c
   const breakdown = (
     <div className="pbk">
       <dl><div><dt>{t("Your budget")}</dt><dd className="num">{euros2(q.dealCents)}</dd></div>
-        <div><dt>{t("Service fee {rate}%", { rate: 10 })}</dt><dd className="num">{euros2(q.feeCents)}</dd></div>
+        <div><dt>{t("Service fee {rate}%", { rate: 10 })}</dt><dd className="num">{q.giftCents ? <><s className="muted">{euros2(base.feeCents)}</s> {euros2(q.feeCents)}</> : euros2(q.feeCents)}</dd></div>
+        {q.giftCents ? <div className="gift-row"><dt><svg className="ico sm" aria-hidden="true"><use href="#i-gift" /></svg>{t("Free service fee, a gift from your invite")}</dt><dd className="num">−{euros2(q.giftCents)}</dd></div> : null}
         <div><dt>{t("VAT {rate}%", { rate: q.vatRate / 100 })}</dt><dd className="num">{euros2(q.vatCents)}</dd></div>
         <div className="tot"><dt>{t("You pay")}</dt><dd className="num">{euros2(q.total)}</dd></div></dl>
       <p>{t("The service fee covers payment protection, the review of every request and delivery, and support.")}</p>

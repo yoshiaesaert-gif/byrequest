@@ -118,12 +118,22 @@ export async function object(dealId: string, reason: string, note: string): Prom
   return guard(async () => { const u = await requireUser(); await deals.object(u.id, dealId, reason, note); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Reported. A person reviews it within 24 hours." }; });
 }
 
-export async function rate(dealId: string, stars: number): Promise<Result> {
-  return guard(async () => { const u = await requireUser(); await deals.rate(u.id, dealId, stars); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for rating." }; });
+export async function rate(dealId: string, review: deals.BuyerReview, tipCents = 0): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    await deals.rate(u.id, dealId, review);
+    if (tipCents > 0) await deals.tip(u.id, dealId, tipCents);
+    revalidatePath(`/deals/${dealId}`);
+    return { ok: true, msg: tipCents > 0 ? "Thanks for your review and your tip." : "Thanks for your review." };
+  });
 }
 
-export async function rateBuyer(dealId: string, stars: number): Promise<Result> {
-  return guard(async () => { const u = await requireUser(); await deals.rateBuyer(u.id, dealId, stars); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for rating." }; });
+export async function tip(dealId: string, cents: number): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await deals.tip(u.id, dealId, cents); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thank you. Your tip is on its way." }; });
+}
+
+export async function rateBuyer(dealId: string, review: deals.CreatorReview): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await deals.rateBuyer(u.id, dealId, review); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for your review." }; });
 }
 
 export async function requestAlbum(offerId: string, kind: "looks" | "body" | "intimate"): Promise<Result> {

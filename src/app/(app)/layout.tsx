@@ -35,12 +35,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="navright">
           <LangSwitch className="navlang" />
           {buy ? <Link href="/post" className="btn btn-primary btn-sm"><I n="plus" c="sm" />{t("Post a request")}</Link> : <span className="mode-pill">{t("Creating")}</span>}
+          <Link href="/invite" className="invite-pill" aria-label={t("Invite friends")}><I n="gift" c="sm" /><span>{t("Invite")}</span></Link>
           {inboxBtn}
           <MenuButton handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
         </div>
       </div></header>
       <header className="mtop">
         <Link href="/" className="wordmark" aria-label="ByRequest home"><img className="lg-g" src="/logo.png" alt="byrequest" /><img className="lg-w" src="/logo_white.png" alt="" /></Link>
+        <Link href="/invite" className="icon-btn invite-ic" aria-label={t("Invite friends")}><I n="gift" /></Link>
         <HideButton />
         {inboxBtn}
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />

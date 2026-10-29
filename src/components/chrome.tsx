@@ -34,6 +34,7 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
             ? <a className="mi switch" href={`/mode?to=${buy ? "sell" : "buy"}`}><svg className="ico" aria-hidden="true"><use href="#i-swap" /></svg>{buy ? t("Switch to creator") : t("Switch to buyer")}</a>
             : <Link className="mi switch" href="/earn"><svg className="ico" aria-hidden="true"><use href="#i-money" /></svg>{t("Start creating, earn money")}</Link>}
           <hr />
+          <Link className="mi mi-invite" href="/invite"><svg className="ico" aria-hidden="true"><use href="#i-gift" /></svg><span>{t("Invite friends")}<small>{t("Earn 10% of what they make")}</small></span></Link>
           <Link className="mi" href="/settings"><svg className="ico" aria-hidden="true"><use href="#i-user" /></svg>{t("Profile and privacy")}</Link>
           <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Edit your avatar")}</Link>
           <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>{t("Inbox")}</Link>

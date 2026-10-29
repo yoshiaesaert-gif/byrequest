@@ -44,8 +44,10 @@ export const users = pgTable("users", {
   supportOrg: text("support_org"),
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
+  freeFees: integer("free_fees").notNull().default(0),               // service fees ByRequest pays for this buyer (referral gift)
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [uniqueIndex("users_email").on(t.email), uniqueIndex("users_handle").on(t.handle)]);
+}, (t) => [uniqueIndex("users_email").on(t.email), uniqueIndex("users_handle").on(t.handle), uniqueIndex("users_ref_code").on(t.refCode)]);
 
 export type Prefs = { frost: boolean; discreetPush: boolean; neutralTab: boolean };
 
@@ -114,6 +116,7 @@ export const requests = pgTable("requests", {
   payRef: text("pay_ref"),
   payTotalCents: integer("pay_total_cents"),
   payFeeCents: integer("pay_fee_cents"),
+  feeGiftCents: integer("fee_gift_cents").notNull().default(0),      // service fee paid by ByRequest (referral gift); given back if refunded
   payVatCents: integer("pay_vat_cents"),
   payVatRate: integer("pay_vat_rate"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
@@ -155,7 +158,14 @@ export const deals = pgTable("deals", {
   buyerReadAt: timestamp("buyer_read_at", { withTimezone: true }),     // last time each side had the chat open: read ticks and unread counts
   creatorReadAt: timestamp("creator_read_at", { withTimezone: true }),
   reviewText: text("review_text"),
-  creatorRating: integer("creator_rating"),          // the creator rates the buyer, stars only                    // optional words with the rating, written by the buyer
+  creatorRating: integer("creator_rating"),          // the creator rates the buyer, stars
+  buyerScores: jsonb("buyer_scores").$type<{ quality: number; asAgreed: boolean; onTime: boolean; communication: number; overDelivered: boolean }>(),
+  creatorScores: jsonb("creator_scores").$type<{ clear: boolean; respectful: boolean; again: boolean }>(),
+  tipCents: integer("tip_cents").notNull().default(0),              // a thank you on top, paid by the buyer after delivery
+  tipCreatorCents: integer("tip_creator_cents").notNull().default(0),
+  tipVatCents: integer("tip_vat_cents").notNull().default(0),
+  tipRef: text("tip_ref"),
+  tipAt: timestamp("tip_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("deals_due").on(t.status, t.objectUntil)]);
 
@@ -241,6 +251,47 @@ export const blocks = pgTable("blocks", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("blocks_pk").on(t.blockerId, t.blockedId), index("blocks_blocked").on(t.blockedId)]);
 
+/* Referral programme. One row per invited person, from sign up on. The person who invited earns
+   10% of what an invited creator nets in their first 30 days (counted from their first paid deal),
+   paid by ByRequest on top, never taken from the friend. An invited buyer gets their first service fee
+   paid by ByRequest, and the person who invited gets one too once that first deal is paid out. */
+export const referrals = pgTable("referrals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  referrerId: uuid("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  refereeId: uuid("referee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  intent: text("intent").$type<"buy" | "earn">().notNull(),
+  firstDealAt: timestamp("first_deal_at", { withTimezone: true }),     // invited creator: first paid deal; starts the 30 day window
+  windowEndsAt: timestamp("window_ends_at", { withTimezone: true }),
+  buyerRewardedAt: timestamp("buyer_rewarded_at", { withTimezone: true }), // invited buyer: first deal paid out, inviter got their gift
+  earnedCents: integer("earned_cents").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("referrals_referee").on(t.refereeId), index("referrals_referrer").on(t.referrerId)]);
+
+/* Each reward, tied to the deal that earned it. A deal can earn a reward once. */
+export const referralRewards = pgTable("referral_rewards", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  referralId: uuid("referral_id").notNull().references(() => referrals.id, { onDelete: "cascade" }),
+  referrerId: uuid("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  dealId: uuid("deal_id").references(() => deals.id),
+  kind: text("kind").$type<"creator_share" | "free_fee">().notNull(),
+  cents: integer("cents").notNull().default(0),
+  status: text("status").$type<"paid" | "on_hold" | "granted">().notNull(),
+  payoutRef: text("payout_ref"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("referral_rewards_deal").on(t.referralId, t.dealId, t.kind), index("referral_rewards_referrer").on(t.referrerId)]);
+
+/* Audit trail of the programme: link opened, signed up, verified, first deal, reward, payout, gift used. */
+export const referralEvents = pgTable("referral_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull(),
+  referralId: uuid("referral_id").references(() => referrals.id, { onDelete: "set null" }),
+  event: text("event").notNull(),
+  detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("referral_events_code").on(t.code, t.createdAt)]);
+
 /* Append only ledger. Every movement of money is one row, so balances can always be rebuilt. */
 /* Bookkeeping mirror of what the payment provider did. Funds are held and paid out by the provider;
    ByRequest does not run its own escrow account or wallet. */
@@ -249,7 +300,7 @@ export const ledger = pgTable("ledger", {
   dealId: uuid("deal_id").references(() => deals.id),
   requestId: uuid("request_id"),                  // set for money moved before a deal exists (paid at posting, refunded)
   userId: uuid("user_id").references(() => users.id),
-  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable">().notNull(),
+  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable" | "referral_payout" | "referral_on_hold" | "fee_gift" | "tip_charge" | "tip_payout" | "tip_on_hold">().notNull(),
   cents: integer("cents").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

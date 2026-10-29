@@ -9,6 +9,7 @@ import { listFor } from "@/server/participants";
 import { Av, Cover, I, when } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, amountLabel, euros } from "@/domain/rules";
 import Room from "./room";
+import { TIP_DAYS } from "@/server/deals";
 import { blockedEither, iBlocked } from "@/server/blocks";
 import { getT } from "@/i18n/server";
 import { textsIn } from "@/server/translate";
@@ -40,7 +41,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
         me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
         other={{ id: other.id, handle: other.handle, publicKey: other.publicKey, readAt: otherReadAt?.toISOString() ?? null }}
         blocked={(await blockedEither(u.id, other.id)) ? ((await iBlocked(u.id, other.id)) ? "me" : "them") : null}
-        deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount }}
+        deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount, stars: x.d.buyerRating, tipCents: x.d.tipCents, tipCreatorCents: x.d.tipCreatorCents, vatRate: x.d.vatRate, tipOpen: !x.d.deliveredAt || Date.now() - x.d.deliveredAt.getTime() < TIP_DAYS * 86400_000 }}
         delivery={lastDelivery ? { review: lastDelivery.review, onlyCreator: lastDelivery.onlyCreator } : null}
         canUpload={a?.caps.upload ?? false} missing={a?.missing ?? []} payoutHeld={hold?.entry === "payout_on_hold"}
         participants={parts.map((p) => ({ id: p.id, label: p.label, identity: p.identity }))}

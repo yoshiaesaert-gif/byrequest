@@ -62,7 +62,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
           <form className="bo-inline" style={{ marginTop: 10 }} action={async (f) => { "use server"; const m = await requireUser(); await contactCreator(m.id, u.handle, String(f.get("msg") ?? "")); redirect(`/c/${u.handle}?sent=1`); }}>
             <input className="input" name="msg" placeholder={t("Write to {name} as {org}", { name: u.handle, org: me.supportOrg })} required minLength={10} /><button className="btn btn-primary btn-sm">{t("Send")}</button></form></section> : null}
         <section className="cp-sec"><span className="eyebrow">{t("Reviews")}</span>
-          {reviews.length ? reviews.map((x, i) => <div key={i} className="cp-rev"><div><b>{x.by}</b><span className="star">{"★★★★★".slice(0, x.stars ?? 5)}<span className="cp-rev-off">{"★★★★★".slice(x.stars ?? 5)}</span></span><span className="cp-rev-m">{t("Verified deal")}{x.at ? ` · ${ago(x.at, t)}` : ""}</span></div>{x.text ? <p>{L(x.text)}</p> : null}</div>)
+          {reviews.length ? reviews.map((x, i) => <div key={i} className="cp-rev"><div><b>{x.by}</b><span className="star">{"★★★★★".slice(0, x.stars ?? 5)}<span className="cp-rev-off">{"★★★★★".slice(x.stars ?? 5)}</span></span>{x.extra ? <span className="badge ok cp-extra">{t("Went the extra mile")}</span> : null}<span className="cp-rev-m">{t("Verified deal")}{x.at ? ` · ${ago(x.at, t)}` : ""}</span></div>{x.text ? <p>{L(x.text)}</p> : null}</div>)
             : <p className="t-sm muted" style={{ marginTop: 8 }}>{t("No reviews yet. Every creator verifies their identity before their first offer.")}</p>}</section>
       </div>
     </div>

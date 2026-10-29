@@ -7,7 +7,7 @@ import { sendCode, checkCode, createAccount, appealClosed, handleFree, type Auth
 
 
 
-export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
+export default function SignInForm({ intent, refCode }: { intent?: "buy" | "earn"; refCode?: string }) {
   const t = useT();
   const [s1, send, p1] = useActionState<AuthState, FormData>(sendCode, { step: "email" });
   const [s2, check, p2] = useActionState<AuthState, FormData>(checkCode, s1);
@@ -25,7 +25,7 @@ export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
   );
   const step = s2.step === "profile" ? "profile" : s1.step === "code" ? "code" : "email";
 
-  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} />;   // the role is always an explicit first choice
+  if (step === "profile") return <Join create={create} pending={p3} error={s3.error} refCode={refCode} />;   // the role is always an explicit first choice
 
   if (step === "code") return (
     <form action={check} className="authstack">
@@ -53,10 +53,11 @@ export default function SignInForm({ intent }: { intent?: "buy" | "earn" }) {
 const STEPS = ["role", "you", "about", "agree"] as const;
 const ERR_STEP: [RegExp, (typeof STEPS)[number]][] = [[/username|letters, numbers/i, "you"], [/adults|birth|country/i, "about"], [/18 or older|consent|terms/i, "agree"], [/choose what/i, "role"]];
 
-function Join({ create, pending, error, intent }: { create: (f: FormData) => void; pending: boolean; error?: string; intent?: "buy" | "earn" }) {
+function Join({ create, pending, error, intent, refCode }: { create: (f: FormData) => void; pending: boolean; error?: string; intent?: "buy" | "earn"; refCode?: string }) {
   const t = useT();
   const [step, setStep] = useState<(typeof STEPS)[number]>(intent ? "you" : "role");
-  const [f, setF] = useState({ intent: (intent ?? "") as "" | "buy" | "earn", handle: "", look: "kai", birthYear: "", country: "BE", adult: false, sensitive: false, marketing: false });
+  const [f, setF] = useState({ intent: (intent ?? "") as "" | "buy" | "earn", handle: "", look: "kai", birthYear: "", country: "BE", adult: false, sensitive: false, marketing: false, ref: refCode ?? "" });
+  const [showRef, setShowRef] = useState(!!refCode);
   const [err, setErr] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [seen, setSeen] = useState<string | undefined>();
@@ -78,6 +79,7 @@ function Join({ create, pending, error, intent }: { create: (f: FormData) => voi
     const d = new FormData();
     d.set("intent", f.intent); d.set("handle", f.handle.trim().toLowerCase()); d.set("look", f.look); d.set("birthYear", f.birthYear); d.set("country", f.country);
     if (f.adult) d.set("adult", "on"); if (f.sensitive) d.set("sensitive", "on"); if (f.marketing) d.set("marketing", "on");
+    if (f.ref.trim()) d.set("ref", f.ref.trim());
     create(d);
   };
 
@@ -129,6 +131,8 @@ function Join({ create, pending, error, intent }: { create: (f: FormData) => voi
       <p className="muted">{t("Read what you agree to. It is short.")}</p>
       <label className="check"><input type="checkbox" checked={f.adult} onChange={(e) => { setErr(null); setF({ ...f, adult: e.target.checked }); }} /> <span>{t("I am 18 or older and accept the")} <a href="/legal/terms" target="_blank">{t("terms")}</a>.</span></label>
       <label className="check"><input type="checkbox" checked={f.sensitive} onChange={(e) => { setErr(null); setF({ ...f, sensitive: e.target.checked }); }} /> <span>{t("I agree that ByRequest handles my requests, deals and content, which can say something about my sex life, only to run the service. I can withdraw this by deleting my account.")} <a href="/legal/privacy" target="_blank">{t("Privacy statement")}</a></span></label>
+      {showRef ? <div className="field join-ref"><label htmlFor="ref"><svg className="ico sm" aria-hidden="true"><use href="#i-gift" /></svg>{t("Invite code")}</label><input id="ref" className="input" value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value.toUpperCase() })} placeholder="MILO-7K2Q" autoCapitalize="characters" autoComplete="off" maxLength={16} /></div>
+        : <button type="button" className="linkbtn" onClick={() => setShowRef(true)}>{t("Got an invite code?")}</button>}
       <label className="check"><input type="checkbox" checked={f.marketing} onChange={(e) => setF({ ...f, marketing: e.target.checked })} /> <span>{t("Optional: send me news and offers by email. Off by default, you can change it anytime.")}</span></label>
       <div className="join-sum"><img src={`/av/${f.look}.webp`} alt="" /><div><b>{f.handle.trim().toLowerCase()}</b><span>{f.intent === "earn" ? t("Starts as creator: next is a short, private verification.") : t("Starts as buyer: next you can post your first request.")}</span></div></div>
     </div>) : null}

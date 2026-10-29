@@ -24,11 +24,17 @@ export async function exportData(userId: string) {
     db.select({ dealId: S.messages.dealId, kind: S.messages.kind, mine: S.messages.senderId, at: S.messages.createdAt, body: S.messages.body }).from(S.messages).where(eq(S.messages.senderId, userId)),
     db.select({ handle: S.users.handle, anonymous: S.blocks.anonymous, at: S.blocks.createdAt }).from(S.blocks).innerJoin(S.users, eq(S.users.id, S.blocks.blockedId)).where(eq(S.blocks.blockerId, userId)),
   ]);
+  const [invitedBy, invites, rewards] = await Promise.all([
+    db.select({ code: S.referrals.code, at: S.referrals.createdAt }).from(S.referrals).where(eq(S.referrals.refereeId, userId)),
+    db.select({ code: S.referrals.code, intent: S.referrals.intent, at: S.referrals.createdAt, earnedCents: S.referrals.earnedCents }).from(S.referrals).where(eq(S.referrals.referrerId, userId)),
+    db.select({ kind: S.referralRewards.kind, cents: S.referralRewards.cents, status: S.referralRewards.status, at: S.referralRewards.createdAt }).from(S.referralRewards).where(eq(S.referralRewards.referrerId, userId)),
+  ]);
   await log(db, `user:${userId}`, "privacy.export", userId);
   return {
     exportedAt: new Date().toISOString(),
     account: { handle: u.handle, email: u.email, birthYear: u.birthYear, country: u.country, createdAt: u.createdAt, marketingOptIn: u.marketingOptIn, sensitiveConsentAt: u.sensitiveConsentAt, ageVerifiedAt: u.ageVerifiedAt, prefs: u.prefs },
     requests: reqs, offers, deals, consents, notifications, decisions, appeals, verificationChecks: checks,
+    invites: { yourCode: u.refCode, joinedWithCode: invitedBy[0] ?? null, friendsInvited: invites, rewards, freeServiceFees: u.freeFees },
     peopleYouBlocked: blocked.map((b) => ({ who: b.anonymous ? "a buyer, blocked from a request" : b.handle, at: b.at })),
     messagesYouSent: { note: "End to end encrypted. Only your devices can decrypt them.", items: msgs },
   };

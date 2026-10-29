@@ -71,6 +71,13 @@
       "when": 1793237141874,
       "tag": "0009_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793255582131,
+      "tag": "0010_referrals_tips",
+      "breakpoints": true
     }
   ]
 }

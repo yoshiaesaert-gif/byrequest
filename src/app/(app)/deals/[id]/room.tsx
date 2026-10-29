@@ -3,7 +3,8 @@ import { BlockButton, UnblockButton } from "@/components/block-button";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { sendMessage, releaseNow, object, rate, rateBuyer } from "../../actions";
+import { sendMessage, releaseNow, object } from "../../actions";
+import { BuyerReview, CreatorReview, TipCard, ReviewDone } from "./review";
 import { toast } from "@/components/chrome";
 import { myKeys, seal, open } from "@/components/e2e";
 import { when } from "@/components/ui";
@@ -13,7 +14,7 @@ type Msg = { id: string; kind: "e2e" | "system"; senderId: string | null; nonce:
 type Props = {
   me: { id: string; handle: string; role: "buyer" | "creator" };
   other: { id: string; handle: string; publicKey: string | null; readAt: string | null };
-  deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; ratedBuyer: boolean; category: string; amount: number };
+  deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; ratedBuyer: boolean; category: string; amount: number; stars: number | null; tipCents: number; tipCreatorCents: number; vatRate: number; tipOpen: boolean };
   delivery: { review: string; onlyCreator: boolean } | null;
   canUpload: boolean; missing: string[]; payoutHeld: boolean;
   participants: { id: string; label: string; identity: string }[];
@@ -86,13 +87,16 @@ export default function Room(p: Props) {
     requestAnimationFrame(() => { f?.focus(); f?.setSelectionRange(a + em.length, a + em.length); });
   };
 
+  // Both sides are asked for a review once the content is in the vault; a tip stays possible for 14 days.
+  const reviewable = (s === "delivered" || s === "released") && !p.blocked;
+  const canTip = buyer && reviewable && !p.deal.tipCents && p.deal.tipOpen;
   let next: { t: string; d: string; acts?: React.ReactNode };
   if (buyer) {
     if (s === "held") next = { t: tr("{name} is making it", { name: p.other.handle }), d: tr("Expected by {time}. No delivery in time means a full refund.", { time: when(p.deal.dueAt, locale) }) };
     else if (s === "reviewing") next = { t: tr("Delivered, being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Waiting for verification and consent of everyone who appears. Then it reaches your vault.") : tr("It passed the file check. A reviewer checks it before it reaches your vault.") };
     else if (s === "delivered") next = { t: tr("In your vault, your turn"), d: tr("Not what you agreed? Object before {time}. Otherwise the payment is released automatically.", { time: when(p.deal.objectUntil!, locale) }), acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>{tr("Report a problem")}</button><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{tr("Release payment")}</button></> };
     else if (s === "disputed") next = { t: tr("Under review"), d: tr("A person compares the file with the terms of the accepted offer. The money stays held until then.") };
-    else if (s === "released") next = { t: tr("Deal completed"), d: tr("It stays in your vault for the agreed period."), acts: <><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link>{!p.deal.rated ? <RateButtons dealId={p.deal.id} other={p.other.handle} /> : null}</> };
+    else if (s === "released") next = { t: tr("Deal completed"), d: tr("It stays in your vault for the agreed period."), acts: <><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link></> };
     else next = { t: tr("Refunded"), d: tr("The full amount goes back to you through the payment partner.") };
   } else {
     if (s === "held") next = p.canUpload
@@ -101,7 +105,7 @@ export default function Room(p: Props) {
     else if (s === "reviewing") next = { t: p.delivery?.review === "blocked_participants" ? tr("Waiting for participants") : tr("Being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Everyone else who appears must verify and consent through their link first.") : tr("A reviewer checks every delivery before it is made available.") };
     else if (s === "delivered") next = { t: tr("In the buyer's vault"), d: tr("The buyer can object until {time}. Then {amount} is released to you.", { time: when(p.deal.objectUntil!, locale), amount: eur(p.deal.creatorCents) }) };
     else if (s === "disputed") next = { t: tr("The buyer reported a problem"), d: tr("A person reviews the file against the accepted offer. You are paid if it matches.") };
-    else if (s === "released") next = p.payoutHeld ? { t: tr("Action needed to enable payouts"), d: tr("{amount} is waiting until your payout setup is approved.", { amount: eur(p.deal.creatorCents) }), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Open payout setup")}</Link> } : { t: tr("Paid"), d: tr("{amount} was released to your payout account.", { amount: eur(p.deal.creatorCents) }), acts: !p.deal.ratedBuyer ? <RateButtons dealId={p.deal.id} other={p.other.handle} buyer /> : undefined };
+    else if (s === "released") next = p.payoutHeld ? { t: tr("Action needed to enable payouts"), d: tr("{amount} is waiting until your payout setup is approved.", { amount: eur(p.deal.creatorCents) }), acts: <Link className="btn btn-primary" href="/onboarding">{tr("Open payout setup")}</Link> } : { t: tr("Paid"), d: tr("{amount} was released to your payout account.", { amount: eur(p.deal.creatorCents) }) };
     else next = { t: tr("Refunded to the buyer"), d: tr("This deal ended without payment.") };
   }
 
@@ -109,6 +113,10 @@ export default function Room(p: Props) {
     <div className="stepper">{steps.map((l, i) => <div key={l} className={"stp " + (i < cur ? "done" : i === cur ? "cur" : "")}><i /><span>{l}</span></div>)}</div>
     <p className="stp-now">{tr("Step {n} of {total}", { n: Math.min(cur + 1, steps.length), total: steps.length })} · <b>{steps[Math.min(cur, steps.length - 1)]}</b></p>
     <div className={"next is-" + s}><div style={{ minWidth: 0 }}><b className="t-h3">{next.t}</b><p className="t-sm muted" style={{ marginTop: 4 }}>{next.d}</p></div>{next.acts ? <div className="acts">{next.acts}</div> : null}</div>
+    {reviewable ? (buyer
+      ? (!p.deal.rated ? <BuyerReview dealId={p.deal.id} name={p.other.handle} vatBp={p.deal.vatRate} canTip={canTip} /> : canTip ? <TipCard dealId={p.deal.id} name={p.other.handle} vatBp={p.deal.vatRate} /> : null)
+      : (!p.deal.ratedBuyer ? <CreatorReview dealId={p.deal.id} name={p.other.handle} /> : null)) : null}
+    <ReviewDone stars={p.deal.stars} tipCents={buyer ? p.deal.tipCents : p.deal.tipCreatorCents} name={p.other.handle} buyer={buyer} />
     <div className="card chatbox">
       <div className="msgs" ref={box} aria-live="polite">
         {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
@@ -168,12 +176,6 @@ function thread(p: Props, plain: Record<string, string | null>, pend: { id: stri
 function sys(body: string, tr: (s: string, v?: Record<string, string | number>) => string) {
   const amount = body.match(/€\d+(?:\.\d{2})?/)?.[0];
   return amount ? tr(body.replace(amount, "{amount}"), { amount }) : tr(body);
-}
-
-function RateButtons({ dealId, other, buyer }: { dealId: string; other: string; buyer?: boolean }) {
-  const [pending, start] = useTransition();
-  const tr = useT();
-  return <div className="optrow" aria-label={tr("Rate {name}", { name: other })}>{[1, 2, 3, 4, 5].map((n) => <button key={n} className="chip" disabled={pending} onClick={() => start(async () => { const r = await (buyer ? rateBuyer : rate)(dealId, n); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{"★".repeat(n)}</button>)}</div>;
 }
 
 function ObjectSheet({ dealId, onClose }: { dealId: string; onClose: () => void }) {

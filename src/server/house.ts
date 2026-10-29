@@ -53,6 +53,6 @@ export async function houseRate(staffId: string, dealId: string, stars: number) 
   const d = await db.query.deals.findFirst({ where: eq(S.deals.id, dealId) });
   const buyer = d ? await db.query.users.findFirst({ where: eq(S.users.id, d.buyerId) }) : null;
   if (!d || !buyer?.house) throw new RuleError("Not a team deal.");
-  await rate(buyer.id, dealId, stars);       // only after a released deal, once, like any buyer
+  await rate(buyer.id, dealId, { stars, quality: stars, communication: stars, asAgreed: true, onTime: true, overDelivered: false });   // once, like any buyer
   await log(db, `staff:${staffId}`, "house.rated", d.creatorId, { dealId, stars });
 }

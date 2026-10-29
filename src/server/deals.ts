@@ -8,6 +8,8 @@ import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
 import { blockedEither } from "./blocks";
+import { onCreatorPaid, payHeldRewards, feeGiftUsed, feeGiftReturned } from "./referrals";
+import { giftFee, tipSplit, TIP_MIN_CENTS, TIP_MAX_CENTS } from "@/domain/referral";
 
 /* Shown next to the checkbox at "Accept" and stored in the audit log with the deal. */
 export const WAIVER_TEXT = "I ask the creator to start now. I understand that I lose my 14 day right of withdrawal once the content is delivered to my vault. My rights when the delivery does not match the offer stay intact.";
@@ -50,13 +52,16 @@ type NewRequest = Omit<typeof requests.$inferInsert, "buyerId" | "status" | "pay
 export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean; totalCents?: number }) {
   if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
   if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start once chosen and that you lose the 14 day withdrawal right once it is delivered.");
-  const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true } });
+  const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true, freeFees: true } });
   // An all in price is split backwards; otherwise the deal value is the base and fee and VAT come on top.
-  const m = opts.totalCents ? quoteFromTotal(opts.totalCents, vatRate(buyer?.country ?? "BE")) : quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
+  const base = opts.totalCents ? quoteFromTotal(opts.totalCents, vatRate(buyer?.country ?? "BE")) : quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
+  // A service fee gift (referral programme) is used on the next request: ByRequest pays the fee.
+  const m = !opts.totalCents && (buyer?.freeFees ?? 0) > 0 ? giftFee(base) : { ...base, giftCents: 0 };
   values = { ...values, dealCents: m.dealCents };
   const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
-    const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, paidAt: new Date() }).returning();
+    const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, feeGiftCents: m.giftCents, paidAt: new Date() }).returning();
+    if (m.giftCents) await feeGiftUsed(tx, buyerId, r.id, m.giftCents);
     await tx.insert(ledger).values([{ requestId: r.id, userId: buyerId, entry: "buyer_charge", cents: m.total }, { requestId: r.id, entry: "escrow_hold", cents: m.total }]);
     await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { request: r.id, text: WAIVER_TEXT });
     return r;
@@ -73,6 +78,7 @@ export async function refundRequest(requestId: string, why: string) {
     await payments.refund({ ref: r.payRef, cents: r.payTotalCents });
     await tx.update(requests).set({ refundedAt: new Date() }).where(eq(requests.id, requestId));
     await tx.insert(ledger).values({ requestId, userId: r.buyerId, entry: "buyer_refund", cents: r.payTotalCents });
+    if (r.feeGiftCents) await feeGiftReturned(tx, r.buyerId, requestId, r.feeGiftCents);   // the gift is not lost on a refund
     await log(tx, "system", "payment.request_refunded", r.buyerId, { request: requestId, why });
     await notify(tx, r.buyerId, "Refund on its way", "You were refunded in full.", `/requests/${requestId}/offers`);
     return true;
@@ -213,7 +219,7 @@ export async function releaseToVault(deliveryId: string) {
     await tx.update(deals).set({ status: st.status, deliveredAt: st.deliveredAt, objectUntil: st.objectUntil }).where(eq(deals.id, d.id));
     await tx.update(schema.deliveries).set({ review: "approved" }).where(eq(schema.deliveries.id, deliveryId));
     await system(tx, d.id, "It is in the buyer's vault. 24 hours to object, then the payment is released.");
-    await notify(tx, d.buyerId, "Delivery ready", "Your delivery is in your vault.", `/deals/${d.id}`);
+    await notify(tx, d.buyerId, "Delivery ready", "It is in your vault. How was it? Rate it, and leave a tip if they went the extra mile.", `/deals/${d.id}#rate`);
   });
   return true;
 }
@@ -229,25 +235,71 @@ export async function object(buyerId: string, dealId: string, reason: string, no
   });
 }
 
-export async function rate(buyerId: string, dealId: string, stars: number) {
+/* Ratings, both ways, with a few short questions. The buyer can rate once the content is in the vault,
+   the creator once the deal is done. Each side rates once; stars feed the public average. */
+export type BuyerReview = { stars: number; quality: number; communication: number; asAgreed: boolean; onTime: boolean; overDelivered: boolean; text?: string };
+export type CreatorReview = { stars: number; clear: boolean; respectful: boolean; again: boolean };
+const clamp = (n: number) => Math.max(1, Math.min(5, Math.round(Number(n) || 0)));
+
+export async function rate(buyerId: string, dealId: string, rv: BuyerReview) {
   const d = await db.query.deals.findFirst({ where: eq(deals.id, dealId) });
-  if (!d || d.buyerId !== buyerId || d.status !== "released" || d.buyerRating) throw new RuleError("You cannot rate this deal.");
-  const s = Math.max(1, Math.min(5, Math.round(stars)));
+  if (!d || d.buyerId !== buyerId || !["delivered", "released"].includes(d.status) || d.buyerRating) throw new RuleError("You cannot rate this deal.");
+  const s = clamp(rv.stars);
+  const text = (rv.text ?? "").trim().replace(/\s+/g, " ").slice(0, 280);
+  // Reviews are public on the profile: no contact details, links or numbers.
+  if (text && /@|https?:|www\.|\d{6,}/i.test(text)) throw new RuleError("Leave out contact details, links and numbers.");
   await db.transaction(async (tx) => {
-    await tx.update(deals).set({ buyerRating: s }).where(eq(deals.id, dealId));
+    await tx.update(deals).set({ buyerRating: s, reviewText: text || null, buyerScores: { quality: clamp(rv.quality), communication: clamp(rv.communication), asAgreed: !!rv.asAgreed, onTime: !!rv.onTime, overDelivered: !!rv.overDelivered } }).where(eq(deals.id, dealId));
     await tx.update(users).set({ ratingSum: sql`${users.ratingSum} + ${s}`, ratingCount: sql`${users.ratingCount} + 1` }).where(eq(users.id, d.creatorId));
+    await notify(tx, d.creatorId, "You got a new review", "Your buyer left a review. Have a look.", `/deals/${dealId}`);
   });
 }
 
-/* The other direction: the creator rates the buyer, stars only, once per released deal. */
-export async function rateBuyer(creatorId: string, dealId: string, stars: number) {
+export async function rateBuyer(creatorId: string, dealId: string, rv: CreatorReview) {
   const d = await db.query.deals.findFirst({ where: eq(deals.id, dealId) });
-  if (!d || d.creatorId !== creatorId || d.status !== "released" || d.creatorRating) throw new RuleError("You cannot rate this deal.");
-  const s = Math.max(1, Math.min(5, Math.round(stars)));
+  if (!d || d.creatorId !== creatorId || !["delivered", "released"].includes(d.status) || d.creatorRating) throw new RuleError("You cannot rate this deal.");
+  const s = clamp(rv.stars);
   await db.transaction(async (tx) => {
-    await tx.update(deals).set({ creatorRating: s }).where(eq(deals.id, dealId));
+    await tx.update(deals).set({ creatorRating: s, creatorScores: { clear: !!rv.clear, respectful: !!rv.respectful, again: !!rv.again } }).where(eq(deals.id, dealId));
     await tx.update(users).set({ buyerRatingSum: sql`${users.buyerRatingSum} + ${s}`, buyerRatingCount: sql`${users.buyerRatingCount} + 1` }).where(eq(users.id, d.buyerId));
   });
+}
+
+/* A tip, like a thank you after a ride. Once per deal, from delivery until 14 days after. The buyer
+   pays exactly the amount picked; the creator gets the same share as on the deal. Paid out with the
+   deal: straight away when the deal is already paid out, otherwise together with it. */
+export const TIP_DAYS = 14;
+export async function tip(buyerId: string, dealId: string, cents: number) {
+  const d = await db.query.deals.findFirst({ where: eq(deals.id, dealId) });
+  if (!d || d.buyerId !== buyerId) throw new RuleError("Not your deal.");
+  if (!["delivered", "released"].includes(d.status)) throw new RuleError("You can tip once the content is in your vault.");
+  if (d.tipCents) throw new RuleError("You already tipped for this deal. Thank you!");
+  if (d.deliveredAt && Date.now() - d.deliveredAt.getTime() > TIP_DAYS * 86400_000) throw new RuleError("Tipping is open for 14 days after delivery.");
+  if (!Number.isInteger(cents) || cents < TIP_MIN_CENTS || cents > TIP_MAX_CENTS) throw new RuleError("Pick a tip between €2 and €200.");
+  if (await blockedEither(d.buyerId, d.creatorId)) throw new RuleError("This chat is closed.");
+  const sp = tipSplit(cents, d.vatRate);
+  const charge = await payments.charge({ buyerId, cents, descriptor: STATEMENT_NAME });
+  await db.transaction(async (tx) => {
+    await tx.update(deals).set({ tipCents: cents, tipCreatorCents: sp.creatorCents, tipVatCents: sp.vatCents, tipRef: charge.ref, tipAt: new Date() }).where(eq(deals.id, dealId));
+    await tx.insert(ledger).values({ dealId, userId: buyerId, entry: "tip_charge", cents });
+    await log(tx, `user:${buyerId}`, "deal.tip", d.creatorId, { dealId, cents, creatorCents: sp.creatorCents });
+    await system(tx, dealId, `The buyer left a tip. €${(sp.creatorCents / 100).toFixed(2)} goes to the creator.`);
+    await notify(tx, d.creatorId, "You got a tip", `€${(sp.creatorCents / 100).toFixed(2)} as a thank you from your buyer.`, `/deals/${dealId}`);
+    if (d.status === "released") await payTip(tx, { ...d, tipCents: cents, tipCreatorCents: sp.creatorCents, tipVatCents: sp.vatCents });
+  });
+}
+
+async function payTip(tx: Tx, d: typeof deals.$inferSelect) {
+  if (!d.tipCents) return;
+  const done = await tx.query.ledger.findFirst({ where: and(eq(ledger.dealId, d.id), inArray(ledger.entry, ["tip_payout", "tip_on_hold"])) });
+  if (done) return;
+  const platform = d.tipCents - d.tipCreatorCents - d.tipVatCents;
+  if (!(await access(d.creatorId)).caps.receivePayouts) {
+    await tx.insert(ledger).values([{ dealId: d.id, userId: d.creatorId, entry: "tip_on_hold", cents: d.tipCreatorCents }, { dealId: d.id, entry: "platform_revenue", cents: platform }, ...(d.tipVatCents ? [{ dealId: d.id, entry: "vat_payable" as const, cents: d.tipVatCents }] : [])]);
+    return;
+  }
+  await payments.payout({ creatorId: d.creatorId, cents: d.tipCreatorCents });
+  await tx.insert(ledger).values([{ dealId: d.id, userId: d.creatorId, entry: "tip_payout", cents: d.tipCreatorCents }, { dealId: d.id, entry: "platform_revenue", cents: platform }, ...(d.tipVatCents ? [{ dealId: d.id, entry: "vat_payable" as const, cents: d.tipVatCents }] : [])]);
 }
 
 /* ---------- trust and safety ---------- */
@@ -293,7 +345,8 @@ export async function runDue(now = new Date()) {
     await system(tx, deal.id, "No delivery before the deadline. The buyer is refunded in full.");
   }).catch(() => {});
   await expireVault(now);
-  return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded };
+  const referralPaid = await payHeldRewards();
+  return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded, referralPaid };
 }
 
 async function expireVault(now: Date) {
@@ -329,6 +382,8 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
       ]);
       await log(tx, "system", "payout.on_hold", d.creatorId, { dealId: d.id, reason: a.missing });
       await notify(tx, d.creatorId, "Action needed to enable payouts", "A payment is waiting for your payout setup.", "/onboarding");
+      await onCreatorPaid(tx, d);
+      await payTip(tx, d);
       return;
     }
     await payments.payout({ creatorId: d.creatorId, cents: d.creatorCents });
@@ -339,10 +394,17 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
     ]);
     await tx.insert(messages).values({ dealId: d.id, kind: "system", body: `Payment released. €${(d.creatorCents / 100).toFixed(2)} goes to the creator.` });
     await notify(tx, d.creatorId, "You got paid", "A payment was added to your balance.", `/deals/${d.id}`);
+    await onCreatorPaid(tx, d);
+    await payTip(tx, d);
+    if (!d.creatorRating) await notify(tx, d.creatorId, "How was this buyer?", "Rate them in a few taps. It helps every creator.", `/deals/${d.id}#rate`);
   } else if (ef.kind === "refund_buyer") {
     const paid = d.dealCents + d.feeCents + d.vatCents;
     await payments.refund({ ref: d.paymentRef, cents: paid });
     await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: paid });
+    if (d.tipCents && d.tipRef) {                       // a tip on a deal that is refunded goes back too
+      await payments.refund({ ref: d.tipRef, cents: d.tipCents });
+      await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: d.tipCents });
+    }
     await notify(tx, d.buyerId, "Refund on its way", "You were refunded in full.", `/deals/${d.id}`);
   } else {
     // A lost dispute alone never closes an account. It is logged; staff see repeated flags on the

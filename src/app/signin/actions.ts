@@ -9,6 +9,8 @@ import { acceptDocs, ensure } from "@/server/onboarding";
 import { BUYER_COUNTRIES } from "@/config/compliance";
 import { RuleError } from "@/domain/rules";
 import { getLocale } from "@/i18n/server";
+import { attach } from "@/server/referrals";
+import { REF_COOKIE } from "@/domain/referral";
 import { issueCode, verifyCode, startSession, endSession, currentUser, markVerified, verifiedEmail, clearVerified } from "@/server/auth";
 
 export type AuthState = { step: "email" | "code" | "profile" | "blocked"; email?: string; devCode?: string | null; error?: string; reason?: string; sent?: boolean };
@@ -72,6 +74,10 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   }).returning();
   // The checkbox records acceptance of the exact current terms and privacy statement (version and hash).
   await acceptDocs(u.id, ["terms", "privacy"]);
+  // Invited: the code from the invite link (cookie) or typed in at sign up ties the account to a friend.
+  const jar = await cookies();
+  await attach(u.id, String(f.get("ref") ?? "").trim() || jar.get(REF_COOKIE)?.value, p.data.intent).catch((e) => console.error("referral attach failed", e instanceof Error ? e.message : e));
+  jar.delete(REF_COOKIE);
   await clearVerified();
   await startSession(u.id);
   // Two different starts: buyers land on the board with their welcome tour, earners go straight into creator setup.
