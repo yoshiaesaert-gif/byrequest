@@ -6,6 +6,7 @@ import { profileFor } from "@/server/queries";
 import { Av, I, Stars } from "@/components/ui";
 import { euros } from "@/domain/rules";
 import AlbumAsk from "./album-ask";
+import { BlockButton, UnblockButton } from "@/components/block-button";
 import { contactCreator } from "@/server/reports";
 import { redirect } from "next/navigation";
 import { cached } from "@/server/translate";
@@ -24,6 +25,10 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
   if (r.hidden) return (<div className="wrap"><div className="card empty" style={{ maxWidth: 520, margin: "40px auto" }}>
     <span className="empty-i"><I n="lock" c="lg" /></span><b className="t-h3">{t("This profile is private")}</b>
     <p className="muted t-sm">{t("This creator shows their profile only to buyers they make an offer to.")}</p><Link href="/post" className="btn btn-primary">{t("Post a request")}</Link></div></div>);
+  if (r.blocked) return (<div className="wrap"><div className="card empty blocked-card">
+    <span className="empty-i"><I n="block" c="lg" /></span><b className="t-h3">{t("You blocked {name}", { name: r.handle })}</b>
+    <p className="muted t-sm">{t("You do not see each other's requests or profile, and there are no applications or chats between you.")}</p>
+    <div className="optrow" style={{ justifyContent: "center" }}><UnblockButton handle={r.handle} className="btn btn-secondary" /><Link href={`/report?type=profile&ref=${encodeURIComponent(r.handle)}`} className="btn btn-ghost">{t("Report")}</Link></div></div></div>);
   const { u, p, reason, offerId, album, reviews, dealsDone } = r;
   // What the creator wrote reads in the viewer's language when a translation is cached.
   const own = [p.bio, p.build, p.sport, p.work, p.languages, p.hair, p.eyes, p.body, p.tattoos, ...p.makes, ...p.never, ...reviews.map((x) => x.text)].filter((x): x is string => !!x);
@@ -41,7 +46,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
         <h1 className="t-h1">{u.handle}</h1>
         <div className="t-sm muted"><Stars sum={u.ratingSum} count={u.ratingCount} t={t} /> · {t("{n} deals", { n: deals })} · {replies}</div>
         <div className="optrow" style={{ justifyContent: "center" }}><span className="badge ok"><I n="shield" c="sm" />{t("Verified creator")}</span><span className="badge brand">{p.showsFace ? t("Face shown") : t("No face")}</span></div>
-        <Link href={`/report?type=profile&ref=${encodeURIComponent(u.handle)}`} className="report-link"><I n="alert" c="sm" />{t("Report this profile")}</Link>
+        {reason !== "self" ? <div className="safe-row" style={{ justifyContent: "center" }}><Link href={`/report?type=profile&ref=${encodeURIComponent(u.handle)}`} className="report-link"><I n="alert" c="sm" />{t("Report this profile")}</Link><BlockButton handle={u.handle} after="/" /></div> : null}
         <div className="cp-vis"><I n={reason === "public" ? "users" : "lock"} c="sm" />{reason === "public" ? t("Public creator profile") : reason === "self" ? t("This is how buyers see your profile.") : t(reason === "deal" ? "Private profile. You see it because {name} has a deal with you." : "Private profile. You see it because {name} made you an offer.", { name: u.handle })}</div>
       </div></div>
       <div className="cp-main">

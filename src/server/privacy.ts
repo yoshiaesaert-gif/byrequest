@@ -12,7 +12,7 @@ const S = schema;
 export async function exportData(userId: string) {
   const u = await db.query.users.findFirst({ where: eq(S.users.id, userId) });
   if (!u) throw new RuleError("Not found.");
-  const [reqs, offers, deals, consents, notifications, decisions, appeals, checks, msgs] = await Promise.all([
+  const [reqs, offers, deals, consents, notifications, decisions, appeals, checks, msgs, blocked] = await Promise.all([
     db.select().from(S.requests).where(eq(S.requests.buyerId, userId)),
     db.select().from(S.offers).where(eq(S.offers.creatorId, userId)),
     db.select().from(S.deals).where(or(eq(S.deals.buyerId, userId), eq(S.deals.creatorId, userId))),
@@ -22,12 +22,14 @@ export async function exportData(userId: string) {
     db.select().from(S.appeals).where(eq(S.appeals.userId, userId)),
     db.select({ purpose: S.identityChecks.purpose, provider: S.identityChecks.provider, status: S.identityChecks.status, over18: S.identityChecks.over18, at: S.identityChecks.updatedAt }).from(S.identityChecks).where(eq(S.identityChecks.userId, userId)),
     db.select({ dealId: S.messages.dealId, kind: S.messages.kind, mine: S.messages.senderId, at: S.messages.createdAt, body: S.messages.body }).from(S.messages).where(eq(S.messages.senderId, userId)),
+    db.select({ handle: S.users.handle, anonymous: S.blocks.anonymous, at: S.blocks.createdAt }).from(S.blocks).innerJoin(S.users, eq(S.users.id, S.blocks.blockedId)).where(eq(S.blocks.blockerId, userId)),
   ]);
   await log(db, `user:${userId}`, "privacy.export", userId);
   return {
     exportedAt: new Date().toISOString(),
     account: { handle: u.handle, email: u.email, birthYear: u.birthYear, country: u.country, createdAt: u.createdAt, marketingOptIn: u.marketingOptIn, sensitiveConsentAt: u.sensitiveConsentAt, ageVerifiedAt: u.ageVerifiedAt, prefs: u.prefs },
     requests: reqs, offers, deals, consents, notifications, decisions, appeals, verificationChecks: checks,
+    peopleYouBlocked: blocked.map((b) => ({ who: b.anonymous ? "a buyer, blocked from a request" : b.handle, at: b.at })),
     messagesYouSent: { note: "End to end encrypted. Only your devices can decrypt them.", items: msgs },
   };
 }

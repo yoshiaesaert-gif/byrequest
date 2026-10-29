@@ -4,18 +4,20 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import { access } from "@/server/onboarding";
-import { Av, I } from "@/components/ui";
+import { Av, I, when } from "@/components/ui";
+import { myBlocks } from "@/server/blocks";
+import { UnblockButton } from "@/components/block-button";
 import { Toggle, BecomeCreator, ProfileForm, Marketing, DeleteAccount } from "./parts";
 
 export default async function Settings() {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const u = await requireUser();
-  const [a, prof] = await Promise.all([u.isCreator ? access(u.id) : null, db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) })]);
+  const [a, prof, blocked] = await Promise.all([u.isCreator ? access(u.id) : null, db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }), myBlocks(u.id)]);
   return (<div className="wrap">
     <div className="page-h"><div><h1 className="t-h1">{t("Profile and privacy")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Only your username and avatar are ever shown to others.")}</p></div></div>
     <div className="settings">
       <div className="card idcard"><Av a={u.avatar} name={u.handle} size={88} /><b className="t-h2">{u.handle}</b><Link href="/avatar" className="btn btn-secondary btn-sm"><I n="spark" c="sm" />{t("Edit avatar")}</Link>
-        {a ? <span className={"badge " + (a.status === "active" ? "ok" : "amber")}>{a.status === "active" ? "Verified creator" : "Creator setup not finished"}</span> : null}
+        {a ? <span className={"badge " + (a.status === "active" ? "ok" : "amber")}>{t(a.status === "active" ? "Verified creator" : "Creator setup not finished")}</span> : null}
         <div className="stats"><div><b className="num">{u.ratingCount ? (u.ratingSum / u.ratingCount).toFixed(1) : "–"}</b><span>{t("Rating")}</span></div><div><b className="num">{u.ratingCount}</b><span>{t("Ratings")}</span></div><div><b className="num">{new Date().getFullYear() - u.birthYear}</b><span>{t("Age")}</span></div></div></div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
         <div className="card group"><h3 className="t-h3">{t("Privacy")}</h3>
@@ -27,6 +29,10 @@ export default async function Settings() {
           <div className="setrow"><div><b>{t("Quick hide")}</b><span className="s">{t("Press Esc twice, or tap the eye icon on mobile")}</span></div><span className="badge">{t("Always")}</span></div>
         </div>
         <div className="card group"><h3 className="t-h3">{t("Messages from ByRequest")}</h3><Marketing on={u.marketingOptIn} /></div>
+        <div className="card group" id="blocked"><h3 className="t-h3">{t("Blocked")}</h3>
+          {blocked.length ? blocked.map((b) => <div key={b.key} className="setrow"><div style={{ display: "flex", gap: 12, alignItems: "center" }}>{b.handle ? <Av a={b.avatar} name={b.handle} size={36} /> : <span className="blk-anon"><I n="user" c="sm" /></span>}<div><b>{b.handle ?? t("A buyer")}</b><span className="s">{t("Blocked on {date}", { date: when(b.at, locale) })}</span></div></div><UnblockButton handle={b.key} name={b.handle ?? t("A buyer")} /></div>)
+            : <div className="setrow"><div><b>{t("Nobody blocked")}</b><span className="s">{t("Block someone from their profile, a request or a chat. They are not told.")}</span></div></div>}
+        </div>
         <div className="card group" id="privacy"><h3 className="t-h3">{t("Your data")}</h3>
           <div className="setrow"><div><b>{t("Download your data")}</b><span className="s">{t("Everything we hold about you, in one file")}</span></div><a href="/api/me/export" className="btn btn-secondary btn-sm">{t("Download")}</a></div>
           <div className="setrow"><div><b>{t("Privacy statement")}</b><span className="s">{t("What we keep, why, and for how long")}</span></div><Link href="/legal/privacy" className="btn btn-secondary btn-sm">{t("Read")}</Link></div>

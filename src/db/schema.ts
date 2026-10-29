@@ -232,6 +232,15 @@ export const saves = pgTable("saves", {
   requestId: uuid("request_id").notNull().references(() => requests.id, { onDelete: "cascade" }),
 }, (t) => [uniqueIndex("saves_pk").on(t.userId, t.requestId)]);
 
+/* One person blocks another. Works both ways once it exists: no applications, no new deals, no chat,
+   and neither sees the other's requests or profile. Silent: the blocked person is never told. */
+export const blocks = pgTable("blocks", {
+  blockerId: uuid("blocker_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  blockedId: uuid("blocked_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  anonymous: boolean("anonymous").notNull().default(false),   // blocked from a request: the buyer's name is never shown to the blocker
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex("blocks_pk").on(t.blockerId, t.blockedId), index("blocks_blocked").on(t.blockedId)]);
+
 /* Append only ledger. Every movement of money is one row, so balances can always be rebuilt. */
 /* Bookkeeping mirror of what the payment provider did. Funds are held and paid out by the provider;
    ByRequest does not run its own escrow account or wallet. */

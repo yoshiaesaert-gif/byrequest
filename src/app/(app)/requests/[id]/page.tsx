@@ -8,6 +8,8 @@ import { access } from "@/server/onboarding";
 import { BigNum, BuyerLine, Chips, Cover, I, leftLabel } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
+import { BlockButton } from "@/components/block-button";
+import { blockedEither } from "@/server/blocks";
 import { RemoveRequest } from "../../admin/parts";
 import { getT } from "@/i18n/server";
 import { localize } from "@/server/translate";
@@ -24,6 +26,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   const [loc] = await localize([raw], locale);
   const r = showOrig ? { ...loc, title: raw.title, details: raw.details } : loc;
   if (r.buyerId === u.id) redirect(`/requests/${id}/offers`);
+  if (await blockedEither(u.id, r.buyerId)) notFound();   // blocked either way: the request does not exist for them
   const [a, mine, offers] = await Promise.all([
     u.isCreator ? access(u.id) : null,
     db.query.offers.findFirst({ where: and(eq(schema.offers.requestId, id), eq(schema.offers.creatorId, u.id)) }),
@@ -68,7 +71,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
             <div><dt>{t("Deliver within")}</dt><dd>{r.dueHours < 72 ? t("{n} hours", { n: r.dueHours }) : t("{n} days", { n: Math.round(r.dueHours / 24) })}</dd></div>
             <div><dt>{t("Vault at least")}</dt><dd>{t(VAULT_LABEL[r.minVault])}</dd></div>
           </dl>
-          <Link href={`/report?type=request&ref=${r.id}`} className="report-link"><I n="alert" c="sm" />{t("Report this request")}</Link>
+          <div className="safe-row"><Link href={`/report?type=request&ref=${r.id}`} className="report-link"><I n="alert" c="sm" />{t("Report this request")}</Link>{u.isCreator && r.buyerId !== u.id ? <BlockButton handle={t("this buyer")} requestId={r.id} label={t("Block this buyer")} after="/for-you" /> : null}</div>
           <p className="rd-how">{t("You make an offer and the buyer picks one creator. The payment is secured before you start, and {amount} is released to you after review and the 24 hour window.", { amount: euros(m.creatorCents) })}</p>
         </div>
       </div>

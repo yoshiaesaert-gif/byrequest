@@ -6,6 +6,7 @@ import { ingest, remove } from "./media";
 import { notify } from "./deals";
 import { requireCap, log } from "./onboarding";
 import { REVIEW_MODE } from "@/config/compliance";
+import { blockedEither } from "./blocks";
 
 const { previewAlbums, offers, requests, media } = schema;
 
@@ -15,6 +16,7 @@ export async function requestAlbum(buyerId: string, offerId: string, kind: "look
   const o = await db.query.offers.findFirst({ where: eq(offers.id, offerId) });
   const r = o && await db.query.requests.findFirst({ where: eq(requests.id, o.requestId) });
   if (!o || !r || r.buyerId !== buyerId || o.status !== "pending") throw new RuleError("You can ask for a preview album only while choosing between offers.");
+  if (await blockedEither(buyerId, o.creatorId)) throw new RuleError("You can ask for a preview album only while choosing between offers.");
   await db.transaction(async (tx) => {
     await tx.insert(previewAlbums).values({ offerId, buyerId, creatorId: o.creatorId, kind });
     await notify(tx, o.creatorId, "Preview request", "A buyer asked for a preview album.", "/studio");

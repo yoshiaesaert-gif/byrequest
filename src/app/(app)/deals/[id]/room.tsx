@@ -1,4 +1,5 @@
 "use client";
+import { BlockButton, UnblockButton } from "@/components/block-button";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ type Props = {
   participants: { id: string; label: string; identity: string }[];
   dispute: { outcome: string } | null;
   msgs: Msg[];
+  blocked: "me" | "them" | null;   // the chat stops after a block; the deal itself keeps its protection
 };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eur = (c: number) => "€" + Math.round(c / 100);
@@ -112,16 +114,18 @@ export default function Room(p: Props) {
         {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
         {!chat && !pendingMsgs.length && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
       </div>
-      <p className="safety-note"><Ico n="lock" c="sm" /><b>{tr("End to end encrypted.")}</b>&nbsp;{tr("Only you and {name} can read this chat. Meeting in person, paying outside ByRequest and sharing contact details are not allowed.", { name: p.other.handle })} <Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report this chat")}</Link></p>
+      <div className="safety-note"><Ico n="lock" c="sm" /><b>{tr("End to end encrypted.")}</b>&nbsp;{tr("Only you and {name} can read this chat. Meeting in person, paying outside ByRequest and sharing contact details are not allowed.", { name: p.other.handle })} <Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report this chat")}</Link>
+        <span className="safe-row" style={{ marginTop: 6 }}>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
       {warned ? <p className="chat-warn" role="alert"><Ico n="alert" c="sm" />{tr("This looks like contact details, a payment outside ByRequest or a meeting. That is not allowed and removes your protection: no review, no refund, no help. Send anyway only if it is something else.")}</p> : null}
-      <form className="composer" onSubmit={send}>
-        {emoji ? <div className="emoji-pop" role="listbox" aria-label={tr("Emoji")}>{EMOJI.map((em) => <button key={em} type="button" onClick={() => addEmoji(em)} aria-label={em}>{em}</button>)}</div> : null}
-        <button type="button" className={"emoji-btn" + (emoji ? " on" : "")} onClick={() => setEmoji((x) => !x)} aria-label={tr("Emoji")} aria-expanded={emoji} disabled={!p.other.publicKey}>😊</button>
-        <textarea ref={field} rows={1} className="input" value={text} onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer:coarse)").matches) { e.preventDefault(); send(); } }}
-          placeholder={p.other.publicKey ? tr("Message {name}", { name: p.other.handle }) : tr("The chat opens once {name} signs in on a device", { name: p.other.handle })} disabled={!p.other.publicKey} autoComplete="off" aria-label={tr("Message")} maxLength={2000} />
-        <button className="btn btn-primary" aria-label={tr("Send")} disabled={!text.trim() || !p.other.publicKey}><Ico n="send" /></button>
-      </form>
+      {p.blocked ? <div className="chat-closed" role="status"><Ico n="block" c="sm" /><div><b>{tr("This chat is closed")}</b><span>{p.blocked === "me" ? tr("You blocked {name}. The deal stays protected: delivery, review and refund work as usual.", { name: p.other.handle }) : tr("New messages are not possible. The deal stays protected: delivery, review and refund work as usual.")}</span></div>{p.blocked === "me" ? <UnblockButton handle={p.other.handle} /> : null}</div>
+      : <>      <form className="composer" onSubmit={send}>
+          {emoji ? <div className="emoji-pop" role="listbox" aria-label={tr("Emoji")}>{EMOJI.map((em) => <button key={em} type="button" onClick={() => addEmoji(em)} aria-label={em}>{em}</button>)}</div> : null}
+          <button type="button" className={"emoji-btn" + (emoji ? " on" : "")} onClick={() => setEmoji((x) => !x)} aria-label={tr("Emoji")} aria-expanded={emoji} disabled={!p.other.publicKey}>😊</button>
+          <textarea ref={field} rows={1} className="input" value={text} onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer:coarse)").matches) { e.preventDefault(); send(); } }}
+            placeholder={p.other.publicKey ? tr("Message {name}", { name: p.other.handle }) : tr("The chat opens once {name} signs in on a device", { name: p.other.handle })} disabled={!p.other.publicKey} autoComplete="off" aria-label={tr("Message")} maxLength={2000} />
+          <button className="btn btn-primary" aria-label={tr("Send")} disabled={!text.trim() || !p.other.publicKey}><Ico n="send" /></button>
+        </form></>}
     </div>
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
     {sheet === "upload" ? <UploadSheet p={p} onClose={() => setSheet(null)} /> : null}

@@ -7,6 +7,7 @@ import { I } from "@/components/ui";
 const ACTIONS: [href: string, icon: string, title: string, text: string][] = [
   ["/report", "alert", "Report a problem", "A request, a profile, a chat or a delivery that is not right. A person looks at every report."],
   ["/removal", "eyeoff", "Request removal", "You appear in something without your consent? We take it offline and block it from being uploaded again."],
+  ["/settings#blocked", "block", "Block someone", "Block from a profile, a request or a chat. No more applications, chats or requests between you. They are not told."],
   ["/settings", "user", "Privacy settings", "Discreet notifications, a neutral tab name, quick hide, your data and deleting your account."],
   ["/legal/contact", "inbox", "Point of contact", "For authorities and for anyone who needs to reach ByRequest directly."],
 ];

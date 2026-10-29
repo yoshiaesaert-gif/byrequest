@@ -16,7 +16,7 @@ export default function AlbumAsk({ offerId, handle, album }: { offerId: string; 
   const [pending, start] = useTransition();
 
   const card = !state ? (
-    <div className="cp-al"><div className="cp-al-i"><Ico n="eye" /></div><div style={{ minWidth: 0 }}><b>{t("Want to see more first?")}</b><p className="t-sm muted">{t("Ask")} {handle} for a few private photos. They open once, for 60 seconds, with your name as watermark. Then they are gone.</p></div><button className="btn btn-primary" onClick={() => setOpen(true)}>{t("Request preview album")}</button></div>
+    <div className="cp-al"><div className="cp-al-i"><Ico n="eye" /></div><div style={{ minWidth: 0 }}><b>{t("Want to see more first?")}</b><p className="t-sm muted">{t("Ask {name} for a few private photos. They open once, for 60 seconds, with your name as watermark. Then they are gone.", { name: handle })}</p></div><button className="btn btn-primary" onClick={() => setOpen(true)}>{t("Request preview album")}</button></div>
   ) : state === "requested" || state === "in_review" ? (
     <div className="cp-al"><div className="cp-al-i"><Ico n="clock" /></div><div style={{ minWidth: 0 }}><b>{state === "requested" ? "Preview album requested" : "Preview album is being reviewed"}</b><p className="t-sm muted">{state === "requested" ? `${handle} gets a neutral notification and decides whether to send it.` : "Every upload is reviewed before you can open it."}</p></div><span className="badge amber">{t("Waiting")}</span></div>
   ) : state === "ready" ? (
@@ -30,8 +30,8 @@ export default function AlbumAsk({ offerId, handle, album }: { offerId: string; 
     {open ? (
       <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
         <div className="sheet" role="dialog" aria-modal="true" aria-label={t("Request preview album")}>
-          <div className="sheet-h"><div><span className="eyebrow">{t("Preview album")}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{t("Ask")} {handle} for a few photos</h3></div><button className="icon-btn" onClick={() => setOpen(false)} aria-label={t("Close")}><Ico n="x" /></button></div>
-          <div className="field"><label>{t("What would you like to see?")}</label><div className="optrow">{KINDS.map(([k, l]) => <button key={k} className={"chip" + (kind === k ? " is-on" : "")} onClick={() => setKind(k)}>{l}</button>)}</div><span className="t-sm muted">{KINDS.find((k) => k[0] === kind)![2]}</span></div>
+          <div className="sheet-h"><div><span className="eyebrow">{t("Preview album")}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{t("Ask {name} for a few photos", { name: handle })}</h3></div><button className="icon-btn" onClick={() => setOpen(false)} aria-label={t("Close")}><Ico n="x" /></button></div>
+          <div className="field"><label>{t("What would you like to see?")}</label><div className="optrow">{KINDS.map(([k, l]) => <button key={k} className={"chip" + (kind === k ? " is-on" : "")} onClick={() => setKind(k)}>{t(l)}</button>)}</div><span className="t-sm muted">{t(KINDS.find((k) => k[0] === kind)![2])}</span></div>
           <div className="cp-rules"><div><Ico n="eye" c="sm" /><span>{t("Opens once, for 60 seconds")}</span></div><div><Ico n="lock" c="sm" /><span>{t("Your name as watermark on every photo")}</span></div><div><Ico n="x" c="sm" /><span>{t("Deleted on both sides after viewing")}</span></div><div><Ico n="shield" c="sm" /><span>{t("Reviewed before you can open it")}</span></div></div>
           <button className="btn btn-brand btn-lg btn-block" disabled={pending} onClick={() => start(async () => { const r = await requestAlbum(offerId, kind); if (r.ok) { setState("requested"); setOpen(false); toast(r.msg ?? "Sent"); } else toast(t(r.error), "err"); })}>{pending ? "Sending…" : "Send request"}</button>
           <p className="t-xs muted">{handle} can always say no. One preview album per offer. Free while you choose between offers.</p>

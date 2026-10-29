@@ -1,4 +1,5 @@
 "use client";
+import { BlockButton } from "@/components/block-button";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { acceptOffer } from "../../../actions";
@@ -66,7 +67,8 @@ export default function Picker({ requestId, open, dealId, money, offers, ageOk, 
               <p className="t-sm">{t("Confirm your age once before you pay. It takes a minute with our verification partner. ByRequest only keeps the result, never your ID.")}</p>
               <Link href={`/verify-age?next=${encodeURIComponent(`/requests/${requestId}/offers`)}`} className="btn btn-brand btn-lg btn-block">{t("Confirm my age")}</Link>
             </>)}
-            <div className="protect"><span><Ico n="shield" c="sm" />{t("Paid out only after review and your 24 hours to object")}</span><span><Ico n="lock" c="sm" />{t("Watermarked, no download, no forwarding")}</span><span><Ico n="check" c="sm" />{t("Shows as BRQ DIGITAL on your statement")}</span></div></>)
+            <div className="protect"><span><Ico n="shield" c="sm" />{t("Paid out only after review and your 24 hours to object")}</span><span><Ico n="lock" c="sm" />{t("Watermarked, no download, no forwarding")}</span><span><Ico n="check" c="sm" />{t("Shows as BRQ DIGITAL on your statement")}</span></div>
+            <div className="safe-row"><Link href={`/report?type=profile&ref=${encodeURIComponent(o.handle)}`} className="report-link"><Ico n="alert" c="sm" />{t("Report {name}", { name: o.handle })}</Link><BlockButton handle={o.handle} /></div></>)
           : <p className="t-sm muted">{t("Select an offer to see the total.")}</p>}
       </div></aside>
     </div>

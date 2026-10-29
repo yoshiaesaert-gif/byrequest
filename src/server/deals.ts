@@ -7,6 +7,7 @@ import { ingest, remove, type Stored } from "./media";
 import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
+import { blockedEither } from "./blocks";
 
 /* Shown next to the checkbox at "Accept" and stored in the audit log with the deal. */
 export const WAIVER_TEXT = "I ask the creator to start now. I understand that I lose my 14 day right of withdrawal once the content is delivered to my vault. My rights when the delivery does not match the offer stay intact.";
@@ -26,6 +27,7 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
   const r = await db.query.requests.findFirst({ where: eq(requests.id, input.requestId) });
   if (!r || r.status !== "open" || r.closesAt < new Date()) throw new RuleError("This request is no longer open.");
   if (r.buyerId === creatorId) throw new RuleError("You cannot make an offer on your own request.");
+  if (await blockedEither(creatorId, r.buyerId)) throw new RuleError("This request is no longer open.");   // silent: never reveals a block
   if (!vaultAtLeast(input.vault, r.minVault)) throw new RuleError("The buyer asked for a longer vault period.");
   if (r.face === "required" && !input.showsFace) throw new RuleError("The buyer asked for the face to be shown.");
   if (input.etaHours > r.dueHours) throw new RuleError(`The buyer needs it within ${r.dueHours} hours.`);
@@ -83,6 +85,7 @@ export async function acceptOffer(buyerId: string, offerId: string, opts: { with
   const r = await db.query.requests.findFirst({ where: eq(requests.id, o.requestId) });
   if (!r || r.buyerId !== buyerId) throw new RuleError("Not your request.");
   if (r.status !== "open") throw new RuleError("You already accepted an offer for this request.");
+  if (await blockedEither(buyerId, o.creatorId)) throw new RuleError("This offer is no longer available.");
   if (!(await access(o.creatorId)).caps.offer) throw new RuleError("This creator cannot take new deals right now. Choose another offer.");
   const paid = !!r.payRef && !r.refundedAt;
   if (!paid && BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");

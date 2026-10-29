@@ -9,6 +9,7 @@ import { listFor } from "@/server/participants";
 import { Av, Cover, I, when } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, amountLabel, euros } from "@/domain/rules";
 import Room from "./room";
+import { blockedEither, iBlocked } from "@/server/blocks";
 import { getT } from "@/i18n/server";
 import { textsIn } from "@/server/translate";
 
@@ -38,6 +39,7 @@ export default async function DealPage({ params, searchParams }: { params: Promi
       <Room
         me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
         other={{ id: other.id, handle: other.handle, publicKey: other.publicKey, readAt: otherReadAt?.toISOString() ?? null }}
+        blocked={(await blockedEither(u.id, other.id)) ? ((await iBlocked(u.id, other.id)) ? "me" : "them") : null}
         deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount }}
         delivery={lastDelivery ? { review: lastDelivery.review, onlyCreator: lastDelivery.onlyCreator } : null}
         canUpload={a?.caps.upload ?? false} missing={a?.missing ?? []} payoutHeld={hold?.entry === "payout_on_hold"}

@@ -1,4 +1,5 @@
 import "server-only";
+import { blockedEither, iBlocked } from "./blocks";
 import { DEMO_MODE } from "@/config/compliance";
 import { and, asc, desc, eq, gt, inArray, or, sql, count } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -10,6 +11,8 @@ export type FeedItem = Awaited<ReturnType<typeof feed>>[number];
 export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | "ending"; limit?: number; category?: string } = {}) {
   const now = new Date();
   const conds = [eq(requests.status, "open"), gt(requests.closesAt, now)];
+  // Two people where one blocked the other never see each other's requests.
+  if (opts.viewerId) conds.push(sql`not exists (select 1 from blocks b where (b.blocker_id = ${opts.viewerId} and b.blocked_id = "requests"."buyer_id") or (b.blocked_id = ${opts.viewerId} and b.blocker_id = "requests"."buyer_id"))`);
   if (opts.category) conds.push(eq(requests.category, opts.category as "video"));
   const order = opts.tab === "ending" ? [asc(requests.closesAt)] : opts.tab === "new" ? [desc(requests.createdAt)] : [desc(requests.dealCents), asc(requests.closesAt)];
   const rows = await db.select({
@@ -84,6 +87,8 @@ export async function profileFor(handle: string, viewerId: string) {
   if (!u || !u.isCreator || u.bannedAt) return null;
   const p = await db.query.creatorProfiles.findFirst({ where: eq(creatorProfiles.userId, u.id) });
   if (!p) return null;
+  // Blocked: the one who blocked sees a short note with an undo; the blocked person sees nothing.
+  if (u.id !== viewerId && await blockedEither(u.id, viewerId)) return (await iBlocked(viewerId, u.id)) ? { hidden: false as const, blocked: true as const, handle: u.handle } : null;
   let reason: "public" | "self" | "offer" | "deal" | null = p.visibility === "public" ? "public" : u.id === viewerId ? "self" : null;
   let offerId: string | null = null;
   if (!reason) {
@@ -105,7 +110,7 @@ export async function profileFor(handle: string, viewerId: string) {
   const reviews = await db.select({ stars: deals.buyerRating, at: deals.settledAt, by: users.handle, text: deals.reviewText }).from(deals)
     .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(desc(deals.settledAt)).limit(12);
   const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
-  return { hidden: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
+  return { hidden: false as const, blocked: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
 }
 
 /* The only shape of a creator that leaves the server for other users. No email, no birth year,
@@ -118,9 +123,10 @@ export function publicProfile(u: typeof users.$inferSelect, p: typeof creatorPro
 }
 export type PublicProfile = ReturnType<typeof publicProfile>;
 
-export async function publicCreators(limit = 12) {
+export async function publicCreators(limit = 12, viewerId?: string) {
   const rows = await db.select({ u: users, p: creatorProfiles }).from(users).innerJoin(creatorProfiles, eq(creatorProfiles.userId, users.id))
-    .where(and(eq(creatorProfiles.visibility, "public"), sql`${users.bannedAt} is null`))
+    .where(and(eq(creatorProfiles.visibility, "public"), sql`${users.bannedAt} is null`,
+      viewerId ? sql`not exists (select 1 from blocks b where (b.blocker_id = ${viewerId} and b.blocked_id = ${users.id}) or (b.blocked_id = ${viewerId} and b.blocker_id = ${users.id}))` : undefined))
     .orderBy(sql`case when ${users.avatar}->>'kind' = '3d' then 0 else 1 end`, desc(users.ratingCount)).limit(limit);
   return rows.map((r) => publicProfile(r.u, r.p));
 }
@@ -207,9 +213,11 @@ export async function themeCounts() {
 }
 
 /* The best paid open requests right now: real budgets, highest first. */
-export async function topBudgets(limit = 6) {
+export async function topBudgets(limit = 6, viewerId?: string) {
   return db.select({ id: requests.id, title: requests.title, category: requests.category, amount: requests.amount, dealCents: requests.dealCents })
-    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()))).orderBy(desc(requests.dealCents)).limit(limit);
+    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()),
+      viewerId ? sql`not exists (select 1 from blocks b where (b.blocker_id = ${viewerId} and b.blocked_id = ${requests.buyerId}) or (b.blocked_id = ${viewerId} and b.blocker_id = ${requests.buyerId}))` : undefined))
+    .orderBy(desc(requests.dealCents)).limit(limit);
 }
 
 /* Live totals of the board: open requests and the budget waiting in them. */

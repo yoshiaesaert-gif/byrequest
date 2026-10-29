@@ -1,4 +1,6 @@
 "use server";
+import { blockedEither } from "@/server/blocks";
+import * as blocks from "@/server/blocks";
 import { queueNew } from "@/server/moderation";
 import { ENABLED_CATEGORIES } from "@/config/compliance";
 import { cookies } from "next/headers";
@@ -145,6 +147,7 @@ export async function sendMessage(dealId: string, nonce: string, body: string): 
     const d = await db.query.deals.findFirst({ where: eq(schema.deals.id, dealId) });
     if (!d || (d.buyerId !== u.id && d.creatorId !== u.id)) return { ok: false, error: "Not your deal." };
     if (!/^[A-Za-z0-9+/=]{20,64}$/.test(nonce) || body.length > 8000) return { ok: false, error: "Invalid message." };
+    if (await blockedEither(d.buyerId, d.creatorId)) return { ok: false, error: "This chat is closed." };
     await db.insert(schema.messages).values({ dealId, senderId: u.id, kind: "e2e", nonce, body });
     const other = d.buyerId === u.id ? d.creatorId : d.buyerId;
     await db.insert(schema.notifications).values({ userId: other, title: "New message", body: "You have a new message.", href: `/deals/${dealId}` });
@@ -251,5 +254,24 @@ export async function giveSensitiveConsent(): Promise<Result> {
     await db.update(schema.users).set({ sensitiveConsentAt: new Date() }).where(eq(schema.users.id, u.id));
     await onboarding.log(db, `user:${u.id}`, "consent.sensitive_data", u.id);
     redirect("/");
+  });
+}
+
+/* Block or unblock another person. Silent for the other side; see server/blocks.ts for what it does. */
+export async function blockUser(target: { handle: string } | { requestId: string }): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    await blocks.blockTarget(u.id, target);
+    revalidatePath("/", "layout");
+    return { ok: true, msg: "Blocked. You will not see each other anymore." };
+  });
+}
+
+export async function unblockUser(handle: string): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    await blocks.unblock(u.id, handle);
+    revalidatePath("/", "layout");
+    return { ok: true, msg: "Unblocked." };
   });
 }

@@ -64,6 +64,13 @@
       "when": 1793230132512,
       "tag": "0008_call_me",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793237141874,
+      "tag": "0009_blocks",
+      "breakpoints": true
     }
   ]
 }

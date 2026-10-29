@@ -50,7 +50,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
   const hideHow = (await cookies()).get("brq_hwb")?.value === "hide";
   const [mine, myDeals, pulse, rawTop, rawBoard, creators, stats] = await Promise.all([
     q.myRequests(userId), q.myDeals(userId), q.pulse(), q.feed({ viewerId: userId, limit: 6 }), q.feed({ viewerId: userId, tab: "new", limit: 20 }),
-    q.publicCreators(18), q.categoryStats(),
+    q.publicCreators(18, userId), q.categoryStats(),
   ]);
   const { t, locale } = await getT();
   const [top, boardItems] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale)]);
@@ -76,7 +76,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
     })),
   } : null;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
+  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5, userId), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
@@ -171,7 +171,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const soon = ending.filter((r) => !r.mine && !shown.has(r.id));
   const [feat, ...rest] = items;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
-  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5), q.boardTotals()]);
+  const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5, userId), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
   const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
   const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
