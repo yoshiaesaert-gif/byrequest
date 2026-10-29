@@ -3,7 +3,7 @@ import { BlockButton, UnblockButton } from "@/components/block-button";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { sendMessage, releaseNow, object } from "../../actions";
+import { sendMessage, object } from "../../actions";
 import { BuyerReview, CreatorReview, TipCard, ReviewDone } from "./review";
 import { toast } from "@/components/chrome";
 import { myKeys, seal, open } from "@/components/e2e";
@@ -94,7 +94,7 @@ export default function Room(p: Props) {
   if (buyer) {
     if (s === "held") next = { t: tr("{name} is making it", { name: p.other.handle }), d: tr("Expected by {time}. No delivery in time means a full refund.", { time: when(p.deal.dueAt, locale) }) };
     else if (s === "reviewing") next = { t: tr("Delivered, being reviewed"), d: p.delivery?.review === "blocked_participants" ? tr("Waiting for verification and consent of everyone who appears. Then it reaches your vault.") : tr("It passed the file check. A reviewer checks it before it reaches your vault.") };
-    else if (s === "delivered") next = { t: tr("In your vault, your turn"), d: tr("Not what you agreed? Object before {time}. Otherwise the payment is released automatically.", { time: when(p.deal.objectUntil!, locale) }), acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>{tr("Report a problem")}</button><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link><button className="btn btn-brand" disabled={pending} onClick={() => start(async () => { const r = await releaseNow(p.deal.id); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); })}>{tr("Release payment")}</button></> };
+    else if (s === "delivered") next = { t: tr("In your vault, your turn"), d: tr("Not what you agreed? Report it before {time}: we check it independently first. Otherwise the payment goes to the creator automatically, 60 minutes after you first open it.", { time: when(p.deal.objectUntil!, locale) }), acts: <><button className="btn btn-secondary" onClick={() => setSheet("object")}>{tr("Report a problem")}</button><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link></> };
     else if (s === "disputed") next = { t: tr("Under review"), d: tr("A person compares the file with the terms of the accepted offer. The money stays held until then.") };
     else if (s === "released") next = { t: tr("Deal completed"), d: tr("It stays in your vault for the agreed period."), acts: <><Link className="btn btn-secondary" href="/vault">{tr("Open vault")}</Link></> };
     else next = { t: tr("Refunded"), d: tr("The full amount goes back to you through the payment partner.") };

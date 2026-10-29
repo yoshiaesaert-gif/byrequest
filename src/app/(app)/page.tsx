@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { THEMES, shuffled } from "@/content/themes";
+import { moodsNow, shuffled } from "@/content/themes";
 import ScrollRow from "@/components/scroll-row";
 import Orbit from "@/components/orbit";
 import HowItWorks from "@/components/how-it-works";
@@ -81,7 +81,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
   const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5, userId), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
-  const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
+  const hot = moodsNow().map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
 
   return (<div className="wrap home">
     {welcome ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Welcome, {name}.", { name: handle })}</b><div className="t-sm">{t("Post your first request. Your payment stays safely held until delivery.")}</div></div></div> : null}
@@ -177,24 +177,37 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   // Alpha Gods stays on top, the other themes follow by how many open requests fit them.
   const [counts, topPaid, totals] = await Promise.all([q.themeCounts(), q.topBudgets(5, userId), q.boardTotals()]);
   const TL = await textsIn(topPaid.map((x) => x.title), locale);
-  const hot = shuffled(THEMES).map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
+  const hot = moodsNow().map((x) => ({ ...x, n: counts[x.k] ?? 0 }));
   const tabs: [string | undefined, string][] = [[undefined, t("Everything")], ["video", t("Video")], ["photos", t("Photos")], ["voice", t("Voice")], ["custom", t("Custom")]];
   return (<div className="wrap">
-    {a.status === "active"
-      ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("You’re ready to earn.")}</b><div className="t-sm">{t("Identity, agreement and payouts are approved.")}</div></div></div>
-      : a.status === "suspended" ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{t("Your creator account is suspended.")}</b><div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div></div>
-      : <section className="cs">
+    {a.status === "suspended" ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{t("Your creator account is suspended.")}</b><div className="t-sm">{a.missing.map((m) => t(m)).join(" · ")}</div></div></div> : a.status !== "active" ? <>
+      <section className="cs">
           <div className="cs-tx"><span className="h-kick">{t("Your setup")}</span><h2>{a.status === "pending_verification" ? t("Almost there: we are checking your details.") : t("Three steps to your first earnings")}</h2>
             <p>{t("Verify once, privately. Your legal name and ID are never shown. Until then you can already look around and prepare your profile.")}</p>
             {a.status !== "pending_verification" ? <Link href="/onboarding" className="btn btn-brand btn-lg">{t("Continue setup")}</Link> : null}</div>
           <ol className="cs-steps">{([["identity", "Verify your identity", "ID and a quick selfie, about 3 minutes"], ["agreement", "Accept the creator agreement", "What you make, what you earn, your rights"], ["payout", "Add your payout account", "Where the money lands"]] as const).map(([k, l, d], i) => {
             const st = a.areas[k]; const done = st === "approved"; const wait = st === "pending";
             return <li key={k} className={done ? "done" : wait ? "wait" : ""}><span className="cs-n">{done ? "✓" : i + 1}</span><div><b>{t(l)}</b><span>{done ? t("Done") : wait ? t("Being checked") : t(d)}</span></div></li>; })}</ol>
-        </section>}
-
-    {missing.length ? <section className="pf-nudge"><div className="pf-nudge-i"><I n="user" /></div><div className="grow"><b>{t("Buyers cannot picture you yet")}</b><p className="t-sm">{t("Complete your public profile to apply. It takes two minutes: {list}.", { list: missing.map((m) => t(m).toLowerCase()).join(", ") })}</p></div><Link href="/settings#creator" className="btn btn-brand">{t("Complete my profile")}</Link></section> : null}
-    <section className="c-hero"><div><span className="eyebrow">{t("Made by you, paid by them")}</span><h1 className="t-display" style={{ marginTop: 10 }}>{t("Make it with your phone. Get paid within a day.")}</h1><p className="muted" style={{ marginTop: 10, maxWidth: 520 }}>{t("Pick a request that fits you, make it in your own time and keep 80%. Paid automatically 24 hours after delivery.")}</p><div className="optrow" style={{ marginTop: 18 }}><Link href="/for-you" className="btn btn-primary btn-lg"><I n="foryou" c="sm" />{t("Find your request")}</Link><Link href="/studio#album" className="btn btn-secondary btn-lg">{t("Your preview album")}</Link></div></div>
-      {topPaid[0] ? <Link href={`/requests/${topPaid[0].id}`} className="c-hero-top"><span className="eyebrow">{t("Top budget right now")}</span><b className="num">{euros(topPaid[0].dealCents)}</b><span>{t("You get {amount}", { amount: euros(Math.round(topPaid[0].dealCents * CREATOR_SHARE)) })}</span><span className="h-link">{t("See the request")} <I n="right" c="sm" /></span></Link> : null}</section>
+        </section>
+    </> : (() => {
+      const top = topPaid[0]; const gets = top ? euros(Math.round(top.dealCents * CREATOR_SHARE)) : null;
+      const steps: [boolean, string, string, string | null][] = [
+        [true, t("Verified and approved"), t("Identity, agreement and payouts"), null],
+        [!missing.length, t("Public profile"), missing.length ? t("{n} details to add", { n: missing.length }) : t("Buyers can picture you"), missing.length ? "/settings#creator" : null],
+        [pendingOffers > 0, t("Apply to a request"), pendingOffers ? t("{n} applications waiting", { n: pendingOffers }) : t("Pick one that fits you"), "/for-you"],
+        [false, t("Deliver and get paid"), t("80% to your bank, 24 hours after delivery"), null],
+      ];
+      const next = steps.findIndex((s) => !s[0]);
+      return (<section className="c-hero">
+        <div className="c-hero-tx"><span className="eyebrow">{t("Made by you, paid by them")}</span>
+          <h1 className="t-display">{gets ? t("Earn {amount} with one request.", { amount: gets }) : t("Make it with your phone. Get paid within a day.")}</h1>
+          <p className="muted">{t("Pick a request that fits you, make it in your own time and keep 80%. Paid automatically 24 hours after delivery.")}</p>
+          <div className="optrow">{missing.length ? <Link href="/settings#creator" className="btn btn-primary btn-lg">{t("Complete my profile")}</Link> : <Link href="/for-you" className="btn btn-primary btn-lg"><I n="foryou" c="sm" />{t("Find your request")}</Link>}
+            {top ? <Link href={`/requests/${top.id}`} className="btn btn-secondary btn-lg">{t("See the top request")} · {euros(top.dealCents)}</Link> : null}</div></div>
+        <ol className="c-path" aria-label={t("Your way to your first earnings")}>{steps.map(([done, title, sub, href], i) => {
+          const body = <><span className="c-path-n">{done ? <I n="check" c="sm" /> : i + 1}</span><span className="c-path-tx"><b>{title}</b><span>{sub}</span></span>{href && !done ? <I n="right" c="sm" /> : null}</>;
+          return <li key={i} className={(done ? "done" : "") + (i === next ? " now" : "")}>{href && !done ? <Link href={href}>{body}</Link> : <div>{body}</div>}</li>; })}</ol>
+      </section>); })()}
 
     <div className="earn-hero">
       <div className="card earn-card">

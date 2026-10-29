@@ -13,6 +13,6 @@ export default async function Help() {
     items: c.items.map((i) => ({ id: `${c.id}-${i.id}`, q: pick(i.q, locale), a: pick(i.a, locale), href: i.href, cta: i.cta ? pick(i.cta, locale) : undefined })) }));
   return (<div className="hc">
     <header className="hc-top"><Link href="/"><img src="/logo.png" alt="byrequest" style={{ height: 30 }} /></Link><Link href="/" className="btn btn-secondary btn-sm">{t("Back")}</Link></header>
-    <HelpCenter cats={cats} labels={{ title: t("How can we help?"), sub: t("Every question about ByRequest, answered. Search or browse by topic."), search: t("Search the help centre"), none: t("No answer found. Try other words, or write to us."), more: t("Go there"), count: t("{n} answers"), still: t("Still a question?"), mail: t("Write to support@byrequest.me. We answer in Dutch, English and French."), all: t("All topics") }} />
+    <HelpCenter cats={cats} labels={{ title: t("How can we help?"), sub: t("Every question about ByRequest, answered. Search or browse by topic."), search: t("Search the help centre"), none: t("No answer found. Try other words, or write to us."), more: t("Go there"), count: t("{n} answers"), still: t("Still a question?"), mail: t("Write to support@byrequest.me. We answer in Dutch, English and French."), all: t("All topics"), popular: t("Popular"), report: t("Report a problem") }} />
   </div>);
 }

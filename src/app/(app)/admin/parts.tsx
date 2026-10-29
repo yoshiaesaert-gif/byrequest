@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -125,4 +125,9 @@ export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDay
 export function MailTest({ kind, lang }: { kind: string; lang: string }) {
   const [p, start] = useTransition();
   return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await mailTest(kind, lang), "Test sent to your own email"))}>{p ? "Sending…" : "Send me a test"}</button>;
+}
+
+export function InternalToggle({ id, internal }: { id: string; internal: boolean }) {
+  const [p, start] = useTransition();
+  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => { await setInternal(id, !internal); })}>{internal ? "Mark as external" : "Mark as internal"}</button>;
 }

@@ -24,7 +24,7 @@ function useClock() {
 export function ChatList({ chats }: { chats: Chat[] }) {
   const t = useT(); const { short } = useClock();
   return <div className="cl">{chats.map((c) => (
-    <Link key={c.id} href={`/deals/${c.id}`} className={"cl-row" + (c.unread ? " unread" : "")}>
+    <Link key={c.id} href={`/deals/${c.id}?from=inbox`} className={"cl-row" + (c.unread ? " unread" : "")}>
       <span className="cl-av">{c.avatar}</span>
       <span className="cl-main"><span className="cl-top"><b>{c.other}</b><time>{short(c.lastAt)}</time></span>
         <span className="cl-sub">{c.title}</span>

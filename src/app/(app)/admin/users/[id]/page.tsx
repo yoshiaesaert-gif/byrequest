@@ -4,7 +4,7 @@ import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
-import { BlockAccount, RemoveRequest, SupportOrgForm } from "../../parts";
+import { BlockAccount, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,7 +17,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
   return (<div className="wrap bo-page">
     <Link href="/admin/users" className="back"><I n="left" c="sm" />Accounts</Link>
     <div className="bo-acc-h"><Av a={u.avatar} name={u.handle} size={64} square /><div>
-      <h1>{u.handle}{x.staff ? <span className="bo-tag">{x.staff}</span> : null}</h1>
+      <h1>{u.handle}{u.internal ? <span className="bo-tag">internal</span> : <span className="bo-tag ext">external</span>}{x.staff ? <span className="bo-tag">{x.staff}</span> : null}</h1><InternalToggle id={u.id} internal={u.internal} />
       <p>{u.isCreator ? "Creator" : "Buyer"} · joined {when(u.createdAt)} · {role === "admin" ? u.email : "email visible to admins"}{u.marketingOptIn ? " · marketing opt in" : ""}</p>
       {u.bannedAt ? <p className="bo-warn">Blocked since {when(u.bannedAt)}{u.banReason ? `: ${u.banReason}` : ""}</p> : null}
     </div></div>

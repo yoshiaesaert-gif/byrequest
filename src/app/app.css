@@ -1006,3 +1006,13 @@ button.report-link{background:none;border:0;padding:0;cursor:pointer;font:inheri
 .mail-frame{width:100%;height:760px;border:0;border-radius:14px;background:#F4F3EF}
 @media (max-width:1000px){.mail-grid{grid-template-columns:1fr}}
 .cp-intimate{display:flex;gap:6px;align-items:center;margin-top:10px}.det-sec{margin-top:8px}
+/* Every inbox row has the same height: each line is one line, the rest is cut off with an ellipsis */
+.cl-row{height:80px;align-items:center;box-sizing:border-box}
+.cl-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cl-top,.cl-sub,.cl-prev{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cl-top{display:flex;justify-content:space-between;gap:10px}.cl-top b{overflow:hidden;text-overflow:ellipsis}.cl-top time{flex:0 0 auto}
+.cl-prev{display:block;position:relative;padding-right:30px}.cl-prev .ico{vertical-align:-2px;margin-right:4px}.cl-prev .cl-n{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+.nl-row{height:64px;box-sizing:border-box}
+.nl-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.nl-main b,.nl-main span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.bo-h.vz-head{max-width:none;margin-bottom:8px}

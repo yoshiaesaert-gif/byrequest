@@ -1,9 +1,10 @@
+import { VIEW_RELEASE_MINUTES } from "@/domain/rules";
 import { BUYER_AGE_CHECK } from "@/config/compliance";
 import { isAgeVerified } from "@/server/onboarding";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
 import { localFile, watermarkImage } from "@/server/media";
@@ -23,6 +24,8 @@ export async function GET(req: Request, ctx: RouteContext<"/api/media/[id]">) {
   if (v.availableUntil && v.availableUntil < new Date()) return new Response("Access ended", { status: 410 });
   const m = await db.query.media.findFirst({ where: eq(schema.media.id, v.mediaId) });
   if (!m) return new Response("Not found", { status: 404 });
+  // The first look starts the last hour: without an objection the creator is paid 60 minutes later.
+  if (!new URL(req.url).searchParams.has("thumb")) await db.update(schema.deals).set({ objectUntil: sql`least(${schema.deals.objectUntil}, now() + make_interval(mins => ${VIEW_RELEASE_MINUTES}))` }).where(and(eq(schema.deals.id, v.dealId), eq(schema.deals.status, "delivered")));
 
   if (m.mime.startsWith("image/")) {
     const viewNo = v.views + 1;

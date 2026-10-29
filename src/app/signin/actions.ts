@@ -70,7 +70,7 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   if (taken) return { ...prev, error: "That username is taken." };
   const [u] = await db.insert(schema.users).values({
     email, handle: p.data.handle, birthYear: p.data.birthYear, avatar: { kind: "3d", look: p.data.look },
-    country: p.data.country, sensitiveConsentAt: new Date(), marketingOptIn: p.data.marketing === "on", lang: await getLocale(),
+    country: p.data.country, sensitiveConsentAt: new Date(), internal: /@(demo\.)?byrequest\.(app|me)$/i.test(email), marketingOptIn: p.data.marketing === "on", lang: await getLocale(),
   }).returning();
   // The checkbox records acceptance of the exact current terms and privacy statement (version and hash).
   await acceptDocs(u.id, ["terms", "privacy"]);

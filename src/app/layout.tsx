@@ -5,6 +5,7 @@ import "./app.css";
 import "./home.css";
 import { getLocale } from "@/i18n/server";
 import { I18nProvider } from "@/i18n/client";
+import Tracker from "@/components/tracker";
 
 export const metadata: Metadata = {
   title: "ByRequest",
@@ -28,6 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} />
         <I18nProvider locale={locale}>{children}</I18nProvider>
+        <Tracker />
       </body>
     </html>
   );

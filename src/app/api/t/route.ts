@@ -1,0 +1,17 @@
+import { cookies, headers } from "next/headers";
+import { currentUser } from "@/server/auth";
+import { beat, type Beat } from "@/server/analytics";
+import { REF_COOKIE } from "@/domain/referral";
+
+/* Receives page views, clicks and heartbeats from the tracker. Never fails the page. */
+export async function POST(req: Request) {
+  try {
+    const b = JSON.parse(await req.text()) as Beat;
+    if (!b || typeof b.p !== "string" || !["page", "click", "ping"].includes(b.k)) return new Response(null, { status: 204 });
+    const h = await headers();
+    const ip = (h.get("cf-connecting-ip") || h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "").trim();
+    const u = await currentUser().catch(() => null);
+    const s = await beat(b, { ip, ua: h.get("user-agent") ?? "", userId: u?.id ?? null, refCode: (await cookies()).get(REF_COOKIE)?.value ?? null });
+    return Response.json({ s }, { headers: { "Cache-Control": "no-store" } });
+  } catch { return new Response(null, { status: 204 }); }
+}

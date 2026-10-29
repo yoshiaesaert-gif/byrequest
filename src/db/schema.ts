@@ -43,6 +43,7 @@ export const users = pgTable("users", {
   sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
   supportOrg: text("support_org"),
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
+  internal: boolean("internal").notNull().default(false),        // created by the ByRequest team (tests, demo, staff); new sign ups are external
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
   freeFees: integer("free_fees").notNull().default(0),               // service fees ByRequest pays for this buyer (referral gift)
@@ -357,3 +358,35 @@ export const settings = pgTable("settings", {
   value: jsonb("value").$type<unknown>().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* Visitor analytics for staff. One row per visit (a tab session that ends after 30 minutes of
+   silence), and one row per page view or click inside it. The IP is kept to estimate location. */
+export const visits = pgTable("visits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  visitorId: text("visitor_id").notNull(),                          // first party cookie, the same browser across visits
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  ip: text("ip"),
+  country: text("country"),
+  city: text("city"),
+  device: text("device"),                                             // mobile, tablet or desktop
+  browser: text("browser"),
+  os: text("os"),
+  lang: text("lang"),
+  referrer: text("referrer"),
+  utm: jsonb("utm").$type<Record<string, string>>(),
+  refCode: text("ref_code"),                                          // came in through an invite link
+  landing: text("landing").notNull(),
+  pages: integer("pages").notNull().default(0),
+  clicks: integer("clicks").notNull().default(0),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  lastAt: timestamp("last_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("visits_started").on(t.startedAt), index("visits_visitor").on(t.visitorId)]);
+
+export const visitEvents = pgTable("visit_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  visitId: uuid("visit_id").notNull().references(() => visits.id, { onDelete: "cascade" }),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  kind: text("kind").notNull(),                                       // page or click
+  path: text("path").notNull(),
+  label: text("label"),
+}, (t) => [index("visit_events_visit").on(t.visitId, t.at), index("visit_events_at").on(t.at)]);

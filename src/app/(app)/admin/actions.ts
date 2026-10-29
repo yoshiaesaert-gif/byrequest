@@ -1,5 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
+import { db, schema } from "@/db";
 import { requireStaff } from "@/server/admin";
 import * as A from "@/server/admin";
 import * as B from "@/server/backoffice";
@@ -20,6 +22,7 @@ async function run(fn: (staffId: string) => Promise<unknown>, min: "support" | "
   catch (e) { if (e instanceof RuleError) return { ok: false, error: e.message }; console.error("admin action failed", e instanceof Error ? e.name : "error"); return { ok: false, error: "Failed." }; }
 }
 
+export const setInternal = async (userId: string, internal: boolean) => run(async (s) => { await db.update(schema.users).set({ internal }).where(eq(schema.users.id, userId)); await db.insert(schema.audit).values({ actor: `staff:${s}`, action: internal ? "account.mark_internal" : "account.mark_external", subjectUserId: userId }); }, "admin");
 export const reviewD = async (id: string, outcome: "approved" | "rejected", note: string) => run((s) => reviewDelivery(id, outcome, `staff:${s}`, note));
 export const reviewA = async (id: string, outcome: "approved" | "rejected") => run((s) => reviewPhoto(id, outcome, `staff:${s}`));
 export const decide = async (id: string, outcome: "upheld" | "rejected") => run((s) => resolveDispute(id, outcome, `staff:${s}`));

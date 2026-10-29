@@ -2,7 +2,8 @@
 
 export const CREATOR_SHARE = 0.8;
 export const BUYER_FEE = 0.1;
-export const OBJECTION_HOURS = 24;
+export const OBJECTION_HOURS = 24;           // the latest moment of automatic release
+export const VIEW_RELEASE_MINUTES = 60;      // after the buyer first opens the delivery, release follows within the hour
 export const ALBUM_SECONDS = 60;
 
 export type Category = "video" | "photos" | "voice" | "custom" | "worn";
