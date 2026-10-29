@@ -876,3 +876,10 @@ p{margin:0}
 .h-world{margin:6px 0 0;font-size:.875rem;color:var(--muted,#6B7079)}
 .ft-ck{display:block}
 .req{color:#D2353F;font-weight:700}
+/* Profile form: the save button stays in reach, and says when something is not saved */
+.pf-save{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:5;align-items:center;padding:10px;margin:0 -10px;border-radius:16px;transition:background .15s,box-shadow .15s}
+.pf-save.is-dirty{background:var(--paper,#fff);box-shadow:0 10px 30px rgba(14,16,19,.14),0 0 0 1px rgba(14,16,19,.06)}
+.pf-dirty{font-size:.8125rem;font-weight:600;color:#B36A00;margin-right:auto}
+@media (max-width:900px){.pf-save{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
+.pf-save{flex-wrap:nowrap}.pf-save.is-dirty{background:#fff}
+@media (max-width:900px){.pf-save.is-dirty .btn-secondary{display:none}.pf-save .btn{white-space:nowrap}}

@@ -2241,5 +2241,6 @@ const nl: Record<string, string> = {
   "Several": "Meerdere",
   "Many": "Veel",
   "Fields with * are needed before you can apply. Buyers choose on them.": "Velden met * zijn nodig voor je je kandidaat kan stellen. Kopers kiezen erop.",
+  "Not saved yet": "Nog niet opgeslagen",
 };
 export default nl;

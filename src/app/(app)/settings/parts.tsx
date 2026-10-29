@@ -1,7 +1,7 @@
 "use client";
 import { useT } from "@/i18n/client";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { setPref, becomeCreator, saveProfile, setMarketing } from "../actions";
 import { toast } from "@/components/chrome";
 import { GENDER, BODY_HAIR, PUBIC, SIZE, CUT, CUP, LABEL, BUILD, HAIR, EYES, TATTOOS, HEIGHTS, type Detail } from "@/domain/looks-detail";
@@ -44,10 +44,12 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
   const sel = (k: keyof Detail, label: string, list: readonly string[], req = false) => <div className="field"><label htmlFor={"d-" + k}>{t(label)}{req ? <span className="req" aria-hidden="true"> *</span> : null}</label>
     <select id={"d-" + k} className="select" value={det[k] ?? ""} onChange={(e) => setDet({ ...det, [k]: e.target.value || undefined })}><option value="">{t("Not shown")}</option>{list.map((v) => <option key={v} value={v}>{t(LABEL[v])}</option>)}</select></div>;
   const [pending, start] = useTransition();
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { if (!dirty) return; const h = (e: BeforeUnloadEvent) => { e.preventDefault(); }; window.addEventListener("beforeunload", h); return () => window.removeEventListener("beforeunload", h); }, [dirty]);
   const pick = (name: keyof P, label: string, list: readonly (string | number)[], req = true, unit = "") => { const cur = (p?.[name] as string | number | null) ?? ""; const opts = cur !== "" && !list.includes(cur) ? [cur, ...list] : list;
     return <div className="field"><label htmlFor={name}>{t(label)}{req ? <span className="req" aria-hidden="true"> *</span> : null}</label><select id={name} name={name} className="select" defaultValue={String(cur)}><option value="">{t("Choose")}</option>{opts.map((v) => <option key={v} value={v}>{typeof v === "number" ? `${v}${unit}` : t(v)}</option>)}</select></div>; };
   const f = (name: keyof P, label: string, ph = "") => <div className="field"><label htmlFor={name}>{t(label)}</label><input id={name} name={name} className="input" defaultValue={(p?.[name] as string) ?? ""} placeholder={ph && t(ph)} /></div>;
-  return (<form className="upbox" style={{ paddingTop: 16 }} onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); start(async () => { fd.set("visibility", vis); for (const [k, v] of Object.entries(det)) if (v) fd.set("d_" + k, v); const r = await saveProfile(fd); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); }); }}>
+  return (<form className="upbox" style={{ paddingTop: 16 }} onChange={() => setDirty(true)} onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); start(async () => { fd.set("visibility", vis); for (const [k, v] of Object.entries(det)) if (v) fd.set("d_" + k, v); const r = await saveProfile(fd); if (r.ok) setDirty(false); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); }); }}>
     <div className="field"><label>{t("Who sees my profile")}</label><div className="seg2">
       <button type="button" className={vis === "offer_only" ? "on" : ""} onClick={() => setVis("offer_only")}><b>{t("Only with an offer")}</b><span className="t-sm muted">{t("Only buyers you make an offer to, while they choose.")}</span></button>
       <button type="button" className={vis === "public" ? "on" : ""} onClick={() => setVis("public")}><b>{t("Public")}</b><span className="t-sm muted">{t("Anyone signed in can find you and send a private request.")}</span></button></div></div>
@@ -68,7 +70,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
       <select name="showsFace" className="select" defaultValue={p?.showsFace ? "yes" : "no"} style={{ width: "auto" }}><option value="no">{t("No face")}</option><option value="yes">{t("Face shown")}</option></select>
       <select name="defaultVault" className="select" defaultValue={p?.defaultVault ?? "30d"} style={{ width: "auto" }}><option value="7d">{t("7 days in vault")}</option><option value="30d">{t("30 days in vault")}</option><option value="1y">{t("1 year in vault")}</option><option value="forever">{t("Forever in vault")}</option></select></div></div>
     <p className="t-xs muted">{t("Shown with your username only. Your age comes from your verified date of birth. Never add your real name, address, socials or anything that identifies you.")}</p>
-    <div className="optrow"><button className="btn btn-primary" disabled={pending}>{pending ? t("Saving…") : t("Save profile")}</button><Link className="btn btn-secondary" href={`/c/${handle}`}>{t("Preview")}</Link></div>
+    <div className={"optrow pf-save" + (dirty ? " is-dirty" : "")}>{dirty ? <span className="pf-dirty">{t("Not saved yet")}</span> : null}<button className="btn btn-primary" disabled={pending}>{pending ? t("Saving…") : t("Save profile")}</button><Link className="btn btn-secondary" href={`/c/${handle}`}>{t("Preview")}</Link></div>
   </form>);
 }
 

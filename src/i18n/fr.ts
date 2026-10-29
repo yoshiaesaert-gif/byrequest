@@ -2241,5 +2241,6 @@ const fr: Record<string, string> = {
   "Several": "Plusieurs",
   "Many": "Beaucoup",
   "Fields with * are needed before you can apply. Buyers choose on them.": "Les champs avec * sont nécessaires pour postuler. Les acheteurs choisissent selon eux.",
+  "Not saved yet": "Pas encore enregistré",
 };
 export default fr;
