@@ -37,6 +37,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
 
   return (
     <div className="feedwrap">
+      <WorldNote />
       <div className="feed" id="feed" ref={ref}>
         {items.length === 0 ? <section className="fi"><div className="card empty" style={{ maxWidth: 420 }}><b className="t-h3">{t("Nothing here right now")}</b><p className="muted t-sm">{t("New requests appear all day. Post your own and creators come to you.")}</p><Link className="btn btn-primary" href="/post">{t("Post a request")}</Link></div></section> : null}
         {items.map((r) => (
@@ -58,7 +59,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
               {frost ? <button onClick={() => setPeek((p) => !p)} className={peek ? "is-on" : ""} aria-label={t("Peek at the cover")}><span className="c"><Ico n="eye" /></span><span className="l">{peek ? t("Hide") : t("Peek")}</span></button> : null}
               <button className={saved[r.id] ? "is-on" : ""} aria-label={t("Save")} onClick={async () => { const on = await toggleSave(r.id); setSaved((s) => ({ ...s, [r.id]: on })); toast(on ? t("Saved") : t("Removed from saved")); }}><span className="c"><Ico n="bookmark" /></span><span className="l">{saved[r.id] ? t("Saved") : t("Save")}</span></button>
               {!sell ? <Link href={`/post?c=${r.category}&amount=${r.amount}&budget=${Math.round(r.dealCents / 100)}&title=${encodeURIComponent(r.title)}`} aria-label={t("Post a similar request")}><span className="c"><Ico n="plus" /></span><span className="l">{t("Similar")}</span></Link> : null}
-              <button aria-label={t("Offers")} onClick={() => toast(t("{n} creators already made an offer.", { n: r.offers }))}><span className="c"><b className="num" style={{ fontSize: ".95rem" }}>{r.offers}</b></span><span className="l">{t("Offers")}</span></button>
+              {sell ? null : <button aria-label={t("Offers")} onClick={() => toast(t("{n} creators already made an offer.", { n: r.offers }))}><span className="c"><b className="num" style={{ fontSize: ".95rem" }}>{r.offers}</b></span><span className="l">{t("Offers")}</span></button>}
             </div>
           </section>
         ))}
@@ -67,4 +68,14 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
       <div className="feed-hint"><button className="icon-btn" onClick={() => step(-1)} aria-label={t("Previous request")}><Ico n="up" /></button><button className="icon-btn" onClick={() => step(1)} aria-label={t("Next request")}><Ico n="down" /></button></div>
     </div>
   );
+}
+
+/* Requests come from buyers in many countries; say so, once per visit, so the board never feels local. */
+function WorldNote() {
+  const t = useT();
+  const [show, setShow] = useState(false);
+  useEffect(() => { const id = window.setTimeout(() => { let seen = false; try { seen = sessionStorage.getItem("brq_world") === "1"; } catch { /* private mode */ } if (!seen) setShow(true); }, 400); return () => clearTimeout(id); }, []);
+  if (!show) return null;
+  return (<div className="world-note" role="status"><span className="world-dot" /><span><b>{t("Requests from buyers worldwide")}</b> {t("Translated into your language automatically. New ones are released throughout the day, so check back.")}</span>
+    <button type="button" aria-label={t("Close")} onClick={() => { try { sessionStorage.setItem("brq_world", "1"); } catch { /* private mode */ } setShow(false); }}><svg className="ico sm" aria-hidden="true"><use href="#i-x" /></svg></button></div>);
 }

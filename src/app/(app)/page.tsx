@@ -226,7 +226,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
     <HowItWorks hidden={hideHow} variant="earn" />
 
     <section className="h-sec">
-      <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2></div>
+      <div className="h-head"><div><span className="h-kick dark">{t("Live board")}</span><h2>{t("What people are asking for")}</h2><p className="h-world">{t("From buyers worldwide, translated into your language. New requests are released throughout the day.")}</p></div>
         <nav className="h-tabs">{tabs.map(([k, l]) => <Link key={l} href={k ? `/?board=${k}` : "/"} scroll={false} className={cat === k ? "on" : ""}>{l}</Link>)}</nav></div>
       {feat ? (
         <div className="h-board">

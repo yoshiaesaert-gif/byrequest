@@ -2199,5 +2199,14 @@ const nl: Record<string, string> = {
   "Private by design": "Privé van in het ontwerp",
   "Your content stays yours. Your name stays secret.": "Je content blijft van jou. Je naam blijft geheim.",
   "Keep logos, team kit and rooms people recognise out of the shot.": "Tip: hou logo's, clubkledij en herkenbare ruimtes uit beeld.",
+  "Nothing to post, no feed to fill": "Niets posten, geen feed vullen",
+  "No real name, no gallery, no content up front. Your profile is a few lines of text. Only when a buyer wants you can you send a few photos that vanish after 10 seconds.": "Geen echte naam, geen galerij, geen content vooraf. Je profiel is een paar regels tekst. Pas als een koper jou wil, kan je enkele foto's sturen die na 10 seconden verdwijnen.",
+  "Stars keep everyone honest": "Sterren houden iedereen eerlijk",
+  "After every deal buyer and creator rate each other. Whoever behaves badly runs out of deals fast. So everyone behaves.": "Na elke deal beoordelen koper en creator elkaar. Wie zich slecht gedraagt, raakt snel zijn deals kwijt. Dus gedraagt iedereen zich.",
+  "No numbers, nothing odd in your inbox": "Geen nummers, niets raars in je mailbox",
+  "Chat, delivery and payment stay on ByRequest, so nobody gets your number or socials. Emails and alerts read neutral, your bank shows BRQ DIGITAL and nobody on ByRequest ever sees your email address.": "Chat, levering en betaling blijven op ByRequest, dus niemand krijgt je nummer of socials. Mails en meldingen klinken neutraal, op je bankafschrift staat BRQ DIGITAL en niemand op ByRequest ziet ooit je mailadres.",
+  "Requests from buyers worldwide": "Zoekertjes van kopers wereldwijd",
+  "Translated into your language automatically. New ones are released throughout the day, so check back.": "Automatisch vertaald naar jouw taal. Doorheen de dag komen er nieuwe vrij, dus kom zeker terug.",
+  "From buyers worldwide, translated into your language. New requests are released throughout the day.": "Van kopers wereldwijd, vertaald naar jouw taal. Doorheen de dag komen er nieuwe zoekertjes vrij.",
 };
 export default nl;

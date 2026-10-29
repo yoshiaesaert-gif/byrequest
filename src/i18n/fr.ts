@@ -2199,5 +2199,14 @@ const fr: Record<string, string> = {
   "Private by design": "Privé dès la conception",
   "Your content stays yours. Your name stays secret.": "Ton contenu reste à toi. Ton nom reste secret.",
   "Keep logos, team kit and rooms people recognise out of the shot.": "Astuce : garde les logos, les tenues d'équipe et les lieux reconnaissables hors du cadre.",
+  "Nothing to post, no feed to fill": "Rien à publier, pas de fil à remplir",
+  "No real name, no gallery, no content up front. Your profile is a few lines of text. Only when a buyer wants you can you send a few photos that vanish after 10 seconds.": "Pas de vrai nom, pas de galerie, pas de contenu à l'avance. Ton profil tient en quelques lignes. Ce n'est que lorsqu'un acheteur te veut que tu peux envoyer quelques photos qui disparaissent après 10 secondes.",
+  "Stars keep everyone honest": "Les étoiles gardent tout le monde honnête",
+  "After every deal buyer and creator rate each other. Whoever behaves badly runs out of deals fast. So everyone behaves.": "Après chaque deal, acheteur et créateur se notent. Celui qui se comporte mal n'a vite plus de deals. Alors tout le monde se tient bien.",
+  "No numbers, nothing odd in your inbox": "Pas de numéro, rien de bizarre dans ta boîte mail",
+  "Chat, delivery and payment stay on ByRequest, so nobody gets your number or socials. Emails and alerts read neutral, your bank shows BRQ DIGITAL and nobody on ByRequest ever sees your email address.": "Discussion, livraison et paiement restent sur ByRequest : personne n'a ton numéro ni tes réseaux. Les e-mails et notifications restent neutres, ton relevé affiche BRQ DIGITAL et personne sur ByRequest ne voit ton adresse e-mail.",
+  "Requests from buyers worldwide": "Des demandes d'acheteurs du monde entier",
+  "Translated into your language automatically. New ones are released throughout the day, so check back.": "Traduites automatiquement dans ta langue. De nouvelles sont publiées tout au long de la journée, alors reviens souvent.",
+  "From buyers worldwide, translated into your language. New requests are released throughout the day.": "D'acheteurs du monde entier, traduites dans ta langue. De nouvelles demandes sont publiées tout au long de la journée.",
 };
 export default fr;
