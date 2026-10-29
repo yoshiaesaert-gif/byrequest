@@ -669,3 +669,10 @@ p{margin:0}
 .neutralbg.g-ocean{background:radial-gradient(120% 90% at 20% 10%,#4FC3F7 0%,#1565C0 55%,#0A1F44 100%)}
 .neutralbg.g-rose{background:radial-gradient(120% 90% at 20% 10%,#FF8FB8 0%,#B8326A 55%,#3D0B22 100%)}
 .neutralbg.g-gold{background:radial-gradient(120% 90% at 20% 10%,#FBE3A6 0%,#C8902E 55%,#3D2A07 100%)}
+
+/* iOS keeps rounded corners on image blocks while scrolling only when each block is its own
+   clipped layer; every fill layer inside follows the same rounding. */
+:where(.media){-webkit-mask-image:-webkit-radial-gradient(white,black);mask-image:radial-gradient(white,black);transform:translateZ(0);backface-visibility:hidden}
+.media > .cimg,.media > .cscrim,.media > .frost,.media > .neutralbg,.media::after,.media canvas.mesh{border-radius:inherit}
+/* Touch: no image menu, no text selection while holding to peek; a card in view clears. */
+@media (hover:none){.media{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.media.in-view .frost{opacity:0}.media.in-view img.cimg{transform:scale(1.03)}}

@@ -89,6 +89,22 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
     return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up); };
   }, []);
 
+  /* On touch screens the card you stop on clears by itself: once it is mostly in view and the page
+     has been still for a moment, the frosted glass slides away; scrolling on frosts it again. */
+  useEffect(() => {
+    if (!window.matchMedia("(hover: none)").matches) return;
+    const seen = new Set<Element>();
+    let idle = 0;
+    const settle = () => { window.clearTimeout(idle); document.querySelectorAll(".media.in-view").forEach((m) => m.classList.remove("in-view"));
+      idle = window.setTimeout(() => seen.forEach((m) => m.classList.add("in-view")), 380); };
+    const io = new IntersectionObserver((es) => { for (const e of es) { if (e.intersectionRatio >= 0.7) seen.add(e.target); else { seen.delete(e.target); e.target.classList.remove("in-view"); } } settle(); }, { threshold: [0, 0.7, 1] });
+    const watch = () => document.querySelectorAll(".media:has(.frost)").forEach((m) => io.observe(m));
+    watch();
+    const mo = new MutationObserver(watch); mo.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("scroll", settle, { passive: true });
+    return () => { io.disconnect(); mo.disconnect(); window.removeEventListener("scroll", settle); window.clearTimeout(idle); };
+  }, []);
+
   /* Polls for new notifications and shows an iOS style banner. Discreet mode hides the content. */
   useEffect(() => {
     let alive = true;
