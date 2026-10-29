@@ -1,5 +1,5 @@
 "use client";
-import Reassure from "@/components/reassure";
+import Reassure, { UspPills } from "@/components/reassure";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n/client";
 import LangSwitch from "@/components/lang-switch";
@@ -58,7 +58,7 @@ export default function Landing({ initial, year, invite }: { initial?: "buy" | "
             <i aria-hidden="true" />
           </div>
           <h1 key={side}>{earn ? <>{t("Pick it.")} {t("Make it.")}<br /><em>{t("Get paid.")}</em></> : <>{t("Ask for it.")}<br />{t("Someone makes it.")}</>}</h1>
-          <ol className="lp-steps" key={side + "s"}>{steps.map(([h, d], i) => <li key={h}><span className="num">{i + 1}</span><div><b>{t(h)}</b><small>{t(d)}</small></div></li>)}</ol>
+          {earn ? <UspPills key="usp" /> : <ol className="lp-steps" key={side + "s"}>{steps.map(([h, d], i) => <li key={h}><span className="num">{i + 1}</span><div><b>{t(h)}</b><small>{t(d)}</small></div></li>)}</ol>}
         </div>
       </section>
 

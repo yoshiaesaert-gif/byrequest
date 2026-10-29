@@ -2187,5 +2187,17 @@ const nl: Record<string, string> = {
   "The buyer pays before you start. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "De koper betaalt voor je begint. ByRequest houdt het vast en betaalt je automatisch uit, uiterlijk 24 uur na levering.",
   "Who is on the other side?": "Wie zit er aan de andere kant?",
   "Every creator is ID checked, every buyer confirms 18+. You never share your number or socials, and you can block anyone in one tap.": "Elke creator is gecontroleerd met ID, elke koper bevestigt 18+. Je deelt nooit je nummer of socials, en je blokkeert iemand met één tik.",
+  "A vault built like a safe": "Een vault zo veilig als een kluis",
+  "Your content only opens for the buyer who paid, inside ByRequest. No download, no copy. It disappears by itself after the period you choose.": "Je content opent enkel voor de koper die betaalde, binnen ByRequest. Geen download, geen kopie. Na de periode die jij kiest, verdwijnt het vanzelf.",
+  "Nobody knows who you are": "Niemand weet wie je bent",
+  "No name, no face needed, your ID is never shown. Buyers only see a username and an avatar.": "Geen naam, geen gezicht nodig, je ID wordt nooit getoond. Kopers zien enkel een gebruikersnaam en een avatar.",
+  "No phone numbers, no socials": "Geen gsm nummers, geen socials",
+  "Chat, delivery and payment all stay on ByRequest. Nobody gets your number, your Instagram or your bank details.": "Chat, levering en betaling blijven allemaal op ByRequest. Niemand krijgt je nummer, je Instagram of je bankgegevens.",
+  "Paid before you start": "Betaald voor je begint",
+  "The buyer pays up front. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "De koper betaalt vooraf. ByRequest houdt het vast en betaalt je automatisch uit, uiterlijk 24 uur na levering.",
+  "Every view carries an invisible mark. If anything ever leaks, we trace it and take it offline.": "Elke weergave draagt een onzichtbaar merkteken. Lekt er ooit iets, dan sporen we het op en halen we het offline.",
+  "Private by design": "Privé van in het ontwerp",
+  "Your content stays yours. Your name stays secret.": "Je content blijft van jou. Je naam blijft geheim.",
+  "Keep logos, team kit and rooms people recognise out of the shot.": "Tip: hou logo's, clubkledij en herkenbare ruimtes uit beeld.",
 };
 export default nl;

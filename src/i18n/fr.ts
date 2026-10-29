@@ -2187,5 +2187,17 @@ const fr: Record<string, string> = {
   "The buyer pays before you start. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "L'acheteur paie avant que tu commences. ByRequest garde l'argent et te paie automatiquement, au plus tard 24 heures après la livraison.",
   "Who is on the other side?": "Qui est de l'autre côté ?",
   "Every creator is ID checked, every buyer confirms 18+. You never share your number or socials, and you can block anyone in one tap.": "Chaque créateur est vérifié avec sa pièce d'identité, chaque acheteur confirme avoir 18 ans. Tu ne partages jamais ton numéro ni tes réseaux, et tu bloques quelqu'un en un geste.",
+  "A vault built like a safe": "Un coffre aussi sûr qu'un vrai coffre fort",
+  "Your content only opens for the buyer who paid, inside ByRequest. No download, no copy. It disappears by itself after the period you choose.": "Ton contenu ne s'ouvre que pour l'acheteur qui a payé, dans ByRequest. Pas de téléchargement, pas de copie. Il disparaît tout seul après la durée que tu choisis.",
+  "Nobody knows who you are": "Personne ne sait qui tu es",
+  "No name, no face needed, your ID is never shown. Buyers only see a username and an avatar.": "Pas de nom, pas besoin de visage, ta pièce d'identité n'est jamais montrée. Les acheteurs ne voient qu'un pseudo et un avatar.",
+  "No phone numbers, no socials": "Pas de numéro, pas de réseaux",
+  "Chat, delivery and payment all stay on ByRequest. Nobody gets your number, your Instagram or your bank details.": "Discussion, livraison et paiement restent sur ByRequest. Personne n'a ton numéro, ton Instagram ou tes coordonnées bancaires.",
+  "Paid before you start": "Payé avant de commencer",
+  "The buyer pays up front. ByRequest holds it and pays you automatically, at the latest 24 hours after delivery.": "L'acheteur paie d'avance. ByRequest garde l'argent et te paie automatiquement, au plus tard 24 heures après la livraison.",
+  "Every view carries an invisible mark. If anything ever leaks, we trace it and take it offline.": "Chaque affichage porte une marque invisible. Si quelque chose fuit, nous le retraçons et le mettons hors ligne.",
+  "Private by design": "Privé dès la conception",
+  "Your content stays yours. Your name stays secret.": "Ton contenu reste à toi. Ton nom reste secret.",
+  "Keep logos, team kit and rooms people recognise out of the shot.": "Astuce : garde les logos, les tenues d'équipe et les lieux reconnaissables hors du cadre.",
 };
 export default fr;
