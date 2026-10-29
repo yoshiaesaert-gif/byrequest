@@ -1,20 +1,16 @@
-import { eq } from "drizzle-orm";
-import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
-import { albumLive, burnAlbum } from "@/server/albums";
+import { viewPhoto } from "@/server/albums";
 import { watermarkImage } from "@/server/media";
 
-/* Preview album photos are served only to the buyer and only during the 60 seconds after opening. */
+/* One preview photo: only to the buyer it was shared with, only during its own 10 seconds, with their
+   name as a watermark made fresh for this view. Never cached, never stored. */
 export async function GET(_: Request, ctx: RouteContext<"/api/album/[id]/[n]">) {
   const { id, n } = await ctx.params;
   const u = await currentUser();
   if (!u) return new Response("Unauthorized", { status: 401 });
-  const a = await db.query.previewAlbums.findFirst({ where: eq(schema.previewAlbums.id, id) });
-  if (!a || a.buyerId !== u.id) return new Response("Not found", { status: 404 });
-  if (!albumLive(a)) { if (a.status === "opened") await burnAlbum(id); return new Response("Gone", { status: 410 }); }
-  const mid = a.mediaIds[Number(n)];
-  const m = mid && await db.query.media.findFirst({ where: eq(schema.media.id, mid) });
-  if (!m) return new Response("Not found", { status: 404 });
-  const img = await watermarkImage(m.storageKey, `${u.handle} · view once`);
-  return new Response(new Uint8Array(img), { headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, no-store", "Content-Disposition": "inline" } });
+  const v = await viewPhoto(u.id, id, Number(n));
+  if (v.status !== 200) return new Response(v.status === 410 ? "Gone" : v.status === 409 ? "Not yet" : "Not found", { status: v.status, headers: { "Cache-Control": "no-store" } });
+  const stamp = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" });
+  const img = await watermarkImage(v.storageKey, `${u.handle} · ${stamp}`);
+  return new Response(new Uint8Array(img), { headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, no-store, max-age=0", "Content-Disposition": "inline", "X-Robots-Tag": "noindex", "X-Seconds-Left": String(Math.round(v.left / 1000)) } });
 }

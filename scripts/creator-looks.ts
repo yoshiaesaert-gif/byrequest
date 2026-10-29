@@ -17,6 +17,18 @@ async function main() {
     if (u.avatar?.kind !== "3d") { await db.update(S.users).set({ avatar: { kind: "3d", look } }).where(eq(S.users.id, u.id)); n++; }
     if (OPEN.includes(handle)) await db.update(S.creatorProfiles).set({ visibility: "public" }).where(eq(S.creatorProfiles.userId, u.id));
   }
+  // Demo creators describe how they look, like real ones do, so buyers see the full profile.
+  const W = ["lina.m", "ava.r", "ines", "sara.l", "nour", "yuki", "mika", "dani.r", "ruby"];
+  const hair = ["smooth", "light", "hairy"] as const, pubic = ["shaved", "trimmed", "natural"] as const, size = ["14_16", "16_18", "18_20", "16_18"] as const, cup = ["a", "b", "c", "d"] as const;
+  const demo = await db.select({ id: S.users.id, handle: S.users.handle, detail: S.creatorProfiles.detail }).from(S.creatorProfiles).innerJoin(S.users, eq(S.users.id, S.creatorProfiles.userId)).where(like(S.users.email, "%@demo.byrequest.app"));
+  for (const [i, d] of demo.entries()) {
+    if (d.detail && Object.keys(d.detail).length) continue;
+    const woman = W.includes(d.handle);
+    await db.update(S.creatorProfiles).set({ detail: woman
+      ? { gender: "woman", bodyHair: "smooth", pubic: pubic[i % 3], cup: cup[i % 4] }
+      : { gender: "man", bodyHair: hair[i % 3], pubic: pubic[(i + 1) % 3], size: size[i % 4], cut: i % 3 ? "uncut" : "cut" } }).where(eq(S.creatorProfiles.userId, d.id));
+    n++;
+  }
   // Any account on a retired avatar gets its replacement.
   for (const [from, to] of Object.entries(REPLACED)) {
     const r = await db.execute(sql`update users set avatar = jsonb_build_object('kind', '3d', 'look', ${to}::text) where avatar->>'kind' = '3d' and avatar->>'look' = ${from}`);

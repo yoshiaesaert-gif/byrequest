@@ -198,7 +198,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
       </div>
       <div className="card terms"><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><h3 className="t-h3">{t("Preview requests")}</h3><Link href="/studio" className="btn btn-ghost btn-sm">{t("Studio")}</Link></div>
         <p className="t-sm muted">{t("Buyers who are choosing can ask for a view once preview. You decide.")}</p>
-        {albums.length ? albums.slice(0, 3).map((x) => <div key={x.a.id} className="term"><span className="muted">{x.buyer} · {x.a.kind}</span><Link href="/studio" className="btn btn-secondary btn-sm">{t("Answer")}</Link></div>) : <div className="term"><span className="muted">{t("No requests right now")}</span><b>{t("All clear")}</b></div>}
+        {albums.length ? albums.slice(0, 3).map((x) => <div key={x.a.id} className="term"><span className="muted">{t("A buyer would like to see more")}</span><Link href="/studio" className="btn btn-secondary btn-sm">{t("Answer")}</Link></div>) : <div className="term"><span className="muted">{t("No requests right now")}</span><b>{t("All clear")}</b></div>}
       </div>
     </div>
 

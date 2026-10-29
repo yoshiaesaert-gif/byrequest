@@ -7,7 +7,7 @@ import { access } from "@/server/onboarding";
 import { Av, I, when } from "@/components/ui";
 import { myBlocks } from "@/server/blocks";
 import { UnblockButton } from "@/components/block-button";
-import { Toggle, BecomeCreator, ProfileForm, Marketing, DeleteAccount } from "./parts";
+import { Toggle, BecomeCreator, ProfileForm, Marketing, Reminders } from "./parts";
 
 export default async function Settings() {
   const { t, locale } = await getT();
@@ -28,22 +28,18 @@ export default async function Settings() {
           <div className="setrow"><div><b>{t("Bank statement")}</b><span className="s">{t("Payments show as BRQ DIGITAL")}</span></div><span className="badge">{t("Always")}</span></div>
           <div className="setrow"><div><b>{t("Quick hide")}</b><span className="s">{t("Press Esc twice, or tap the eye icon on mobile")}</span></div><span className="badge">{t("Always")}</span></div>
         </div>
-        <div className="card group"><h3 className="t-h3">{t("Messages from ByRequest")}</h3><Marketing on={u.marketingOptIn} /></div>
+        <div className="card group"><h3 className="t-h3">{t("Messages from ByRequest")}</h3><Reminders on={!u.prefs.mailOff} /><Marketing on={u.marketingOptIn} /></div>
+        <div className="card group" id="creator"><h3 className="t-h3">{t("Creating")}</h3>
+          {!u.isCreator ? <BecomeCreator /> : (<>
+            <div className="setrow"><div><b>{t("Creator setup")}</b><span className="s">{a!.status === "active" ? t("Identity, agreement and payouts approved") : a!.missing.map((m) => t(m)).join(" · ")}</span></div><Link href="/onboarding" className="btn btn-secondary btn-sm">{a!.status === "active" ? "View" : "Continue"}</Link></div>
+            <div id="profile" /><ProfileForm p={prof ? { detail: prof.detail ?? {}, visibility: prof.visibility, bio: prof.bio, heightCm: prof.heightCm, build: prof.build ?? "", sport: prof.sport ?? "", work: prof.work ?? "", languages: prof.languages ?? "", hair: prof.hair ?? "", eyes: prof.eyes ?? "", body: prof.body ?? "", tattoos: prof.tattoos ?? "", makes: prof.makes.join(", "), never: prof.never.join(", "), showsFace: prof.showsFace, defaultVault: prof.defaultVault } : null} handle={u.handle} />
+          </>)}
+        </div>
         <div className="card group" id="blocked"><h3 className="t-h3">{t("Blocked")}</h3>
           {blocked.length ? blocked.map((b) => <div key={b.key} className="setrow"><div style={{ display: "flex", gap: 12, alignItems: "center" }}>{b.handle ? <Av a={b.avatar} name={b.handle} size={36} /> : <span className="blk-anon"><I n="user" c="sm" /></span>}<div><b>{b.handle ?? t("A buyer")}</b><span className="s">{t("Blocked on {date}", { date: when(b.at, locale) })}</span></div></div><UnblockButton handle={b.key} name={b.handle ?? t("A buyer")} /></div>)
             : <div className="setrow"><div><b>{t("Nobody blocked")}</b><span className="s">{t("Block someone from their profile, a request or a chat. They are not told.")}</span></div></div>}
         </div>
-        <div className="card group" id="privacy"><h3 className="t-h3">{t("Your data")}</h3>
-          <div className="setrow"><div><b>{t("Download your data")}</b><span className="s">{t("Everything we hold about you, in one file")}</span></div><a href="/api/me/export" className="btn btn-secondary btn-sm">{t("Download")}</a></div>
-          <div className="setrow"><div><b>{t("Privacy statement")}</b><span className="s">{t("What we keep, why, and for how long")}</span></div><Link href="/legal/privacy" className="btn btn-secondary btn-sm">{t("Read")}</Link></div>
-          <DeleteAccount />
-        </div>
-        <div className="card group" id="creator"><h3 className="t-h3">{t("Creating")}</h3>
-          {!u.isCreator ? <BecomeCreator /> : (<>
-            <div className="setrow"><div><b>{t("Creator setup")}</b><span className="s">{a!.status === "active" ? t("Identity, agreement and payouts approved") : a!.missing.map((m) => t(m)).join(" · ")}</span></div><Link href="/onboarding" className="btn btn-secondary btn-sm">{a!.status === "active" ? "View" : "Continue"}</Link></div>
-            <div id="profile" /><ProfileForm p={prof ? { visibility: prof.visibility, bio: prof.bio, heightCm: prof.heightCm, build: prof.build ?? "", sport: prof.sport ?? "", work: prof.work ?? "", languages: prof.languages ?? "", hair: prof.hair ?? "", eyes: prof.eyes ?? "", body: prof.body ?? "", tattoos: prof.tattoos ?? "", makes: prof.makes.join(", "), never: prof.never.join(", "), showsFace: prof.showsFace, defaultVault: prof.defaultVault } : null} handle={u.handle} />
-          </>)}
-        </div>
+        <div className="set-foot"><Link href="/legal/terms">{t("Terms of use")}</Link><Link href="/legal/privacy">{t("Privacy statement")}</Link><Link href="/settings/data">{t("Your data and rights")}</Link><Link href="/settings/delete" className="set-del">{t("Delete account")}</Link></div>
       </div>
     </div>
   </div>);

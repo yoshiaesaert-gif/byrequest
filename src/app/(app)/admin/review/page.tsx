@@ -37,8 +37,8 @@ export default async function Review() {
           <div className="thumbs" style={{ margin: "12px 0" }}>{x.dl.mediaIds.map((m) => q.mimes[m]?.startsWith("image/") ? <a key={m} href={`/api/admin/media/${m}`} target="_blank"><img src={`/api/admin/media/${m}`} alt="" /></a> : q.mimes[m]?.startsWith("video/") ? <video key={m} src={`/api/admin/media/${m}`} controls preload="metadata" /> : <audio key={m} src={`/api/admin/media/${m}`} controls />)}</div>
           <div className="t-xs muted" style={{ marginBottom: 10 }}>{x.dl.technical.map((t) => (t.ok ? "✓ " : "✗ ") + t.text).join(" · ")}</div>
           {x.dl.review === "blocked_participants" ? <span className="status st-action_required">Reviewed, waiting for participant consent</span> : <DeliveryReview id={x.dl.id} />}</div>))}
-        {q.albums.map((x) => (<div key={x.a.id} className="card"><b>Preview album · {x.a.kind}</b><div className="t-sm muted">by {x.creator}</div>
-          <div className="thumbs" style={{ margin: "12px 0" }}>{x.a.mediaIds.map((m) => <img key={m} src={`/api/admin/media/${m}`} alt="" />)}</div><AlbumReview id={x.a.id} /></div>))}
+        {q.albums.map((x) => (<div key={x.p.id} className="card"><b>Preview album photo · {x.p.kind}</b><div className="t-sm muted">by {x.creator} · shared only with buyers they choose, 10 seconds per photo</div>
+          <div className="thumbs" style={{ margin: "12px 0" }}><img src={`/api/admin/media/${x.p.mediaId}`} alt="" /></div><AlbumReview id={x.p.id} /></div>))}
         {!q.dls.length && !q.albums.length ? <p className="muted">Nothing waiting.</p> : null}</div>
     </section>
 

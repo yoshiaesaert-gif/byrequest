@@ -40,6 +40,7 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
           <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>{t("Inbox")}</Link>
           {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>{t("Vault")}</Link> : <Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>{t("Studio and earnings")}</Link>}
           <Link className="mi" href="/safety"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>{t("Trust and safety")}</Link>
+          <Link className="mi" href="/help"><svg className="ico" aria-hidden="true"><use href="#i-alert" /></svg>{t("Help and FAQ")}</Link>
           {staff ? <Link className="mi mi-admin" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-lock" /></svg>{t("Admin")}<span className="mi-tag">{t("Staff")}</span></Link> : null}
           <hr />
           <LangSwitch />

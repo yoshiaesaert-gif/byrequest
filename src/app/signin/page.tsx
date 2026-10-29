@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { currentUser } from "@/server/auth";
-import { owner } from "@/server/referrals";
+import { owner, getConfig } from "@/server/referrals";
 import { REF_COOKIE, normalizeCode } from "@/domain/referral";
 import Landing from "./landing";
 
@@ -12,5 +12,5 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
   const sp = await searchParams;
   const code = sp.ref ?? (await cookies()).get(REF_COOKIE)?.value;
   const o = code ? await owner(code).catch(() => null) : null;
-  return <Landing initial={sp.as === "earn" ? "earn" : sp.as === "buy" ? "buy" : undefined} year={new Date().getFullYear()} invite={o && code ? { code: normalizeCode(code) } : undefined} />;
+  return <Landing initial={sp.as === "earn" ? "earn" : sp.as === "buy" ? "buy" : undefined} year={new Date().getFullYear()} invite={o && code ? { code: normalizeCode(code), welcomePct: (await getConfig()).welcomePct, buyerGift: (await getConfig()).buyerGift } : undefined} />;
 }

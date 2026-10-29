@@ -23,23 +23,36 @@ export default async function Invite() {
   const tag = locale === "nl" ? "nl-BE" : locale === "fr" ? "fr-BE" : "en-GB";
   const day = (d: Date, o2: Intl.DateTimeFormatOptions = { day: "numeric", month: "long" }) => new Date(d).toLocaleDateString(tag, o2);
   const eur2 = (c: number) => (c < 0 ? "−" : "+") + "€" + (Math.abs(c) / 100).toFixed(2).replace(".", locale === "en" ? "." : ",");
-  const line = (l: (typeof o.lines)[number]) => l.kind === "week_bonus" ? t("Week bonus · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
+  const line = (l: (typeof o.lines)[number]) => l.kind === "welcome_bonus" ? t("Welcome bonus · your first deal") : l.kind === "week_bonus" ? t("Week bonus · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
     : l.kind === "free_fee" ? t("Free service fee · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
     : l.kind === "withdrawal" ? t("Transferred to your account") : l.kind === "spent" ? t("Used for a request") : t("Back from a refunded request");
   return (<div className="wrap inv">
     <section className="inv-hero">
       <div className="inv-hero-copy">
         <span className="eyebrow">{t("Invite friends")}</span>
-        <h1>{t("Get a {pct}% bonus on every friend who creates.", { pct })}</h1>
-        <p>{t("On everything a friend earns as a creator in their first {days} days. ByRequest pays it, your friend keeps everything. It lands on your bonus balance every Monday.", { days })}</p>
+        <h1>{t("Invite friends. You both get a gift.")}</h1>
+        <p>{t("Works for friends who create and for friends who buy. ByRequest pays every gift; nobody pays for it.")}</p>
       </div>
       <ShareBox url={url} display={`${host}/r/${o.code}`} code={o.code} qr={qr} />
     </section>
 
+    <div className="inv-offers">
+      <section className="inv-offer inv-offer-c">
+        <span className="inv-offer-k"><I n="spark" c="sm" />{t("A friend who creates")}</span>
+        <div className="inv-offer-row"><b className="inv-pct">{pct}%</b><div><b>{t("For you")}</b><p>{t("A bonus on everything they earn in their first {days} days.", { days })}</p></div></div>
+        {o.cfg.welcomePct ? <div className="inv-offer-row"><b className="inv-pct">+{o.cfg.welcomePct}%</b><div><b>{t("For your friend")}</b><p>{t("Extra on top of their first deal. They keep all they earn.")}</p></div></div> : null}
+      </section>
+      {o.cfg.buyerGift ? <section className="inv-offer inv-offer-b">
+        <span className="inv-offer-k"><I n="gift" c="sm" />{t("A friend who buys")}</span>
+        <div className="inv-offer-row"><b className="inv-pct">€0</b><div><b>{t("For your friend")}</b><p>{t("No service fee on their first request.")}</p></div></div>
+        <div className="inv-offer-row"><b className="inv-pct">€0</b><div><b>{t("For you")}</b><p>{t("Your next service fee is on us after their first deal.")}</p></div></div>
+      </section> : null}
+    </div>
+
     <ol className="inv-how">
       <li><span>1</span><div><b>{t("Share your link")}</b><p>{t("In a chat, in person with the QR code, or just say your code.")}</p></div></li>
       <li><span>2</span><div><b>{t("Your friend starts")}</b><p>{t("Signs up, verifies once and makes their first deal.")}</p></div></li>
-      <li><span>3</span><div><b>{t("Your bonus every Monday")}</b><p>{t("{pct}% for {days} days, bundled into one weekly amount.", { pct, days })}</p></div></li>
+      <li><span>3</span><div><b>{t("Your gifts every Monday")}</b><p>{t("Bonuses and free service fees land on your balance once a week.")}</p></div></li>
     </ol>
 
     <div className="inv-grid">
@@ -62,11 +75,10 @@ export default async function Invite() {
       </section>
     </div>
 
-    {o.cfg.buyerGift ? <p className="inv-buyer inv-buyer-wide"><I n="gift" c="sm" /><span>{t("Inviting a buyer? Their first service fee is on us, and you get one too after their first deal.")}</span></p> : null}
-
     <details className="inv-rules"><summary>{t("The rules, short and clear")}</summary><ul>
       <li>{t("Only new accounts that sign up with your link or code count. You cannot invite yourself.")}</li>
       <li>{t("The bonus is {pct}% of what your friend nets after fees, on deals paid out within {days} days of their first paid deal. ByRequest pays it on top; your friend earns exactly the same.", { pct, days })}</li>
+      {o.cfg.welcomePct ? <li>{t("An invited creator gets {pct}% extra on their first paid deal, paid by ByRequest, on their bonus balance.", { pct: o.cfg.welcomePct })}</li> : null}
       <li>{t("Deals between you and your friend do not count.")}</li>
       <li>{t("Every Monday the bonuses of the week before land on your balance as one amount. Transfer it to your own verified account from {min}, or use it to pay for a request.", { min: euros(o.minWithdraw) })}</li>
       {o.cfg.buyerGift ? <li>{t("A free service fee covers up to {cap} on one request. If that request is refunded, you get it back.", { cap: euros(o.cfg.feeGiftCapCents) })}</li> : null}

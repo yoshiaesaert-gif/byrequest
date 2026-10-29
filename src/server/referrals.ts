@@ -90,6 +90,12 @@ export async function onCreatorPaid(tx: Tx, d: typeof deals.$inferSelect, now = 
       ends = windowEnd(now, cfg.windowDays);
       await tx.update(referrals).set({ firstDealAt: now, windowEndsAt: ends }).where(eq(referrals.id, rc.id));
       await event(tx, rc.code, "first_deal", rc.id, { dealId: d.id });
+      // The invited creator gets a welcome bonus on top of their first deal, also paid by ByRequest.
+      const welcome = Math.round(d.creatorCents * cfg.welcomePct / 100);
+      if (welcome > 0) {
+        await tx.insert(referralRewards).values({ referralId: rc.id, referrerId: d.creatorId, dealId: d.id, kind: "welcome_bonus", cents: welcome, status: "on_hold" }).onConflictDoNothing();
+        await event(tx, rc.code, "welcome_bonus", rc.id, { dealId: d.id, cents: welcome, pct: cfg.welcomePct });
+      }
     }
     const cents = creatorReward(d.creatorCents, cfg.creatorPct, ends!, now);
     if (cents > 0) await reward(tx, rc, d.id, cents, cfg.creatorPct);
@@ -125,8 +131,8 @@ export async function creditWeekly(now = new Date()) {
   for (const r of due) {
     await db.transaction(async (tx) => {
       await tx.update(referralRewards).set({ status: "paid", paidAt: now }).where(inArray(referralRewards.id, r.ids));
-      if (r.kind === "creator_share" && r.cents > 0) {
-        await tx.insert(walletEntries).values({ userId: r.referrerId, kind: "week_bonus", cents: r.cents, weekOf });
+      if ((r.kind === "creator_share" || r.kind === "welcome_bonus") && r.cents > 0) {
+        await tx.insert(walletEntries).values({ userId: r.referrerId, kind: r.kind === "welcome_bonus" ? "welcome_bonus" : "week_bonus", cents: r.cents, weekOf });
         await tx.insert(ledger).values({ userId: r.referrerId, entry: "bonus_credited", cents: r.cents });
         await tx.insert(notifications).values({ userId: r.referrerId, title: "Your week bonus is in", body: `€${(r.cents / 100).toFixed(2)} was added to your bonus balance.`, href: "/invite" });
       } else if (r.kind === "free_fee") {
@@ -205,7 +211,7 @@ export async function adminList() {
       (select count(*)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as deals,
       (select coalesce(sum(d.deal_cents),0)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as gmv,
       (select coalesce(sum(d.deal_cents + d.fee_cents - d.creator_cents),0)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as revenue,
-      (select coalesce(sum(w.cents),0)::int from referral_rewards w where w.referral_id = r.id and w.kind = 'creator_share') as bonus,
+      (select coalesce(sum(w.cents),0)::int from referral_rewards w where w.referral_id = r.id and w.kind in ('creator_share', 'welcome_bonus')) as bonus,
       (select coalesce(sum(q.fee_gift_cents),0)::int from requests q where q.buyer_id = r.referee_id) as gifts
     from referrals r join users ref on ref.id = r.referrer_id join users fr on fr.id = r.referee_id
     order by r.created_at desc limit 300`);

@@ -1,4 +1,5 @@
 import "server-only";
+import { remove as removeFile } from "./media";
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { log } from "./onboarding";
@@ -48,7 +49,13 @@ export async function deleteAccount(userId: string) {
   const open = await db.select({ id: S.deals.id }).from(S.deals).where(and(or(eq(S.deals.buyerId, userId), eq(S.deals.creatorId, userId)), inArray(S.deals.status, ["held", "reviewing", "delivered", "disputed"]))).limit(1);
   if (open.length) throw new RuleError("Finish or cancel your open deals first. Then you can delete your account.");
   const tag = userId.slice(0, 8);
+  // The private preview album goes completely: files from storage, rows from the database.
+  const photos = await db.select({ mediaId: S.previewPhotos.mediaId, key: S.media.storageKey }).from(S.previewPhotos).innerJoin(S.media, eq(S.media.id, S.previewPhotos.mediaId)).where(eq(S.previewPhotos.creatorId, userId));
+  for (const p of photos) await removeFile(p.key).catch(() => {});
   await db.transaction(async (tx) => {
+    await tx.update(S.previewAlbums).set({ status: "gone", mediaIds: [] }).where(or(eq(S.previewAlbums.creatorId, userId), eq(S.previewAlbums.buyerId, userId)));
+    await tx.delete(S.previewPhotos).where(eq(S.previewPhotos.creatorId, userId));
+    if (photos.length) await tx.delete(S.media).where(inArray(S.media.id, photos.map((p) => p.mediaId)));
     await tx.delete(S.sessions).where(eq(S.sessions.userId, userId));
     await tx.delete(S.notifications).where(eq(S.notifications.userId, userId));
     await tx.delete(S.saves).where(eq(S.saves.userId, userId));

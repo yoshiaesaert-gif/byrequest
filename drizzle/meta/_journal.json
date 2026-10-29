@@ -85,6 +85,27 @@
       "when": 1793258340008,
       "tag": "0011_wallet",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793259699993,
+      "tag": "0012_lifecycle_mail",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793259946210,
+      "tag": "0013_creator_detail",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793260064280,
+      "tag": "0014_preview_v2",
+      "breakpoints": true
     }
   ]
 }

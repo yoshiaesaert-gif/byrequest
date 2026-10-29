@@ -9,7 +9,7 @@ import * as M from "@/server/moderation";
 import * as Ref from "@/server/referrals";
 import type { RefConfig } from "@/domain/referral";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
-import { reviewAlbum } from "@/server/albums";
+import { reviewPhoto } from "@/server/albums";
 import { hideDelivery } from "@/server/participants";
 import { RuleError } from "@/domain/rules";
 
@@ -21,7 +21,7 @@ async function run(fn: (staffId: string) => Promise<unknown>, min: "support" | "
 }
 
 export const reviewD = async (id: string, outcome: "approved" | "rejected", note: string) => run((s) => reviewDelivery(id, outcome, `staff:${s}`, note));
-export const reviewA = async (id: string, outcome: "approved" | "rejected") => run((s) => reviewAlbum(id, outcome, `staff:${s}`));
+export const reviewA = async (id: string, outcome: "approved" | "rejected") => run((s) => reviewPhoto(id, outcome, `staff:${s}`));
 export const decide = async (id: string, outcome: "upheld" | "rejected") => run((s) => resolveDispute(id, outcome, `staff:${s}`));
 export const requestInfo = async (userId: string, area: "identity" | "payout" | "agreement", message: string) => run((s) => A.requestInfo(s, userId, area, message));
 export const restrict = async (userId: string, level: "none" | "restricted" | "suspended", reason: string) => run((s) => A.setRestriction(s, userId, level, reason), "admin");
@@ -45,3 +45,11 @@ export const reqAuto = async (on: boolean) => run((s) => M.setAutoApprove(s, on)
 export const testInbox = async () => run(async (s) => { const { fillTestInbox } = await import("@/server/testdata"); const r = await fillTestInbox(s); if (!r.ok) throw new RuleError(r.error); return r.made; });
 
 export const referralConfig = async (v: Partial<RefConfig>) => run((s) => Ref.setConfig(s, v), "admin");
+
+export const mailTest = async (kind: string, lang: string) => run(async (staffId) => {
+  const L = await import("@/server/lifecycle");
+  const u = await A.requireStaff("admin");
+  if (!(L.KINDS as readonly string[]).includes(kind)) throw new RuleError("Unknown email.");
+  await L.sendTest(kind as (typeof L.KINDS)[number], (["nl", "en", "fr"].includes(lang) ? lang : "nl") as "nl", { id: u.user.id, email: u.user.email, handle: u.user.handle });
+  void staffId;
+}, "admin");

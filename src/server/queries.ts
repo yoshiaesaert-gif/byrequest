@@ -1,4 +1,5 @@
 import "server-only";
+import { asked, PREVIEW_LIMIT } from "./albums";
 import { blockedEither, iBlocked } from "./blocks";
 import { DEMO_MODE } from "@/config/compliance";
 import { and, asc, desc, eq, gt, inArray, or, sql, count } from "drizzle-orm";
@@ -107,10 +108,15 @@ export async function profileFor(handle: string, viewerId: string) {
     offerId = o?.id ?? null;
   }
   const album = offerId ? await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.offerId, offerId) }) : null;
+  const ofr = offerId ? await db.query.offers.findFirst({ where: eq(offers.id, offerId) }) : null;
+  const previewsLeft = ofr ? Math.max(0, PREVIEW_LIMIT - await asked(viewerId, ofr.requestId)) : 0;
   const reviews = await db.select({ stars: deals.buyerRating, at: sql<Date | null>`coalesce(${deals.settledAt}, ${deals.deliveredAt})`.mapWith(deals.settledAt), by: users.handle, text: deals.reviewText, extra: sql<boolean>`coalesce((${deals.buyerScores}->>'overDelivered')::boolean, false)` }).from(deals)
     .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(sql`coalesce(${deals.settledAt}, ${deals.deliveredAt}) desc nulls last`).limit(12);
   const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
-  return { hidden: false as const, blocked: false as const, ...publicProfile(u, p), reason, offerId, album, reviews, dealsDone: n };
+  // Intimate details only for the creator, a buyer they applied to, or a buyer they have a deal with.
+  const intimate = u.id === viewerId || !!offerId || !!(await db.select({ id: deals.id }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.buyerId, viewerId))).limit(1))[0];
+  const detail = intimate ? (p.detail ?? {}) : { gender: p.detail?.gender };
+  return { hidden: false as const, blocked: false as const, ...publicProfile(u, p), reason, offerId, album, previewsLeft, reviews, dealsDone: n, detail, intimate };
 }
 
 /* The only shape of a creator that leaves the server for other users. No email, no birth year,
@@ -156,8 +162,9 @@ export async function pulse() {
   return { paidCents: paid.c, open: open.n, done: done.n, avgHours: avg.h, recent };
 }
 
+/* Preview requests for a creator. The buyer stays anonymous: the creator sees the request, not who asked. */
 export async function albumsForCreator(creatorId: string) {
-  return db.select({ a: previewAlbums, buyer: users.handle }).from(previewAlbums).innerJoin(users, eq(users.id, previewAlbums.buyerId))
+  return db.select({ a: previewAlbums, title: requests.title, requestId: requests.id }).from(previewAlbums).innerJoin(offers, eq(offers.id, previewAlbums.offerId)).innerJoin(requests, eq(requests.id, offers.requestId))
     .where(and(eq(previewAlbums.creatorId, creatorId), eq(previewAlbums.status, "requested")));
 }
 

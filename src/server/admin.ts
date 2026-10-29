@@ -76,10 +76,10 @@ export async function reviewQueue() {
   const dls = await db.select({ dl: S.deliveries, title: S.requests.title, category: S.requests.category, amount: S.requests.amount, creator: S.users.handle })
     .from(S.deliveries).innerJoin(S.deals, eq(S.deals.id, S.deliveries.dealId)).innerJoin(S.requests, eq(S.requests.id, S.deals.requestId)).innerJoin(S.users, eq(S.users.id, S.deliveries.creatorId))
     .where(inArray(S.deliveries.review, ["pending_review", "blocked_participants"])).orderBy(S.deliveries.createdAt);
-  const albums = await db.select({ a: S.previewAlbums, creator: S.users.handle }).from(S.previewAlbums).innerJoin(S.users, eq(S.users.id, S.previewAlbums.creatorId)).where(eq(S.previewAlbums.status, "in_review"));
+  const albums = await db.select({ p: S.previewPhotos, creator: S.users.handle }).from(S.previewPhotos).innerJoin(S.users, eq(S.users.id, S.previewPhotos.creatorId)).where(eq(S.previewPhotos.status, "in_review"));
   const disputes = await db.select({ dp: S.disputes, title: S.requests.title }).from(S.disputes).innerJoin(S.deals, eq(S.deals.id, S.disputes.dealId)).innerJoin(S.requests, eq(S.requests.id, S.deals.requestId)).where(eq(S.disputes.outcome, "open"));
   const removals = await db.select().from(S.removalRequests).where(eq(S.removalRequests.status, "received"));
-  const ids = [...dls.flatMap((d) => d.dl.mediaIds), ...albums.flatMap((a) => a.a.mediaIds)];
+  const ids = [...dls.flatMap((d) => d.dl.mediaIds), ...albums.map((a) => a.p.mediaId)];
   const mimes = Object.fromEntries(ids.length ? (await db.select({ id: S.media.id, mime: S.media.mime }).from(S.media).where(inArray(S.media.id, ids))).map((m) => [m.id, m.mime]) : []);
   return { dls, albums, disputes, removals, mimes };
 }

@@ -1,4 +1,5 @@
 "use server";
+import { cleanDetail } from "@/domain/looks-detail";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
 import { withdraw } from "@/server/referrals";
@@ -10,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
-import { requireUser, requireCreator, endSession } from "@/server/auth";
+import { requireUser, requireCreator, endSession, issueCode, verifyCode, markStepUp, stepUpFresh } from "@/server/auth";
 import { deleteAccount } from "@/server/privacy";
 import { getLocale } from "@/i18n/server";
 import * as deals from "@/server/deals";
@@ -138,18 +139,36 @@ export async function rateBuyer(dealId: string, review: deals.CreatorReview): Pr
   return guard(async () => { const u = await requireUser(); await deals.rateBuyer(u.id, dealId, review); revalidatePath(`/deals/${dealId}`); return { ok: true, msg: "Thanks for your review." }; });
 }
 
-export async function requestAlbum(offerId: string, kind: "looks" | "body" | "intimate"): Promise<Result> {
-  return guard(async () => { const u = await requireUser(); await albums.requestAlbum(u.id, offerId, kind); revalidatePath("/c", "layout"); return { ok: true, msg: "Request sent. They decide whether to send it." }; });
+export async function requestAlbum(offerId: string): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await albums.requestAlbum(u.id, offerId); revalidatePath("/c", "layout"); revalidatePath("/requests", "layout"); return { ok: true, msg: "Asked. They decide whether to share." }; });
 }
 
-export async function answerAlbum(albumId: string, f: FormData | null): Promise<Result> {
+export async function answerAlbum(albumId: string, share: string[] | null): Promise<Result> {
   return guard(async () => {
     const u = await requireCreator();
-    const files = f ? f.getAll("files").filter((x): x is File => x instanceof File && x.size > 0) : null;
-    await albums.answerAlbum(u.id, albumId, files);
+    await albums.answerAlbum(u.id, albumId, share);
     revalidatePath("/studio");
-    return { ok: true, msg: files ? "Preview album sent." : "Declined." };
+    return { ok: true, msg: share ? "Preview shared." : "Declined." };
   });
+}
+
+export async function addPreviewPhotos(f: FormData): Promise<Result> {
+  return guard(async () => {
+    const u = await requireCreator();
+    const files = f.getAll("files").filter((x): x is File => x instanceof File && x.size > 0);
+    const kind = (["looks", "body", "intimate"] as const).find((k) => k === f.get("kind")) ?? "looks";
+    const n = await albums.addPhotos(u.id, files, kind);
+    revalidatePath("/studio");
+    return { ok: true, msg: n === 1 ? "Photo added. It is checked before it can be shared." : "Photos added. They are checked before they can be shared." };
+  });
+}
+
+export async function removePreviewPhoto(id: string): Promise<Result> {
+  return guard(async () => { const u = await requireCreator(); await albums.removePhoto(u.id, id); revalidatePath("/studio"); return { ok: true, msg: "Photo removed." }; });
+}
+
+export async function closePreview(albumId: string) {
+  const u = await requireUser(); await albums.closeShare(u.id, albumId);
 }
 
 /* The client encrypts with NaCl box before calling this. The server stores nonce and ciphertext only. */
@@ -180,7 +199,7 @@ export async function forceNewKey(pk: string) {
   await db.update(schema.users).set({ publicKey: pk }).where(eq(schema.users.id, u.id));
 }
 
-export async function setPref(key: "frost" | "discreetPush" | "neutralTab", value: boolean) {
+export async function setPref(key: "frost" | "discreetPush" | "neutralTab" | "mailOff", value: boolean) {
   const u = await requireUser();
   await db.update(schema.users).set({ prefs: { ...u.prefs, [key]: value } }).where(eq(schema.users.id, u.id));
   revalidatePath("/", "layout");
@@ -210,7 +229,8 @@ export async function saveProfile(f: FormData): Promise<Result> {
     const p = ProfileForm.safeParse(Object.fromEntries(f));
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     const list = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 8);
-    const v = { ...p.data, makes: list(p.data.makes), never: list(p.data.never), showsFace: p.data.showsFace === "yes", heightCm: p.data.heightCm ?? null };
+    const raw = Object.fromEntries([...f.entries()].filter(([k]) => k.startsWith("d_")).map(([k, x]) => [k.slice(2), x]));
+    const v = { ...p.data, makes: list(p.data.makes), never: list(p.data.never), showsFace: p.data.showsFace === "yes", heightCm: p.data.heightCm ?? null, detail: cleanDetail(raw) };
     await db.insert(schema.creatorProfiles).values({ userId: u.id, ...v }).onConflictDoUpdate({ target: schema.creatorProfiles.userId, set: v });
     revalidatePath("/settings");
     return { ok: true, msg: "Profile saved." };
@@ -250,9 +270,13 @@ export async function addParticipant(label: string): Promise<{ ok: true; link: s
   return { ok: true, link };
 }
 
-export async function deleteMyAccount(): Promise<Result> {
+/* Account deletion, step 3: only with a fresh email code and the username typed in. */
+export async function deleteMyAccount(typedHandle: string, reason = ""): Promise<Result> {
   return guard(async () => {
     const u = await requireUser();
+    if (typedHandle.trim().toLowerCase() !== u.handle) return { ok: false, error: "Type your username exactly to confirm." };
+    if (!(await stepUpFresh(10))) return { ok: false, error: "Confirm with the code from your email first." };
+    await onboarding.log(db, `user:${u.id}`, "account.delete_confirmed", u.id, { reason: reason.slice(0, 80) });
     await deleteAccount(u.id);
     await endSession();
     redirect("/signin?deleted=1");
@@ -290,4 +314,17 @@ export async function unblockUser(handle: string): Promise<Result> {
 
 export async function withdrawBalance(): Promise<Result> {
   return guard(async () => { const u = await requireUser(); await withdraw(u.id); revalidatePath("/invite"); return { ok: true, msg: "Transfer started. It shows on your account within a few days." }; });
+}
+
+/* Account deletion, step 2 to 3: the code that proves it is really the owner. */
+export async function sendDeleteCode(): Promise<Result & { devCode?: string | null }> {
+  return guard(async () => { const u = await requireUser(); const { code } = await issueCode(u.email); return { ok: true, devCode: process.env.DEV_SHOW_CODE === "1" ? code : null }; });
+}
+export async function confirmDeleteCode(code: string): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    if (!(await verifyCode(u.email, code.replace(/\D/g, "")))) return { ok: false, error: "That code is not right or has expired." };
+    await markStepUp();
+    return { ok: true };
+  });
 }

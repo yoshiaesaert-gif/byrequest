@@ -15,7 +15,7 @@ const CARDS = [
 const LEGAL: [string, string][] = [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/creator_agreement", "Creator agreement"], ["/legal/participant_consent", "Consent to appear"], ["/legal/contact", "Point of contact"], ["/report", "Report a problem"], ["/removal", "Request removal"]];
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
-export default function Landing({ initial, year, invite }: { initial?: "buy" | "earn"; year: number; invite?: { code: string } }) {
+export default function Landing({ initial, year, invite }: { initial?: "buy" | "earn"; year: number; invite?: { code: string; welcomePct: number; buyerGift: boolean } }) {
   const t = useT();
   const [side, setSide] = useState<"buy" | "earn">(initial ?? "earn");
   // Creators first, then the two sides take turns every 5 seconds. A click on the switch restarts the
@@ -65,7 +65,7 @@ export default function Landing({ initial, year, invite }: { initial?: "buy" | "
         <LangSwitch className="lp-lang" />
         <div className="lp-form" onFocusCapture={() => setAuto(false)}>
           {invite ? <div className="invited" role="status"><span className="invited-ic"><Ico n="gift" /></span><div><b>{t("A friend invited you")}</b>
-            <span>{earn ? t("Sign up as a creator and start earning. Your friend gets a thank you from ByRequest; it never comes out of what you earn, and they never see what you do.") : t("Your first service fee is on us.")}</span></div></div> : null}
+            <span>{earn ? (invite.welcomePct ? t("Sign up as a creator: you get {pct}% extra on your first deal, from ByRequest. Your friend never sees what you do.", { pct: invite.welcomePct }) : t("Sign up as a creator and start earning. Your friend never sees what you do.")) : invite.buyerGift ? t("Your first service fee is on us.") : t("Welcome to ByRequest.")}</span></div></div> : null}
           <SignInForm intent={side} refCode={invite?.code} />
           <ul className="ld-trust">{([["shield", "Adults only, ID checked"], ["lock", "Encrypted chat"], ["eyeoff", "No nudity in feeds"], ["vault", "Private vault"]] as const).map(([i, l]) => <li key={l}><span><Ico n={i} c="sm" /></span>{t(l)}</li>)}</ul>
         </div>

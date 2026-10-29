@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SearchToggle from "@/components/search-toggle";
 import { cookies } from "next/headers";
 import { requireUser } from "@/server/auth";
 import { unread } from "@/server/queries";
@@ -10,12 +11,13 @@ import { MenuButton, HideButton, Live } from "@/components/chrome";
 import NavLinks from "@/components/navlinks";
 import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
-import LangSwitch from "@/components/lang-switch";
 import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const u = await requireUser();
   const { t } = await getT();
+  // Last seen, kept coarse (every few hours) and only used for the "we miss you" email.
+  if (!u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 3 * 3600_000) await db.update(schema.users).set({ lastSeenAt: new Date() }).where(eq(schema.users.id, u.id));
   const mode = u.isCreator && (await cookies()).get("brq_mode")?.value === "sell" ? "sell" : "buy";
   const n = await unread(u.id);
   const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
@@ -31,9 +33,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="topnav"><div className="topnav-in">
         <Link href="/" className="wordmark" aria-label="ByRequest home"><img className="lg-g" src="/logo.png" alt="byrequest" /><img className="lg-w" src="/logo_white.png" alt="" /></Link>
         <nav className="mainnav" aria-label="Main"><NavLinks items={nav} /></nav>
-        <form className="navsearch" action="/for-you"><I n="search" c="sm" /><input name="q" placeholder={t("Search requests")} aria-label={t("Search requests")} /></form>
         <div className="navright">
-          <LangSwitch className="navlang" />
+          <SearchToggle />
           {buy ? <Link href="/post" className="btn btn-primary btn-sm"><I n="plus" c="sm" />{t("Post a request")}</Link> : <span className="mode-pill">{t("Creating")}</span>}
           <Link href="/invite" className="invite-pill" aria-label={t("Invite friends")}><I n="gift" c="sm" /><span>{t("Invite")}</span></Link>
           {inboxBtn}

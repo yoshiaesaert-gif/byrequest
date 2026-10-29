@@ -6,6 +6,7 @@ import { profileFor } from "@/server/queries";
 import { Av, I, Stars } from "@/components/ui";
 import { euros } from "@/domain/rules";
 import AlbumAsk from "./album-ask";
+import { LABEL } from "@/domain/looks-detail";
 import { BlockButton, UnblockButton } from "@/components/block-button";
 import { contactCreator } from "@/server/reports";
 import { redirect } from "next/navigation";
@@ -29,7 +30,8 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
     <span className="empty-i"><I n="block" c="lg" /></span><b className="t-h3">{t("You blocked {name}", { name: r.handle })}</b>
     <p className="muted t-sm">{t("You do not see each other's requests or profile, and there are no applications or chats between you.")}</p>
     <div className="optrow" style={{ justifyContent: "center" }}><UnblockButton handle={r.handle} className="btn btn-secondary" /><Link href={`/report?type=profile&ref=${encodeURIComponent(r.handle)}`} className="btn btn-ghost">{t("Report")}</Link></div></div></div>);
-  const { u, p, reason, offerId, album, reviews, dealsDone } = r;
+  const { u, p, reason, offerId, album, previewsLeft, reviews, dealsDone, detail, intimate } = r;
+  const dt = (k: string, v?: string) => (v ? <div><dt>{t(k)}</dt><dd>{t(LABEL[v])}</dd></div> : null);
   // What the creator wrote reads in the viewer's language when a translation is cached.
   const own = [p.bio, p.build, p.sport, p.work, p.languages, p.hair, p.eyes, p.body, p.tattoos, ...p.makes, ...p.never, ...reviews.map((x) => x.text)].filter((x): x is string => !!x);
   const tr = await cached(own, locale);
@@ -51,8 +53,8 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
       </div></div>
       <div className="cp-main">
         <section className="cp-sec"><span className="eyebrow">{t("About")}</span>{p.bio ? <p className="cp-bio">{L(p.bio)}</p> : null}
-          <dl className="cp-spec">{fact("Age", u.age)}{fact("Height", p.heightCm ? `${(p.heightCm / 100).toFixed(2)} m` : null)}{fact("Build", p.build)}{fact("Sport", p.sport)}{fact("Work", p.work)}{fact("Languages", p.languages)}{fact("Hair", p.hair)}{fact("Eyes", p.eyes)}{fact("Body", p.body)}{fact("Tattoos", p.tattoos)}</dl></section>
-        {offerId ? <AlbumAsk offerId={offerId} handle={u.handle} album={album ? { id: album.id, status: album.status } : null} /> : null}
+          <dl className="cp-spec">{fact("Age", u.age)}{fact("Height", p.heightCm ? `${(p.heightCm / 100).toFixed(2)} m` : null)}{fact("Build", p.build)}{fact("Sport", p.sport)}{fact("Work", p.work)}{fact("Languages", p.languages)}{fact("Hair", p.hair)}{fact("Eyes", p.eyes)}{fact("Body", p.body)}{fact("Tattoos", p.tattoos)}{dt("Gender", detail.gender)}{intimate ? <>{dt("Body hair", detail.bodyHair)}{dt("Pubic hair", detail.pubic)}{dt("Size", detail.size)}{dt("Circumcised", detail.cut)}{dt("Cup size", detail.cup)}</> : null}</dl>{!intimate ? <p className="t-xs muted cp-intimate"><I n="lock" c="sm" />{t("More details about how they look show once this creator applies for your request.")}</p> : null}</section>
+        {offerId ? <AlbumAsk offerId={offerId} handle={u.handle} album={album ? { id: album.id, status: album.status } : null} left={previewsLeft} /> : null}
         <section className="cp-sec"><span className="eyebrow">{t("Makes")}</span>
           <div className="optrow" style={{ marginTop: 10 }}>{p.makes.map((d) => <span key={d} className="chip is-on" style={{ pointerEvents: "none" }}>{L(d)}</span>)}</div>
           {p.never.length ? <p className="cp-never"><b>{t("Never")}</b> {p.never.map((d) => L(d).toLowerCase()).join(", ")}</p> : null}

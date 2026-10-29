@@ -46,10 +46,12 @@ export const users = pgTable("users", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
   freeFees: integer("free_fees").notNull().default(0),               // service fees ByRequest pays for this buyer (referral gift)
+  lang: text("lang").notNull().default("nl"),                        // language for emails, follows the language switch
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),      // for the "we miss you" email only, updated at most every few hours
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("users_email").on(t.email), uniqueIndex("users_handle").on(t.handle), uniqueIndex("users_ref_code").on(t.refCode)]);
 
-export type Prefs = { frost: boolean; discreetPush: boolean; neutralTab: boolean };
+export type Prefs = { frost: boolean; discreetPush: boolean; neutralTab: boolean; mailOff?: boolean };   // mailOff: no tips or reminder emails
 
 export const creatorProfiles = pgTable("creator_profiles", {
   userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
@@ -64,6 +66,7 @@ export const creatorProfiles = pgTable("creator_profiles", {
   eyes: text("eyes"),
   body: text("body"),
   tattoos: text("tattoos"),
+  detail: jsonb("detail").$type<import("@/domain/looks-detail").Detail>().notNull().default({}),   // gender shown; intimate details only to buyers they applied to
   makes: jsonb("makes").$type<string[]>().notNull().default([]),
   never: jsonb("never").$type<string[]>().notNull().default([]),
   showsFace: boolean("shows_face").notNull().default(false),
@@ -224,9 +227,21 @@ export const previewAlbums = pgTable("preview_albums", {
   kind: text("kind").$type<"looks" | "body" | "intimate">().notNull(),
   status: albumStatus("status").notNull().default("requested"),
   mediaIds: jsonb("media_ids").$type<string[]>().notNull().default([]),
+  views: jsonb("views").$type<Record<string, string>>().notNull().default({}),   // photo index -> first time it was shown; each photo shows once
   openedAt: timestamp("opened_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("album_one_per_offer").on(t.offerId)]);
+
+/* The creator's own hidden preview album: a few photos they choose, each reviewed before it can be
+   shared. Never public, never in a feed. Shared only with a buyer who asked, while they choose. */
+export const previewPhotos = pgTable("preview_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  creatorId: uuid("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  mediaId: uuid("media_id").notNull().references(() => media.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"looks" | "body" | "intimate">().notNull(),
+  status: text("status").$type<"in_review" | "approved" | "rejected">().notNull().default("in_review"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("preview_photos_creator").on(t.creatorId, t.createdAt)]);
 
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -275,7 +290,7 @@ export const referralRewards = pgTable("referral_rewards", {
   referralId: uuid("referral_id").notNull().references(() => referrals.id, { onDelete: "cascade" }),
   referrerId: uuid("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   dealId: uuid("deal_id").references(() => deals.id),
-  kind: text("kind").$type<"creator_share" | "free_fee">().notNull(),
+  kind: text("kind").$type<"creator_share" | "free_fee" | "welcome_bonus">().notNull(),   // welcome_bonus: to the invited creator, on their first deal
   cents: integer("cents").notNull().default(0),
   status: text("status").$type<"paid" | "on_hold" | "granted">().notNull(),
   payoutRef: text("payout_ref"),
@@ -288,12 +303,20 @@ export const referralRewards = pgTable("referral_rewards", {
 export const walletEntries = pgTable("wallet_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  kind: text("kind").$type<"week_bonus" | "free_fee" | "withdrawal" | "spent" | "spent_back">().notNull(),
+  kind: text("kind").$type<"week_bonus" | "free_fee" | "welcome_bonus" | "withdrawal" | "spent" | "spent_back">().notNull(),
   cents: integer("cents").notNull(),               // plus adds to the balance, minus takes from it
   weekOf: timestamp("week_of", { withTimezone: true }),
   ref: text("ref"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("wallet_user").on(t.userId, t.createdAt)]);
+
+/* Every automatic email sent, once per kind per person, so nobody gets the same email twice. */
+export const emailLog = pgTable("email_log", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  status: text("status").notNull().default("sent"),               // sent, skipped (mail off) or failed
+}, (t) => [uniqueIndex("email_log_pk").on(t.userId, t.kind)]);
 
 /* Audit trail of the programme: link opened, signed up, verified, first deal, reward, payout, gift used. */
 export const referralEvents = pgTable("referral_events", {

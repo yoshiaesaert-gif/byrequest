@@ -2,22 +2,49 @@
 import { useT } from "@/i18n/client";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { answerAlbum, addParticipant } from "../actions";
+import { answerAlbum, addParticipant, addPreviewPhotos, removePreviewPhoto } from "../actions";
+import { useRouter } from "next/navigation";
 import { toast } from "@/components/chrome";
 
-export function AlbumAnswer({ id, buyer, kind, canUpload }: { id: string; buyer: string; kind: string; canUpload: boolean }) {
+type Photo = { id: string; mediaId: string; kind: string; status: string };
+const KINDS = [["looks", "Looks"], ["body", "Body"], ["intimate", "Intimate"]] as const;
+
+/* The creator's own hidden album: up to six photos, each checked before it can be shared. */
+export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max: number; canUpload: boolean }) {
   const t = useT();
-  const [files, setFiles] = useState<File[]>([]);
+  const router = useRouter();
+  const [kind, setKind] = useState<"looks" | "body" | "intimate">("looks");
+  const [pending, start] = useTransition();
+  const live = photos.filter((p) => p.status !== "rejected");
+  return (<div className="alb">
+    <div className="alb-grid">{live.map((p) => (
+      <div key={p.id} className="alb-ph"><img src={`/api/preview-photo/${p.id}`} alt="" draggable={false} />
+        <span className={"badge alb-st " + (p.status === "approved" ? "ok" : "amber")}>{t(p.status === "approved" ? "Ready to share" : "Being checked")}</span>
+        <span className="badge glass alb-k">{t(KINDS.find((k) => k[0] === p.kind)?.[1] ?? "Looks")}</span>
+        <button className="alb-x" aria-label={t("Remove photo")} disabled={pending} onClick={() => start(async () => { const r = await removePreviewPhoto(p.id); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); router.refresh(); })}><svg className="ico sm" aria-hidden="true"><use href="#i-x" /></svg></button></div>))}
+      {live.length < max ? (canUpload ? <label className="alb-add"><input type="file" accept="image/*" multiple hidden disabled={pending} onChange={(e) => { const files = Array.from(e.target.files ?? []); if (!files.length) return; const f = new FormData(); files.forEach((x) => f.append("files", x)); f.set("kind", kind); start(async () => { const r = await addPreviewPhotos(f); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); router.refresh(); }); e.target.value = ""; }} />
+        <svg className="ico" aria-hidden="true"><use href="#i-plus" /></svg><span>{pending ? t("Uploading…") : t("Add photos")}</span><small>{live.length}/{max}</small></label>
+        : <Link href="/onboarding" className="alb-add"><span>{t("Finish setup to add photos")}</span></Link>) : null}
+    </div>
+    <div className="optrow alb-kind"><span className="t-sm muted">{t("New photos are")}</span>{KINDS.map(([k, l]) => <button key={k} type="button" className={"chip" + (kind === k ? " is-on" : "")} onClick={() => setKind(k)}>{t(l)}</button>)}</div>
+  </div>);
+}
+
+/* A buyer who is choosing asks to see more. The creator shares (picks which approved photos) or says no. */
+export function AlbumAnswer({ id, title, photos, canShare }: { id: string; title: string; photos: Photo[]; canShare: boolean }) {
+  const t = useT();
+  const ready = photos.filter((p) => p.status === "approved");
+  const [pick, setPick] = useState<string[]>(ready.map((p) => p.id));
   const [pending, start] = useTransition();
   const [done, setDone] = useState(false);
   if (done) return null;
-  return (<div className="lrow" style={{ gridTemplateColumns: "minmax(0,1fr) auto", alignItems: "center" }}>
-    <div style={{ minWidth: 0 }}><b>{buyer} asks for a {kind} preview</b><div className="t-sm muted">{t("Up to 5 photos. Reviewed first, then viewable once for 60 seconds.")}</div>
-      {canUpload ? <input type="file" accept="image/*" multiple onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))} style={{ marginTop: 8 }} /> : <Link href="/onboarding" className="t-sm" style={{ fontWeight: 600 }}>{t("Finish setup to send previews")}</Link>}</div>
-    <div className="optrow">
-      <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => start(async () => { const r = await answerAlbum(id, null); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); if (r.ok) setDone(true); })}>{t("Decline")}</button>
-      <button className="btn btn-primary btn-sm" disabled={pending || !files.length || !canUpload} onClick={() => start(async () => { const f = new FormData(); files.forEach((x) => f.append("files", x)); const r = await answerAlbum(id, f); toast(r.ok ? r.msg! : r.error, r.ok ? "ok" : "err"); if (r.ok) setDone(true); })}>{t("Send")}</button>
-    </div>
+  const go = (share: string[] | null) => start(async () => { const r = await answerAlbum(id, share); toast(r.ok ? t(r.msg!) : t(r.error), r.ok ? "ok" : "err"); if (r.ok) setDone(true); });
+  return (<div className="alb-req">
+    <div><b>{t("A buyer would like to see more")}</b><div className="t-sm muted">{t("For: {title}", { title })} · {t("They see each photo once, for 10 seconds, with their name on it.")}</div></div>
+    {ready.length ? <div className="alb-pick">{ready.map((p) => <label key={p.id} className={"alb-pk" + (pick.includes(p.id) ? " is-on" : "")}><input type="checkbox" hidden checked={pick.includes(p.id)} onChange={(e) => setPick(e.target.checked ? [...pick, p.id] : pick.filter((x) => x !== p.id))} /><img src={`/api/preview-photo/${p.id}`} alt="" /></label>)}</div>
+      : <p className="t-sm muted">{t("Your album has no approved photos yet. Add some above.")}</p>}
+    <div className="optrow"><button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => go(null)}>{t("No thanks")}</button>
+      <button className="btn btn-primary btn-sm" disabled={pending || !canShare || !pick.length} onClick={() => go(pick)}>{t("Share {n} photos", { n: pick.length })}</button></div>
   </div>);
 }
 
