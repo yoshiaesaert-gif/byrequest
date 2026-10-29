@@ -120,6 +120,13 @@
       "when": 1793269037412,
       "tag": "0016_internal_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793269522251,
+      "tag": "0017_passkeys",
+      "breakpoints": true
     }
   ]
 }

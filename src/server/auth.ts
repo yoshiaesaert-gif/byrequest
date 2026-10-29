@@ -14,7 +14,7 @@ const secret = () => {
   if (!s && process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET is not set.");
   return s || "dev";
 };
-const hmac = (v: string) => createHmac("sha256", secret()).update(v).digest("hex");
+export const hmac = (v: string) => createHmac("sha256", secret()).update(v).digest("hex");
 
 /* Limits on asking for codes, per address and per network address, so nobody can flood an inbox
    or try codes at scale. One instance runs the app, so memory is enough. */

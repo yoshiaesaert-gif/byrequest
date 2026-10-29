@@ -3,6 +3,7 @@ import { LOOKS } from "@/domain/looks";
 import { useT } from "@/i18n/client";
 import { useActionState, useState } from "react";
 import { BUYER_COUNTRIES } from "@/config/compliance";
+import { PasskeySignIn } from "@/components/passkey";
 import { sendCode, checkCode, createAccount, appealClosed, handleFree, type AuthState } from "./actions";
 
 
@@ -42,9 +43,10 @@ export default function SignInForm({ intent, refCode }: { intent?: "buy" | "earn
   return (
     <form action={send} className="authstack">
       <div><h2 className="t-h1">{intent === "earn" ? t("Start earning") : intent === "buy" ? t("Post your first request") : t("Welcome to ByRequest")}</h2><p className="muted" style={{ marginTop: 6 }}>{t("Sign in or join with your email. No password: you get a six digit code. Nobody on ByRequest ever sees your email.")}</p></div>
-      <div className="field"><label htmlFor="email">{t("Email")}</label><input className="input" id="email" name="email" type="email" autoComplete="email" placeholder={t("you@example.com")} required /></div>
+      <div className="field"><label htmlFor="email">{t("Email")}</label><input className="input" id="email" name="email" type="email" autoComplete="email webauthn" placeholder={t("you@example.com")} required /></div>
       {s1.error ? <p className="formerr" role="alert">{t(s1.error)}</p> : null}
       <button className="btn btn-primary btn-lg btn-block" disabled={p1}>{p1 ? t("Sending…") : t("Continue with email")}</button>
+      <PasskeySignIn />
     </form>
   );
 }

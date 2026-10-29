@@ -55,7 +55,10 @@ export async function searchUsers(q: string, kind: "all" | "external" | "interna
     bought: sql<number>`(select count(*)::int from deals d where d.buyer_id = "users"."id")`,
     sold: sql<number>`(select count(*)::int from deals d where d.creator_id = "users"."id")`,
     staff: sql<string | null>`(select s.role::text from staff s where s.user_id = "users"."id")`,
-  }).from(S.users).where(where).orderBy(desc(S.users.createdAt)).limit(60);
+    spent: sql<number>`(select coalesce(sum(d.deal_cents),0)::int from deals d where d.buyer_id = "users"."id" and d.status = 'released')`,
+    earned: sql<number>`(select coalesce(sum(d.creator_cents),0)::int from deals d where d.creator_id = "users"."id" and d.status = 'released')`,
+    lastSeenAt: S.users.lastSeenAt, country: S.users.country, deletedAt: S.users.deletedAt,
+  }).from(S.users).where(where).orderBy(desc(S.users.createdAt)).limit(1000);
 }
 
 export async function userDetail(id: string) {

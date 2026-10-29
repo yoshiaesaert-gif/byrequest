@@ -390,3 +390,16 @@ export const visitEvents = pgTable("visit_events", {
   path: text("path").notNull(),
   label: text("label"),
 }, (t) => [index("visit_events_visit").on(t.visitId, t.at), index("visit_events_at").on(t.at)]);
+
+/* Passkeys (WebAuthn): sign in with Face ID, a fingerprint or the device PIN. Only the public key is
+   stored; the private key never leaves the person's device or password manager. */
+export const passkeys = pgTable("passkeys", {
+  id: text("id").primaryKey(),                                        // credential id, base64url
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  publicKey: text("public_key").notNull(),                            // base64url
+  counter: integer("counter").notNull().default(0),
+  transports: jsonb("transports").$type<string[]>(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+}, (t) => [index("passkeys_user").on(t.userId)]);

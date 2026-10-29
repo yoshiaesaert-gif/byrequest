@@ -11,10 +11,13 @@ import { MenuButton, HideButton, Live } from "@/components/chrome";
 import NavLinks from "@/components/navlinks";
 import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
+import { PasskeyPrompt } from "@/components/passkey";
+import { listPasskeys } from "@/server/passkeys";
 import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const u = await requireUser();
+  const hasKey = (await listPasskeys(u.id)).length > 0;
   const { t } = await getT();
   // Last seen, kept coarse (every few hours) and only used for the "we miss you" email.
   if (!u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 3 * 3600_000) await db.update(schema.users).set({ lastSeenAt: new Date() }).where(eq(schema.users.id, u.id));
@@ -49,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
       </header>
       <main className="main" id="main">{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
+      {hasKey ? null : <PasskeyPrompt />}
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} />
     </div>

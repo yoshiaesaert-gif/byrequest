@@ -1,5 +1,7 @@
 import { getT } from "@/i18n/server";
 import Link from "next/link";
+import { listPasskeys } from "@/server/passkeys";
+import { PasskeyManager } from "@/components/passkey";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
@@ -12,7 +14,7 @@ import { Toggle, BecomeCreator, ProfileForm, Marketing, Reminders } from "./part
 export default async function Settings() {
   const { t, locale } = await getT();
   const u = await requireUser();
-  const [a, prof, blocked] = await Promise.all([u.isCreator ? access(u.id) : null, db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }), myBlocks(u.id)]);
+  const [a, prof, blocked, keys] = await Promise.all([u.isCreator ? access(u.id) : null, db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }), myBlocks(u.id), listPasskeys(u.id)]);
   return (<div className="wrap">
     <div className="page-h"><div><h1 className="t-h1">{t("Profile and privacy")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Only your username and avatar are ever shown to others.")}</p></div></div>
     <div className="settings">
@@ -20,6 +22,7 @@ export default async function Settings() {
         {a ? <span className={"badge " + (a.status === "active" ? "ok" : "amber")}>{t(a.status === "active" ? "Verified creator" : "Creator setup not finished")}</span> : null}
         <div className="stats"><div><b className="num">{u.ratingCount ? (u.ratingSum / u.ratingCount).toFixed(1) : "–"}</b><span>{t("Rating")}</span></div><div><b className="num">{u.ratingCount}</b><span>{t("Ratings")}</span></div><div><b className="num">{new Date().getFullYear() - u.birthYear}</b><span>{t("Age")}</span></div></div></div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+        <div className="card group" id="passkeys"><h3 className="t-h3">{t("Sign in")}</h3><PasskeyManager keys={keys.map((k) => ({ id: k.id, name: k.name, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} /></div>
         <div className="card group"><h3 className="t-h3">{t("Privacy")}</h3>
           <div className="setrow"><div><b>{t("End to end encrypted chats")}</b><span className="s">{t("Always on. Not even ByRequest can read your messages")}</span></div><span className="badge ok"><I n="lock" c="sm" />{t("On")}</span></div>
           <Toggle k="frost" on={u.prefs.frost} b="Frosted covers" s="Covers stay behind glass until you hover or hold" />
