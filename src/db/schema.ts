@@ -61,6 +61,7 @@ export const creatorProfiles = pgTable("creator_profiles", {
   visibility: profileVisibility("visibility").notNull().default("offer_only"),
   bio: text("bio").notNull().default(""),
   heightCm: integer("height_cm"),
+  weightKg: integer("weight_kg"),                                  // optional, typed by the creator
   build: text("build"),
   sport: text("sport"),
   work: text("work"),

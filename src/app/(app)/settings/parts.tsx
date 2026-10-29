@@ -35,7 +35,7 @@ export function BecomeCreator() {
   </div>);
 }
 
-type P = { visibility: "offer_only" | "public"; bio: string; heightCm: number | null; build: string; sport: string; work: string; languages: string; hair: string; eyes: string; body: string; tattoos: string; makes: string; never: string; showsFace: boolean; defaultVault: string; detail: Detail };
+type P = { visibility: "offer_only" | "public"; bio: string; heightCm: number | null; weightKg?: number | null; build: string; sport: string; work: string; languages: string; hair: string; eyes: string; body: string; tattoos: string; makes: string; never: string; showsFace: boolean; defaultVault: string; detail: Detail };
 
 export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
   const t = useT();
@@ -65,7 +65,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
     <p className="t-xs muted">{t("Fields with * are needed before you can apply. Buyers choose on them.")}</p>
     <div className="field"><label htmlFor="bio">{t("Short bio")}<span className="req" aria-hidden="true"> *</span></label><textarea id="bio" name="bio" className="input" rows={3} maxLength={400} style={{ height: "auto", padding: 14 }} defaultValue={p?.bio ?? ""} placeholder={t("What you do, what you are like, what you make.")} /></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>
-      {pick("heightCm", "Height", HEIGHTS, true, " cm")}{pick("build", "Build", BUILD)}{pick("hair", "Hair", HAIR)}{pick("eyes", "Eyes", EYES)}{pick("tattoos", "Tattoos", TATTOOS, false)}
+      {pick("heightCm", "Height", HEIGHTS, true, " cm")}<div className="field"><label htmlFor="weightKg">{t("Weight in kg")}</label><input id="weightKg" name="weightKg" className="input" type="number" inputMode="numeric" min={35} max={250} placeholder={t("Optional, for example 78")} defaultValue={p?.weightKg ?? ""} /></div>{pick("build", "Build", BUILD)}{pick("hair", "Hair", HAIR)}{pick("eyes", "Eyes", EYES)}{pick("tattoos", "Tattoos", TATTOOS, false)}
       {f("sport", "Sport", "Football, gym")}{f("work", "Work", "Student")}{f("languages", "Languages", "English, Dutch")}{f("body", "Distinctive features", "Piercings, freckles, a scar")}
     </div>
     <div className="field det-sec"><label>{t("How you look")}</label><p className="t-xs muted">{t("Buyers choose with this. Gender shows on your profile. The intimate details only show to buyers you applied to, never publicly.")}</p></div>

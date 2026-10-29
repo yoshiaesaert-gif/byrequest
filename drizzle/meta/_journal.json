@@ -148,6 +148,13 @@
       "when": 1793292770804,
       "tag": "0020_notification_mail",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793301794163,
+      "tag": "0021_weight",
+      "breakpoints": true
     }
   ]
 }

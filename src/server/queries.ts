@@ -124,7 +124,7 @@ export async function profileFor(handle: string, viewerId: string) {
 export function publicProfile(u: typeof users.$inferSelect, p: typeof creatorProfiles.$inferSelect) {
   return {
     u: { id: u.id, handle: u.handle, avatar: u.avatar, ratingSum: u.ratingSum, ratingCount: u.ratingCount, age: new Date().getFullYear() - u.birthYear },
-    p: { visibility: p.visibility, bio: p.bio, heightCm: p.heightCm, build: p.build, sport: p.sport, work: p.work, languages: p.languages, hair: p.hair, eyes: p.eyes, body: p.body, tattoos: p.tattoos, makes: p.makes, never: p.never, showsFace: p.showsFace, defaultVault: p.defaultVault, fromCents: p.fromCents, replyMinutes: p.replyMinutes },
+    p: { visibility: p.visibility, bio: p.bio, heightCm: p.heightCm, weightKg: p.weightKg, build: p.build, sport: p.sport, work: p.work, languages: p.languages, hair: p.hair, eyes: p.eyes, body: p.body, tattoos: p.tattoos, makes: p.makes, never: p.never, showsFace: p.showsFace, defaultVault: p.defaultVault, fromCents: p.fromCents, replyMinutes: p.replyMinutes },
   };
 }
 export type PublicProfile = ReturnType<typeof publicProfile>;

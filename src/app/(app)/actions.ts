@@ -216,6 +216,7 @@ const ProfileForm = z.object({
   visibility: z.enum(["offer_only", "public"]),
   bio: z.string().trim().max(400),
   heightCm: z.coerce.number().int().min(120).max(230).optional().or(z.literal("").transform(() => undefined)),
+  weightKg: z.coerce.number().int().min(35).max(250).optional().or(z.literal("").transform(() => undefined)),
   build: z.string().trim().max(40), sport: z.string().trim().max(60), work: z.string().trim().max(60),
   languages: z.string().trim().max(60), hair: z.string().trim().max(40), eyes: z.string().trim().max(30),
   body: z.string().trim().max(40), tattoos: z.string().trim().max(60),
@@ -231,7 +232,7 @@ export async function saveProfile(f: FormData): Promise<Result> {
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     const list = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean).slice(0, 8);
     const raw = Object.fromEntries([...f.entries()].filter(([k]) => k.startsWith("d_")).map(([k, x]) => [k.slice(2), x]));
-    const v = { ...p.data, makes: list(p.data.makes), never: list(p.data.never), showsFace: p.data.showsFace === "yes", heightCm: p.data.heightCm ?? null, detail: cleanDetail(raw) };
+    const v = { ...p.data, makes: list(p.data.makes), never: list(p.data.never), showsFace: p.data.showsFace === "yes", heightCm: p.data.heightCm ?? null, weightKg: p.data.weightKg ?? null, detail: cleanDetail(raw) };
     await db.insert(schema.creatorProfiles).values({ userId: u.id, ...v }).onConflictDoUpdate({ target: schema.creatorProfiles.userId, set: v });
     revalidatePath("/settings");
     return { ok: true, msg: "Profile saved." };

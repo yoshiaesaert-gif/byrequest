@@ -1,0 +1,1 @@
+ALTER TABLE "creator_profiles" ADD COLUMN "weight_kg" integer;

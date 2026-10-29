@@ -56,7 +56,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
       <section>
         {u.isCreator ? <><h2 className="bo-sh">Public profile <Link href={`/c/${u.handle}`} className="bo-sh-l">Open as buyers see it</Link></h2>
           {prof ? (() => { const missing = profileMissing(prof); const d = prof.detail ?? {}; const rows: [string, string | null | undefined][] = [
-            ["Bio", prof.bio], ["Height", prof.heightCm ? `${(prof.heightCm / 100).toFixed(2)} m` : null], ["Build", prof.build], ["Hair", prof.hair], ["Eyes", prof.eyes], ["Distinctive features", prof.body], ["Tattoos", prof.tattoos],
+            ["Bio", prof.bio], ["Height", prof.heightCm ? `${(prof.heightCm / 100).toFixed(2)} m` : null], ["Weight", prof.weightKg ? `${prof.weightKg} kg` : null], ["Build", prof.build], ["Hair", prof.hair], ["Eyes", prof.eyes], ["Distinctive features", prof.body], ["Tattoos", prof.tattoos],
             ["Sport", prof.sport], ["Work", prof.work], ["Languages", prof.languages],
             ["Gender", d.gender && LABEL[d.gender]], ["Body hair", d.bodyHair && LABEL[d.bodyHair]], ["Pubic hair", d.pubic && LABEL[d.pubic]], ["Penis length", sizeText(d)], ["Circumcised", d.cut && LABEL[d.cut]], ["Cup size", d.cup && LABEL[d.cup]],
             ["Likes to make", prof.makes.join(", ")], ["Never", prof.never.join(", ")], ["Shows face", prof.showsFace ? "Yes" : "No"], ["Profile", prof.visibility === "public" ? "Public" : "Only for buyers they apply to"]];

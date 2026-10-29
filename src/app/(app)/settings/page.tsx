@@ -35,7 +35,7 @@ export default async function Settings() {
         <div className="card group" id="creator"><h3 className="t-h3">{t("Creating")}</h3>
           {!u.isCreator ? <BecomeCreator /> : (<>
             <div className="setrow"><div><b>{t("Creator setup")}</b><span className="s">{a!.status === "active" ? t("Identity, agreement and payouts approved") : a!.missing.map((m) => t(m)).join(" · ")}</span></div><Link href="/onboarding" className="btn btn-secondary btn-sm">{a!.status === "active" ? "View" : "Continue"}</Link></div>
-            <div id="profile" /><ProfileForm p={prof ? { detail: prof.detail ?? {}, visibility: prof.visibility, bio: prof.bio, heightCm: prof.heightCm, build: prof.build ?? "", sport: prof.sport ?? "", work: prof.work ?? "", languages: prof.languages ?? "", hair: prof.hair ?? "", eyes: prof.eyes ?? "", body: prof.body ?? "", tattoos: prof.tattoos ?? "", makes: prof.makes.join(", "), never: prof.never.join(", "), showsFace: prof.showsFace, defaultVault: prof.defaultVault } : null} handle={u.handle} />
+            <div id="profile" /><ProfileForm p={prof ? { detail: prof.detail ?? {}, visibility: prof.visibility, bio: prof.bio, heightCm: prof.heightCm, weightKg: prof.weightKg, build: prof.build ?? "", sport: prof.sport ?? "", work: prof.work ?? "", languages: prof.languages ?? "", hair: prof.hair ?? "", eyes: prof.eyes ?? "", body: prof.body ?? "", tattoos: prof.tattoos ?? "", makes: prof.makes.join(", "), never: prof.never.join(", "), showsFace: prof.showsFace, defaultVault: prof.defaultVault } : null} handle={u.handle} />
           </>)}
         </div>
         <div className="card group" id="blocked"><h3 className="t-h3">{t("Blocked")}</h3>
