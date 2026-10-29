@@ -2208,5 +2208,14 @@ const nl: Record<string, string> = {
   "Requests from buyers worldwide": "Zoekertjes van kopers wereldwijd",
   "Translated into your language automatically. New ones are released throughout the day, so check back.": "Automatisch vertaald naar jouw taal. Doorheen de dag komen er nieuwe vrij, dus kom zeker terug.",
   "From buyers worldwide, translated into your language. New requests are released throughout the day.": "Van kopers wereldwijd, vertaald naar jouw taal. Doorheen de dag komen er nieuwe zoekertjes vrij.",
+  "Questions from the buyer": "Vragen van de koper",
+  "Only you and {name} can read this.": "Enkel jij en {name} kunnen dit lezen.",
+  "Answer {name}": "Antwoord {name}",
+  "This message was written to another device of yours.": "Dit bericht werd naar een ander toestel van jou gestuurd.",
+  "Try again in a moment.": "Probeer zo meteen opnieuw.",
+  "A question about your application": "Een vraag over je kandidatuur",
+  "The buyer sent you a message.": "De koper stuurde je een bericht.",
+  "A candidate replied": "Een kandidaat antwoordde",
+  "That message is too long.": "Dat bericht is te lang.",
 };
 export default nl;

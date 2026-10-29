@@ -2208,5 +2208,14 @@ const fr: Record<string, string> = {
   "Requests from buyers worldwide": "Des demandes d'acheteurs du monde entier",
   "Translated into your language automatically. New ones are released throughout the day, so check back.": "Traduites automatiquement dans ta langue. De nouvelles sont publiées tout au long de la journée, alors reviens souvent.",
   "From buyers worldwide, translated into your language. New requests are released throughout the day.": "D'acheteurs du monde entier, traduites dans ta langue. De nouvelles demandes sont publiées tout au long de la journée.",
+  "Questions from the buyer": "Questions de l'acheteur",
+  "Only you and {name} can read this.": "Seuls toi et {name} pouvez lire ceci.",
+  "Answer {name}": "Répondre à {name}",
+  "This message was written to another device of yours.": "Ce message a été envoyé à un autre de tes appareils.",
+  "Try again in a moment.": "Réessaie dans un instant.",
+  "A question about your application": "Une question sur ta candidature",
+  "The buyer sent you a message.": "L'acheteur t'a envoyé un message.",
+  "A candidate replied": "Un candidat a répondu",
+  "That message is too long.": "Ce message est trop long.",
 };
 export default fr;

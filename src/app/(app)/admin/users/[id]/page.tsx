@@ -5,12 +5,13 @@ import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
 import { BlockAccount, HouseAccept, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
-import { applicationsOf } from "@/server/teamchat";
+import { applicationsOf, offerUnread } from "@/server/teamchat";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
   const [x, apps] = await Promise.all([userDetail(id), applicationsOf(id)]);
+  const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();
   const { u } = x;
   const spent = x.deals.filter((d) => d.d.buyerId === u.id && d.d.status !== "refunded").reduce((s, d) => s + d.d.dealCents + d.d.feeCents, 0);
@@ -42,7 +43,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
           <small>to {a.author}{a.authorHouse ? " · team profile" : ""} · {euros(a.dealCents)} · request {a.reqStatus} · sent {when(a.o.createdAt)}</small>
           <small>Delivers within {a.o.etaHours} h · {a.o.showsFace ? "shows face" : "no face"} · vault {a.o.vault}</small>
           {a.o.note ? <p className="bo-app-note">“{a.o.note}”</p> : null}
-          {a.authorHouse ? <div className="bo-app-act">{a.dealId ? <Link className="btn btn-primary btn-sm" href={`/admin/chat/${a.dealId}`}>Chat as {a.author}</Link> : a.o.status === "pending" && a.reqStatus === "open" ? <HouseAccept id={a.o.id} /> : null}{a.dealId ? <span className="t-xs muted">deal {a.dealStatus}</span> : a.o.status === "pending" ? <span className="t-xs muted">Accept as {a.author} to start the deal and the chat</span> : null}</div> : null}
+          {a.authorHouse ? <div className="bo-app-act">{a.dealId ? <Link className="btn btn-primary btn-sm" href={`/admin/chat/${a.dealId}`}>Deal chat as {a.author}</Link> : null}<Link className={"btn btn-sm " + (a.dealId ? "btn-secondary" : "btn-primary")} href={`/admin/offer-chat/${a.o.id}`}>Message as {a.author}{unread[a.o.id] ? ` · ${unread[a.o.id]} new` : ""}</Link>{!a.dealId && a.o.status === "pending" && a.reqStatus === "open" ? <HouseAccept id={a.o.id} /> : null}{a.dealId ? <span className="t-xs muted">deal {a.dealStatus}</span> : null}</div> : null}
         </div>))}{!apps.length ? <p className="muted t-sm">No applications.</p> : null}</div>
         <h2 className="bo-sh">Requests</h2>
         <div className="bo-list">{x.reqs.map((r) => (

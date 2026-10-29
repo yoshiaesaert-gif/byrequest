@@ -1,7 +1,7 @@
 import "server-only";
 import nacl from "tweetnacl";
 import { decodeBase64, decodeUTF8, encodeBase64, encodeUTF8 } from "tweetnacl-util";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema as S } from "@/db";
 import { createHash } from "crypto";
 
@@ -69,4 +69,77 @@ export async function applicationsOf(creatorId: string) {
     .from(S.offers).innerJoin(S.requests, eq(S.requests.id, S.offers.requestId)).innerJoin(S.users, eq(S.users.id, S.requests.buyerId))
     .leftJoin(S.deals, and(eq(S.deals.offerId, S.offers.id)))
     .where(eq(S.offers.creatorId, creatorId)).orderBy(desc(S.offers.createdAt)).limit(100);
+}
+
+/* ---------- questions before a choice, on one application ---------- */
+async function offerParties(offerId: string) {
+  const o = await db.query.offers.findFirst({ where: eq(S.offers.id, offerId) });
+  const r = o ? await db.query.requests.findFirst({ where: eq(S.requests.id, o.requestId) }) : null;
+  if (!o || !r) return null;
+  const [buyer, creator] = await Promise.all([db.query.users.findFirst({ where: eq(S.users.id, r.buyerId) }), db.query.users.findFirst({ where: eq(S.users.id, o.creatorId) })]);
+  return buyer && creator ? { o, r, buyer, creator } : null;
+}
+
+/* Staff side: the conversation as the team profile, decrypted on the server. */
+export async function teamOfferThread(offerId: string) {
+  const x = await offerParties(offerId);
+  if (!x?.buyer.house) return null;
+  const k = await teamKeys(x.buyer.id);
+  const rows = await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)).orderBy(asc(S.offerMessages.createdAt));
+  await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, x.creator.id), isNull(S.offerMessages.readAt)));
+  const msgs = rows.map((m) => {
+    let text = "(This message could not be opened.)";
+    try { const o = x.creator.publicKey ? nacl.box.open(decodeBase64(m.body), decodeBase64(m.nonce), decodeBase64(x.creator.publicKey), k.secret) : null; if (o) text = encodeUTF8(o); } catch { /* unreadable */ }
+    return { id: m.id, mine: m.senderId === x.buyer.id, system: false, text, at: m.createdAt };
+  });
+  return { ...x, msgs };
+}
+
+export async function teamOfferSend(staffId: string, offerId: string, text: string) {
+  const t = text.trim();
+  if (!t || t.length > 2000) throw new RuleError("Write a message first.");
+  const x = await offerParties(offerId);
+  if (!x?.buyer.house) throw new RuleError("Only team requests can be answered from the back office.");
+  if (!x.creator.publicKey) throw new RuleError("The creator has not opened ByRequest on a device yet.");
+  const k = await teamKeys(x.buyer.id);
+  const nonce = nacl.randomBytes(nacl.box.nonceLength);
+  const body = nacl.box(decodeUTF8(t), nonce, decodeBase64(x.creator.publicKey), k.secret);
+  await db.transaction(async (tx) => {
+    await tx.insert(S.offerMessages).values({ offerId, senderId: x.buyer.id, nonce: encodeBase64(nonce), body: encodeBase64(body) });
+    await notify(tx, x.creator.id, "A question about your application", "The buyer sent you a message.", `/requests/${x.r.id}#talk`);
+    await log(tx, `staff:${staffId}`, "house.offer_message", x.creator.id, { offerId });
+  });
+}
+
+/* Either party, from the app: the ciphertexts and the other side's public key. Only buyer and candidate. */
+export async function offerThreadFor(userId: string, offerId: string) {
+  const x = await offerParties(offerId);
+  if (!x || (x.buyer.id !== userId && x.creator.id !== userId)) return null;
+  const other = x.buyer.id === userId ? x.creator : x.buyer;
+  if (other.house) await teamKeys(other.id);
+  const fresh = other.house ? await db.query.users.findFirst({ where: eq(S.users.id, other.id) }) : other;
+  const rows = await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)).orderBy(asc(S.offerMessages.createdAt));
+  await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, other.id), isNull(S.offerMessages.readAt)));
+  return { other: { id: other.id, handle: other.handle, publicKey: fresh?.publicKey ?? null }, msgs: rows.map((m) => ({ id: m.id, mine: m.senderId === userId, nonce: m.nonce, body: m.body, at: m.createdAt.toISOString() })) };
+}
+
+export async function offerSendFrom(userId: string, offerId: string, sealed: { nonce: string; body: string }) {
+  const x = await offerParties(offerId);
+  if (!x || (x.buyer.id !== userId && x.creator.id !== userId)) throw new RuleError("Not found.");
+  if (x.r.status !== "open" && x.o.status !== "accepted") throw new RuleError("This request is closed.");
+  if (sealed.body.length > 6000) throw new RuleError("That message is too long.");
+  const toBuyer = x.creator.id === userId;
+  await db.transaction(async (tx) => {
+    await tx.insert(S.offerMessages).values({ offerId, senderId: userId, nonce: sealed.nonce, body: sealed.body });
+    if (toBuyer && x.buyer.house) {
+      // Team requests: the staff hear about it, with a link straight to the conversation.
+      for (const st of await tx.select({ userId: S.staff.userId }).from(S.staff)) await notify(tx, st.userId, `${x.creator.handle} replied`, `About "${x.r.title}" (${x.buyer.handle}).`, `/admin/offer-chat/${offerId}`);
+    } else await notify(tx, toBuyer ? x.buyer.id : x.creator.id, toBuyer ? "A candidate replied" : "A question about your application", "You have a new message.", toBuyer ? `/requests/${x.r.id}/offers` : `/requests/${x.r.id}#talk`);
+  });
+}
+
+export async function offerUnread(offerIds: string[], from: string) {
+  if (!offerIds.length) return {} as Record<string, number>;
+  const rows = await db.select({ id: S.offerMessages.offerId, n: sql<number>`count(*)::int` }).from(S.offerMessages).where(and(inArray(S.offerMessages.offerId, offerIds), isNull(S.offerMessages.readAt), eq(S.offerMessages.senderId, from))).groupBy(S.offerMessages.offerId);
+  return Object.fromEntries(rows.map((r) => [r.id, r.n])) as Record<string, number>;
 }

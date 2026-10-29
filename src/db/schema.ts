@@ -404,3 +404,15 @@ export const passkeys = pgTable("passkeys", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
 }, (t) => [index("passkeys_user").on(t.userId)]);
+
+/* Questions before a choice: the buyer and a candidate talk about one application. End to end
+   encrypted like deal chats (box between their public keys); team profiles answer from the back office. */
+export const offerMessages = pgTable("offer_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  offerId: uuid("offer_id").notNull().references(() => offers.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  nonce: text("nonce").notNull(),
+  body: text("body").notNull(),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("offer_messages_offer").on(t.offerId, t.createdAt)]);

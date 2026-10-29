@@ -1130,3 +1130,10 @@ i.td{background:#4434E6}i.yd{background:#A7ABB3}i.lw{background:#D9A21B}
 .bo-top-in{align-items:flex-end;gap:20px}
 .bo-brand{padding:10px 16px 14px 0;border-right:1px solid rgba(255,255,255,.14);margin-bottom:10px;padding-bottom:4px}
 .bo-brand b{font-size:.88rem;font-weight:800;letter-spacing:.01em;color:#fff}
+/* Questions before a choice */
+.talk{display:flex;flex-direction:column;gap:10px;margin-top:16px;padding:16px;border-radius:18px;background:var(--paper,#fff);border:1px solid var(--line,#E4E5E9);scroll-margin-top:90px}
+.talk-h{display:flex;flex-direction:column;gap:2px}.talk-h span{font-size:.75rem;color:var(--muted,#6B7079)}
+.talk-msgs{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto}
+.talk-m{align-self:flex-start;max-width:85%}.talk-m span{display:block;padding:9px 13px;border-radius:16px 16px 16px 4px;background:var(--sunk);font-size:.9375rem;line-height:1.45;white-space:pre-wrap}
+.talk-m.mine{align-self:flex-end}.talk-m.mine span{background:#4434E6;color:#fff;border-radius:16px 16px 4px 16px}
+.talk-f{display:flex;gap:8px}.talk-f .input{flex:1}

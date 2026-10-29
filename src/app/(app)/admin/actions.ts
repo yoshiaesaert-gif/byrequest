@@ -37,6 +37,7 @@ export const dropRequest = async (id: string, reason: string) => run((s) => B.re
 export const staffRole = async (who: string, role: "none" | "support" | "admin") => run((s) => B.setStaffRole(s, who, role), "admin");
 export const handleR = async (id: string, status: "reviewing" | "actioned" | "passed_to_police" | "rejected", note: string) => run((s) => Rp.handleReport(s, id, status, note));
 export const supportOrg = async (userId: string, org: string | null) => run((s) => Rp.setSupportOrg(s, userId, org), "admin");
+export const teamOfferSend = async (offerId: string, text: string) => run((s) => TC.teamOfferSend(s, offerId, text));
 export const teamSend = async (dealId: string, text: string) => run((s) => TC.teamSend(s, dealId, text));
 export const houseAccept = async (offerId: string) => run((s) => H.houseAccept(s, offerId));
 export const houseRate = async (dealId: string, stars: number) => run((s) => H.houseRate(s, dealId, stars));

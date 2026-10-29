@@ -1,4 +1,5 @@
 "use server";
+import * as TCH from "@/server/teamchat";
 import { cleanDetail } from "@/domain/looks-detail";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
@@ -334,4 +335,13 @@ export async function confirmDeleteCode(code: string): Promise<Result> {
     await markStepUp();
     return { ok: true };
   });
+}
+
+/* Questions before a choice, on one application. The text is sealed in the browser. */
+export async function offerThread(offerId: string) {
+  const u = await requireUser();
+  return TCH.offerThreadFor(u.id, offerId);
+}
+export async function sendOfferMessage(offerId: string, sealed: { nonce: string; body: string }): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await TCH.offerSendFrom(u.id, offerId, sealed); });
 }
