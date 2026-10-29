@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { eq } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { LABEL, profileMissing } from "@/domain/looks-detail";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
@@ -10,7 +13,7 @@ import { applicationsOf, offerUnread } from "@/server/teamchat";
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
-  const [x, apps] = await Promise.all([userDetail(id), applicationsOf(id)]);
+  const [x, apps, prof, photos] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id))]);
   const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();
   const { u } = x;
@@ -51,7 +54,16 @@ export default async function Account({ params }: { params: Promise<{ id: string
           {!x.reqs.length ? <p className="muted t-sm">No requests.</p> : null}</div>
       </section>
       <section>
-        {u.isCreator ? <><h2 className="bo-sh">Creator setup</h2>
+        {u.isCreator ? <><h2 className="bo-sh">Public profile <Link href={`/c/${u.handle}`} className="bo-sh-l">Open as buyers see it</Link></h2>
+          {prof ? (() => { const missing = profileMissing(prof); const d = prof.detail ?? {}; const rows: [string, string | null | undefined][] = [
+            ["Bio", prof.bio], ["Height", prof.heightCm ? `${(prof.heightCm / 100).toFixed(2)} m` : null], ["Build", prof.build], ["Hair", prof.hair], ["Eyes", prof.eyes], ["Distinctive features", prof.body], ["Tattoos", prof.tattoos],
+            ["Sport", prof.sport], ["Work", prof.work], ["Languages", prof.languages],
+            ["Gender", d.gender && LABEL[d.gender]], ["Body hair", d.bodyHair && LABEL[d.bodyHair]], ["Pubic hair", d.pubic && LABEL[d.pubic]], ["Size", d.size && LABEL[d.size]], ["Circumcised", d.cut && LABEL[d.cut]], ["Cup size", d.cup && LABEL[d.cup]],
+            ["Likes to make", prof.makes.join(", ")], ["Never", prof.never.join(", ")], ["Shows face", prof.showsFace ? "Yes" : "No"], ["Profile", prof.visibility === "public" ? "Public" : "Only for buyers they apply to"]];
+            return (<div className="bo-prof">{missing.length ? <p className="bo-warn">Not complete, cannot apply yet: {missing.join(", ")}</p> : <p className="bo-ok">Complete. Can apply.</p>}
+              <dl>{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={v ? "" : "muted"}>{v || "Not filled in"}</dd></div>)}</dl>
+              <p className="t-xs muted">Preview album: {photos.length} photo{photos.length === 1 ? "" : "s"} ({photos.filter((x) => x.status === "approved").length} approved, {photos.filter((x) => x.status === "in_review").length} in review).</p></div>); })() : <p className="muted t-sm">No profile yet.</p>}
+          <h2 className="bo-sh">Creator setup</h2>
           <p className="t-sm muted" style={{ marginBottom: 10 }}>Identity {x.onboarding?.identity ?? "not started"} · payouts {x.onboarding?.payout ?? "not started"} · restriction {x.onboarding?.restriction ?? "none"}</p>
           <Link href={`/admin/creators/${u.id}`} className="btn btn-secondary btn-sm">Open creator file</Link></> : null}
         <h2 className="bo-sh">Account</h2>

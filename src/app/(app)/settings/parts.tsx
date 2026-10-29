@@ -52,7 +52,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
     <div className="field"><label htmlFor="bio">{t("Short bio")}</label><textarea id="bio" name="bio" className="input" rows={3} maxLength={400} style={{ height: "auto", padding: 14 }} defaultValue={p?.bio ?? ""} placeholder={t("What you do, what you are like, what you make.")} /></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>
       <div className="field"><label htmlFor="heightCm">{t("Height in cm")}</label><input id="heightCm" name="heightCm" className="input" inputMode="numeric" defaultValue={p?.heightCm ?? ""} /></div>
-      {f("build", "Build", "Athletic")}{f("sport", "Sport", "Football, gym")}{f("work", "Work", "Student")}{f("languages", "Languages", "English, Dutch")}{f("hair", "Hair")}{f("eyes", "Eyes")}{f("body", "Body")}{f("tattoos", "Tattoos")}
+      {f("build", "Build", "Athletic")}{f("sport", "Sport", "Football, gym")}{f("work", "Work", "Student")}{f("languages", "Languages", "English, Dutch")}{f("hair", "Hair")}{f("eyes", "Eyes")}{f("body", "Distinctive features", "Piercings, freckles, a scar")}{f("tattoos", "Tattoos")}
     </div>
     <div className="field det-sec"><label>{t("How you look")}</label><p className="t-xs muted">{t("Buyers choose with this. Gender shows on your profile. The intimate details only show to buyers you applied to, never publicly.")}</p></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>

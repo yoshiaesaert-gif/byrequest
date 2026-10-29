@@ -1137,3 +1137,10 @@ i.td{background:#4434E6}i.yd{background:#A7ABB3}i.lw{background:#D9A21B}
 .talk-m{align-self:flex-start;max-width:85%}.talk-m span{display:block;padding:9px 13px;border-radius:16px 16px 16px 4px;background:var(--sunk);font-size:.9375rem;line-height:1.45;white-space:pre-wrap}
 .talk-m.mine{align-self:flex-end}.talk-m.mine span{background:#4434E6;color:#fff;border-radius:16px 16px 4px 16px}
 .talk-f{display:flex;gap:8px}.talk-f .input{flex:1}
+.bo-sh-l{margin-left:10px;font-size:.75rem;font-weight:600;color:#4434E6}
+.bo-prof{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.bo-prof dl{margin:0;display:grid;grid-template-columns:1fr;border:1px solid var(--line,#E4E5E9);border-radius:14px;background:var(--paper,#fff);overflow:hidden}
+.bo-prof dl div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px;padding:9px 14px;border-top:1px solid var(--line,#F0F0EC);font-size:.8125rem}
+.bo-prof dl div:first-child{border-top:0}
+.bo-prof dt{color:var(--muted,#6B7079)}.bo-prof dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.bo-prof dd.muted{color:#B0B3B9}
+.bo-ok{margin:0;font-size:.8125rem;font-weight:600;color:#16804A}

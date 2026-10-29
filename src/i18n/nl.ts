@@ -2217,5 +2217,7 @@ const nl: Record<string, string> = {
   "The buyer sent you a message.": "De koper stuurde je een bericht.",
   "A candidate replied": "Een kandidaat antwoordde",
   "That message is too long.": "Dat bericht is te lang.",
+  "Distinctive features": "Bijzondere kenmerken",
+  "Piercings, freckles, a scar": "Piercings, sproeten, een litteken",
 };
 export default nl;

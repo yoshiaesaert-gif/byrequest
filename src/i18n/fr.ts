@@ -2217,5 +2217,7 @@ const fr: Record<string, string> = {
   "The buyer sent you a message.": "L'acheteur t'a envoyé un message.",
   "A candidate replied": "Un candidat a répondu",
   "That message is too long.": "Ce message est trop long.",
+  "Distinctive features": "Signes particuliers",
+  "Piercings, freckles, a scar": "Piercings, taches de rousseur, une cicatrice",
 };
 export default fr;
