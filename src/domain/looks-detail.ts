@@ -41,6 +41,7 @@ export function profileMissing(p: ProfileBasics | null | undefined): string[] {
   if (!p?.eyes?.trim()) m.push("Eyes");
   if (!p?.detail?.bodyHair) m.push("Body hair");
   if (!p?.detail?.pubic) m.push("Pubic hair");
+  if (p?.detail?.gender === "man" && !p.detail.sizeCm && !p.detail.size) m.push("Penis length");
   return m;
 }
 
