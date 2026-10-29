@@ -1666,5 +1666,6 @@ const fr: Record<string, string> = {
   "Your request \"{title}\" was taken offline. Your account is not affected.": "Ta demande « {title} » a été retirée. Ton compte n’est pas concerné.",
   "{n} of {total}": "{n} sur {total}",
   "Go": "Go",
+  "This older version is only available in English, the language it was recorded in.": "Cette ancienne version n’existe qu’en anglais, la langue dans laquelle elle a été enregistrée.",
 };
 export default fr;

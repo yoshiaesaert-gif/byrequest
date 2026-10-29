@@ -1666,5 +1666,6 @@ const nl: Record<string, string> = {
   "Your request \"{title}\" was taken offline. Your account is not affected.": "Je request \"{title}\" is offline gehaald. Je account blijft onaangeroerd.",
   "{n} of {total}": "{n} van {total}",
   "Go": "Start",
+  "This older version is only available in English, the language it was recorded in.": "Deze oudere versie bestaat alleen in het Engels, de taal waarin ze is vastgelegd.",
 };
 export default nl;

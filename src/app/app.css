@@ -860,3 +860,4 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 /* Titles written by buyers always start with a capital, wherever they are shown. */
 .h-most li div>b,.lrow>div>b,.dlist .lrow b{display:block}
 .rq .t::first-letter,.fcard .t::first-letter,.h-most li div>b::first-letter,.lrow>div>b::first-letter,.rd-title h1::first-letter,.h-inspo .t::first-letter{text-transform:uppercase}
+@media (max-width:900px){.er-card.c0 .er-card-b span,.er-card.c2 .er-card-b span{display:none}}

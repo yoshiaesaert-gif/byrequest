@@ -20,6 +20,7 @@ export default async function Legal({ params, searchParams }: { params: Promise<
   const html = lines.map((l, i) => l.startsWith("# ") ? <h1 key={i}>{l.slice(2)}</h1> : <p key={i}>{l}</p>);
   return (<div className="wrap"><article className="doc">
     <img src="/logo.png" alt="byrequest" style={{ height: 40, marginBottom: 24 }} />
+    {!tr && locale !== "en" && !(await searchParams).orig ? <p className="banner info" style={{ marginBottom: 20 }}>{t("This older version is only available in English, the language it was recorded in.")}</p> : null}
     {html}
     <footer className="doc-meta">
       {tr ? <p>{t("Translation of version {v}. The recorded text is the English original.", { v: d.version })} <a href={`?${d.current ? "" : `v=${d.version}&`}orig=1`}>{t("Read the original")}</a></p> : null}
