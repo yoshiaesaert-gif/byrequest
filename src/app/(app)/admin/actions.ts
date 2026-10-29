@@ -6,6 +6,8 @@ import * as B from "@/server/backoffice";
 import * as Rp from "@/server/reports";
 import * as H from "@/server/house";
 import * as M from "@/server/moderation";
+import * as Ref from "@/server/referrals";
+import type { RefConfig } from "@/domain/referral";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
 import { reviewAlbum } from "@/server/albums";
 import { hideDelivery } from "@/server/participants";
@@ -41,3 +43,5 @@ export const reqEdit = async (id: string, input: M.EditInput) => run((s) => M.ed
 export const reqBulk = async (ids: string[], action: "approve" | "close") => run((s) => M.bulk(s, ids, action), "admin");
 export const reqAuto = async (on: boolean) => run((s) => M.setAutoApprove(s, on), "admin");
 export const testInbox = async () => run(async (s) => { const { fillTestInbox } = await import("@/server/testdata"); const r = await fillTestInbox(s); if (!r.ok) throw new RuleError(r.error); return r.made; });
+
+export const referralConfig = async (v: Partial<RefConfig>) => run((s) => Ref.setConfig(s, v), "admin");

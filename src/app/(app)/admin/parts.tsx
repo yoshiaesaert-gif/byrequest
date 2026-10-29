@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -106,4 +106,17 @@ export function HouseBudget({ euros }: { euros: number }) {
   const [v, setV] = useState(String(euros)); const [p, start] = useTransition();
   return <div className="bo-inline" style={{ maxWidth: 360 }}><input className="input" inputMode="numeric" value={v} onChange={(e) => setV(e.target.value)} aria-label="Budget in euros" />
     <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await houseBudget(Number(v)), "Budget saved"))}>Save budget</button></div>;
+}
+
+/* The numbers of the invite programme. Changes count from now on and are logged with before and after. */
+export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number } }) {
+  const [v, setV] = useState({ pct: String(cfg.creatorPct), days: String(cfg.windowDays), gift: cfg.buyerGift, cap: String(cfg.feeGiftCapCents / 100) });
+  const [p, start] = useTransition();
+  return <div className="bo-refcfg">
+    <label>Creator bonus<span className="bo-inline"><input className="input" inputMode="numeric" value={v.pct} onChange={(e) => setV({ ...v, pct: e.target.value })} aria-label="Creator bonus in percent" /> %</span><small>0 to 30. Share of what the invited creator nets.</small></label>
+    <label>Bonus period<span className="bo-inline"><input className="input" inputMode="numeric" value={v.days} onChange={(e) => setV({ ...v, days: e.target.value })} aria-label="Bonus period in days" /> days</span><small>7 to 365, from their first paid deal.</small></label>
+    <label>Buyer gift<span className="bo-inline"><input type="checkbox" checked={v.gift} onChange={(e) => setV({ ...v, gift: e.target.checked })} /> free first service fee</span><small>For invited buyers, and one for the inviter.</small></label>
+    <label>Gift covers up to<span className="bo-inline">€ <input className="input" inputMode="numeric" value={v.cap} onChange={(e) => setV({ ...v, cap: e.target.value })} aria-label="Gift cap in euros" /></span><small>Per request.</small></label>
+    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await referralConfig({ creatorPct: Number(v.pct), windowDays: Number(v.days), buyerGift: v.gift, feeGiftCapCents: Math.round(Number(v.cap) * 100) }), "Saved. The invite page shows the new numbers now."))}>Save</button>
+  </div>;
 }

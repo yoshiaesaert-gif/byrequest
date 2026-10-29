@@ -1,10 +1,13 @@
 import { CREATOR_SHARE } from "./rules";
 
-/* The referral programme in numbers. Kept here so the invite page, the payout code and the tests
-   always agree. */
-export const REF_SHARE = 0.1;            // of what an invited creator nets, paid by ByRequest on top
-export const REF_WINDOW_DAYS = 30;       // counted from the invited creator's first paid deal
-export const FEE_GIFT_CAP_CENTS = 2000;  // a gifted service fee covers up to €20
+/* The referral programme in numbers. Staff change them in the back office (settings key "referral");
+   these are the defaults. The invite page, the payout code and the tests all read the same config. */
+export type RefConfig = { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number };
+export const REF_DEFAULTS: RefConfig = { creatorPct: 10, windowDays: 30, buyerGift: true, feeGiftCapCents: 2000 };
+export function cleanConfig(v: Partial<RefConfig> | null | undefined): RefConfig {
+  const n = (x: unknown, lo: number, hi: number, d: number) => (typeof x === "number" && Number.isFinite(x) ? Math.min(hi, Math.max(lo, Math.round(x))) : d);
+  return { creatorPct: n(v?.creatorPct, 0, 30, REF_DEFAULTS.creatorPct), windowDays: n(v?.windowDays, 7, 365, REF_DEFAULTS.windowDays), buyerGift: typeof v?.buyerGift === "boolean" ? v.buyerGift : REF_DEFAULTS.buyerGift, feeGiftCapCents: n(v?.feeGiftCapCents, 0, 10000, REF_DEFAULTS.feeGiftCapCents) };
+}
 export const REF_COOKIE = "brq_ref";
 export const REF_COOKIE_DAYS = 30;
 
@@ -15,17 +18,29 @@ export function makeCode(handle: string, rnd: () => number = Math.random) {
   return `${head}-${tail}`;
 }
 export const normalizeCode = (raw: string) => raw.trim().toUpperCase().replace(/\s+/g, "").slice(0, 16);
-export const validCode = (c: string) => /^[A-Z0-9]{1,5}-[A-Z0-9]{4}$/.test(c);
+/* Codes are short and easy to say: 3 to 12 letters or digits, one dash allowed (MILO-VPWU, SAM, LUCA10). */
+export const validCode = (c: string) => /^[A-Z0-9]{2,12}(-[A-Z0-9]{2,6})?$/.test(c) && c.replace("-", "").length >= 3;
+const RESERVED = /^(ADMIN|BYREQUEST|BRQ|STAFF|SUPPORT|HELP|TEAM|OFFICIAL)/;
+export const allowedCustom = (c: string) => validCode(c) && !RESERVED.test(c);
 
-/* 10% of the creator's net amount, when the deal was paid out within the window. */
-export function creatorReward(creatorCents: number, windowEndsAt: Date, paidAt: Date) {
-  return paidAt <= windowEndsAt ? Math.round(creatorCents * REF_SHARE) : 0;
+/* The creator bonus: a share of what the creator nets, when the deal was paid out within the window. */
+export function creatorReward(creatorCents: number, pct: number, windowEndsAt: Date, paidAt: Date) {
+  return paidAt <= windowEndsAt ? Math.round(creatorCents * pct / 100) : 0;
 }
-export const windowEnd = (firstDealAt: Date) => new Date(firstDealAt.getTime() + REF_WINDOW_DAYS * 86400_000);
+export const windowEnd = (firstDealAt: Date, days: number) => new Date(firstDealAt.getTime() + days * 86400_000);
+
+/* Bonuses are bundled and paid once a week, on Monday, so nobody can read single deals of a friend
+   from them. Everything earned before this Monday 00:00 (UTC) is in this week's payout. */
+export function weekStart(now: Date) {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d;
+}
+export const nextPayout = (now: Date) => new Date(weekStart(now).getTime() + 7 * 86400_000);
 
 /* A gifted service fee: ByRequest pays the fee (up to the cap) and the VAT on it. */
-export function giftFee(m: { dealCents: number; feeCents: number; vatRate: number; vatCents: number; total: number }) {
-  const gift = Math.min(m.feeCents, FEE_GIFT_CAP_CENTS);
+export function giftFee(m: { dealCents: number; feeCents: number; vatRate: number; vatCents: number; total: number }, cap = REF_DEFAULTS.feeGiftCapCents) {
+  const gift = Math.min(m.feeCents, cap);
   const feeCents = m.feeCents - gift;
   const vatCents = Math.round((m.dealCents + feeCents) * m.vatRate / 10000);
   return { ...m, feeCents, vatCents, total: m.dealCents + feeCents + vatCents, giftCents: gift };

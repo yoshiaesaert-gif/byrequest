@@ -8,7 +8,7 @@ import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
 import { blockedEither } from "./blocks";
-import { onCreatorPaid, payHeldRewards, feeGiftUsed, feeGiftReturned } from "./referrals";
+import { onCreatorPaid, payWeekly, feeGiftUsed, feeGiftReturned, getConfig as refConfig } from "./referrals";
 import { giftFee, tipSplit, TIP_MIN_CENTS, TIP_MAX_CENTS } from "@/domain/referral";
 
 /* Shown next to the checkbox at "Accept" and stored in the audit log with the deal. */
@@ -56,7 +56,7 @@ export async function postPaid(buyerId: string, values: NewRequest, opts: { with
   // An all in price is split backwards; otherwise the deal value is the base and fee and VAT come on top.
   const base = opts.totalCents ? quoteFromTotal(opts.totalCents, vatRate(buyer?.country ?? "BE")) : quote(values.dealCents, vatRate(buyer?.country ?? "BE"));
   // A service fee gift (referral programme) is used on the next request: ByRequest pays the fee.
-  const m = !opts.totalCents && (buyer?.freeFees ?? 0) > 0 ? giftFee(base) : { ...base, giftCents: 0 };
+  const m = !opts.totalCents && (buyer?.freeFees ?? 0) > 0 ? giftFee(base, (await refConfig()).feeGiftCapCents) : { ...base, giftCents: 0 };
   values = { ...values, dealCents: m.dealCents };
   const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
@@ -345,7 +345,7 @@ export async function runDue(now = new Date()) {
     await system(tx, deal.id, "No delivery before the deadline. The buyer is refunded in full.");
   }).catch(() => {});
   await expireVault(now);
-  const referralPaid = await payHeldRewards();
+  const referralPaid = await payWeekly(now);
   return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded, referralPaid };
 }
 

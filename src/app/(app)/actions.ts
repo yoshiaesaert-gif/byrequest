@@ -1,6 +1,7 @@
 "use server";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
+import { setCode } from "@/server/referrals";
 import { queueNew } from "@/server/moderation";
 import { ENABLED_CATEGORIES } from "@/config/compliance";
 import { cookies } from "next/headers";
@@ -284,4 +285,8 @@ export async function unblockUser(handle: string): Promise<Result> {
     revalidatePath("/", "layout");
     return { ok: true, msg: "Unblocked." };
   });
+}
+
+export async function changeRefCode(code: string): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await setCode(u.id, code); revalidatePath("/invite"); return { ok: true }; });
 }
