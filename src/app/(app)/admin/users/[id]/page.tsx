@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { LABEL, profileMissing } from "@/domain/looks-detail";
+import { LABEL, profileMissing, sizeText } from "@/domain/looks-detail";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
@@ -58,7 +58,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
           {prof ? (() => { const missing = profileMissing(prof); const d = prof.detail ?? {}; const rows: [string, string | null | undefined][] = [
             ["Bio", prof.bio], ["Height", prof.heightCm ? `${(prof.heightCm / 100).toFixed(2)} m` : null], ["Build", prof.build], ["Hair", prof.hair], ["Eyes", prof.eyes], ["Distinctive features", prof.body], ["Tattoos", prof.tattoos],
             ["Sport", prof.sport], ["Work", prof.work], ["Languages", prof.languages],
-            ["Gender", d.gender && LABEL[d.gender]], ["Body hair", d.bodyHair && LABEL[d.bodyHair]], ["Pubic hair", d.pubic && LABEL[d.pubic]], ["Size", d.size && LABEL[d.size]], ["Circumcised", d.cut && LABEL[d.cut]], ["Cup size", d.cup && LABEL[d.cup]],
+            ["Gender", d.gender && LABEL[d.gender]], ["Body hair", d.bodyHair && LABEL[d.bodyHair]], ["Pubic hair", d.pubic && LABEL[d.pubic]], ["Penis length", sizeText(d)], ["Circumcised", d.cut && LABEL[d.cut]], ["Cup size", d.cup && LABEL[d.cup]],
             ["Likes to make", prof.makes.join(", ")], ["Never", prof.never.join(", ")], ["Shows face", prof.showsFace ? "Yes" : "No"], ["Profile", prof.visibility === "public" ? "Public" : "Only for buyers they apply to"]];
             return (<div className="bo-prof">{missing.length ? <p className="bo-warn">Not complete, cannot apply yet: {missing.join(", ")}</p> : <p className="bo-ok">Complete. Can apply.</p>}
               <dl>{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className={v ? "" : "muted"}>{v || "Not filled in"}</dd></div>)}</dl>

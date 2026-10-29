@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
   internal: boolean("internal").notNull().default(false),        // created by the ByRequest team (tests, demo, staff); new sign ups are external
   chatKey: text("chat_key"),                                       // team profiles only: their chat secret key, sealed, so staff can answer as them
+  notifyMailedAt: timestamp("notify_mailed_at", { withTimezone: true }),   // last notification email, to send at most one per half hour
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
   freeFees: integer("free_fees").notNull().default(0),               // service fees ByRequest pays for this buyer (referral gift)
@@ -252,6 +253,7 @@ export const notifications = pgTable("notifications", {
   body: text("body").notNull(),
   href: text("href").notNull(),
   readAt: timestamp("read_at", { withTimezone: true }),
+  mailedAt: timestamp("mailed_at", { withTimezone: true }),         // when it went out in a notification email
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("notifications_user").on(t.userId, t.createdAt)]);
 

@@ -2243,5 +2243,9 @@ const fr: Record<string, string> = {
   "Fields with * are needed before you can apply. Buyers choose on them.": "Les champs avec * sont nécessaires pour postuler. Les acheteurs choisissent selon eux.",
   "Not saved yet": "Pas encore enregistré",
   "Saved automatically": "Enregistré automatiquement",
+  "Penis length in cm": "Longueur du pénis en cm",
+  "Penis length": "Longueur du pénis",
+  "For example 17": "Par exemple 17",
+  "Erect, measured on top from the base to the tip.": "En érection, mesurée sur le dessus de la base jusqu'au bout.",
 };
 export default fr;

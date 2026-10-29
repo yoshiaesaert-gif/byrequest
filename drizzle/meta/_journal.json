@@ -141,6 +141,13 @@
       "when": 1793287062961,
       "tag": "0019_offer_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793292770804,
+      "tag": "0020_notification_mail",
+      "breakpoints": true
     }
   ]
 }

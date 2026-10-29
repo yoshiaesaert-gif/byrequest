@@ -2243,5 +2243,9 @@ const nl: Record<string, string> = {
   "Fields with * are needed before you can apply. Buyers choose on them.": "Velden met * zijn nodig voor je je kandidaat kan stellen. Kopers kiezen erop.",
   "Not saved yet": "Nog niet opgeslagen",
   "Saved automatically": "Automatisch opgeslagen",
+  "Penis length in cm": "Penislengte in cm",
+  "Penis length": "Penislengte",
+  "For example 17": "Bijvoorbeeld 17",
+  "Erect, measured on top from the base to the tip.": "In erectie, bovenaan gemeten van de basis tot de top.",
 };
 export default nl;

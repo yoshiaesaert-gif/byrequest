@@ -6,7 +6,7 @@ export const PUBIC = ["shaved", "trimmed", "natural"] as const;
 export const SIZE = ["under_14", "14_16", "16_18", "18_20", "over_20"] as const;
 export const CUT = ["cut", "uncut"] as const;
 export const CUP = ["a", "b", "c", "d", "dd_plus"] as const;
-export type Detail = { gender?: (typeof GENDER)[number]; bodyHair?: (typeof BODY_HAIR)[number]; pubic?: (typeof PUBIC)[number]; size?: (typeof SIZE)[number]; cut?: (typeof CUT)[number]; cup?: (typeof CUP)[number] };
+export type Detail = { sizeCm?: number; gender?: (typeof GENDER)[number]; bodyHair?: (typeof BODY_HAIR)[number]; pubic?: (typeof PUBIC)[number]; size?: (typeof SIZE)[number]; cut?: (typeof CUT)[number]; cup?: (typeof CUP)[number] };
 
 export const LABEL: Record<string, string> = {
   man: "Man", woman: "Woman", nonbinary: "Non-binary",
@@ -18,7 +18,8 @@ export const LABEL: Record<string, string> = {
 };
 const pick = <T extends readonly string[]>(list: T, v: unknown) => (typeof v === "string" && (list as readonly string[]).includes(v) ? (v as T[number]) : undefined);
 export function cleanDetail(v: Record<string, unknown>): Detail {
-  return { gender: pick(GENDER, v.gender), bodyHair: pick(BODY_HAIR, v.bodyHair), pubic: pick(PUBIC, v.pubic), size: pick(SIZE, v.size), cut: pick(CUT, v.cut), cup: pick(CUP, v.cup) };
+  const cm = Number(v.sizeCm);
+  return { sizeCm: Number.isFinite(cm) && cm >= 5 && cm <= 35 ? Math.round(cm * 2) / 2 : undefined, gender: pick(GENDER, v.gender), bodyHair: pick(BODY_HAIR, v.bodyHair), pubic: pick(PUBIC, v.pubic), size: pick(SIZE, v.size), cut: pick(CUT, v.cut), cup: pick(CUP, v.cup) };
 }
 
 /* Fixed choices for the basic looks, so profiles read the same and buyers can compare. */
@@ -42,3 +43,6 @@ export function profileMissing(p: ProfileBasics | null | undefined): string[] {
   if (!p?.detail?.pubic) m.push("Pubic hair");
   return m;
 }
+
+/* Penis length as typed in cm; older profiles keep their range. */
+export const sizeText = (d: Detail | null | undefined) => (d?.sizeCm ? `${String(d.sizeCm).replace(".", ",")} cm` : d?.size ? LABEL[d.size] : undefined);

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { setPref, becomeCreator, saveProfile, setMarketing } from "../actions";
 import { toast } from "@/components/chrome";
-import { GENDER, BODY_HAIR, PUBIC, SIZE, CUT, CUP, LABEL, BUILD, HAIR, EYES, TATTOOS, HEIGHTS, type Detail } from "@/domain/looks-detail";
+import { GENDER, BODY_HAIR, PUBIC, CUT, CUP, LABEL, BUILD, HAIR, EYES, TATTOOS, HEIGHTS, type Detail } from "@/domain/looks-detail";
 
 export function Toggle({ k, on, b, s }: { k: "frost" | "discreetPush" | "neutralTab"; on: boolean; b: string; s: string }) {
   const t = useT();
@@ -52,7 +52,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
   useEffect(() => { latest.current = { vis, det }; }, [vis, det]);
   useEffect(() => { if (!dirty) return; const h = (e: BeforeUnloadEvent) => { e.preventDefault(); }; window.addEventListener("beforeunload", h); return () => window.removeEventListener("beforeunload", h); }, [dirty]);
   // Saves by itself a moment after the last change, so nothing filled in is ever lost.
-  const save = (quiet: boolean) => { if (!form.current) return; const fd = new FormData(form.current); fd.set("visibility", latest.current.vis); for (const [k, v] of Object.entries(latest.current.det)) if (v) fd.set("d_" + k, v);
+  const save = (quiet: boolean) => { if (!form.current) return; const fd = new FormData(form.current); fd.set("visibility", latest.current.vis); for (const [k, v] of Object.entries(latest.current.det)) if (v !== undefined) fd.set("d_" + k, String(v));
     start(async () => { const r = await saveProfile(fd); if (r.ok) { setDirty(false); setSaved(true); if (!quiet) toast(t(r.msg!)); } else toast(t(r.error), "err"); }); };
   const changed = () => { setDirty(true); setSaved(false); clearTimeout(timer.current); timer.current = window.setTimeout(() => save(true), 1200); };
   const pick = (name: keyof P, label: string, list: readonly (string | number)[], req = true, unit = "") => { const cur = (p?.[name] as string | number | null) ?? ""; const opts = cur !== "" && !list.includes(cur) ? [cur, ...list] : list;
@@ -71,7 +71,7 @@ export function ProfileForm({ p, handle }: { p: P | null; handle: string }) {
     <div className="field det-sec"><label>{t("How you look")}</label><p className="t-xs muted">{t("Buyers choose with this. Gender shows on your profile. The intimate details only show to buyers you applied to, never publicly.")}</p></div>
     <div className="cp-facts" style={{ marginTop: 0 }}>
       {sel("gender", "Gender", GENDER, true)}{sel("bodyHair", "Body hair", BODY_HAIR, true)}{sel("pubic", "Pubic hair", PUBIC, true)}
-      {det.gender !== "woman" ? <>{sel("size", "Size", SIZE)}{sel("cut", "Circumcised", CUT)}</> : null}
+      {det.gender !== "woman" ? <><div className="field"><label htmlFor="d-sizeCm">{t("Penis length in cm")}</label><input id="d-sizeCm" className="input" type="number" inputMode="decimal" min={5} max={35} step={0.5} placeholder={t("For example 17")} value={det.sizeCm ?? ""} onChange={(e) => setDet({ ...det, sizeCm: e.target.value ? Number(e.target.value) : undefined, size: undefined })} /><span className="t-xs muted">{t("Erect, measured on top from the base to the tip.")}</span></div>{sel("cut", "Circumcised", CUT)}</> : null}
       {det.gender !== "man" ? sel("cup", "Cup size", CUP) : null}
     </div>
     {f("makes", "I make", "Shower, Workout, Voice notes")}{f("never", "I never do", "Face, Outdoor content")}
