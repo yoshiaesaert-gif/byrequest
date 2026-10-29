@@ -883,3 +883,4 @@ p{margin:0}
 @media (max-width:900px){.pf-save{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 .pf-save{flex-wrap:nowrap}.pf-save.is-dirty{background:#fff}
 @media (max-width:900px){.pf-save.is-dirty .btn-secondary{display:none}.pf-save .btn{white-space:nowrap}}
+.pf-ok{font-size:.8125rem;font-weight:600;color:#16804A;margin-right:auto}
