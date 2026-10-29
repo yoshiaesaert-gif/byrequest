@@ -823,3 +823,13 @@ p{margin:0}
   .hc-still-btns,.hc-still-btns .btn{width:100%}
 }
 .bo-tag.ext{background:#E3F7EC;color:#16804A}
+
+/* Cookie choice: a calm card at the bottom, never blocking the page */
+.ck{position:fixed;z-index:90;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(760px,calc(100% - 32px));display:flex;gap:20px;align-items:center;padding:20px 22px;border-radius:22px;background:var(--paper,#fff);color:var(--ink);box-shadow:0 24px 60px rgba(14,16,19,.22),0 0 0 1px rgba(14,16,19,.06)}
+.ck-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ck-tx b{font-size:1rem}
+.ck-tx p{margin:0;font-size:.8125rem;line-height:1.5;color:var(--muted,#6B7079)}
+.ck-tx a{color:var(--ink);font-weight:600;text-decoration:underline}
+.ck-btns{display:flex;gap:8px;flex:0 0 auto}
+.ft-ck{margin-top:14px;padding:0;border:0;background:none;color:rgba(255,255,255,.6);font:inherit;font-size:.8125rem;text-decoration:underline;cursor:pointer;align-self:flex-start}
+@media (max-width:640px){.ck{flex-direction:column;align-items:stretch;gap:14px;bottom:calc(76px + env(safe-area-inset-bottom,0px))}.ck-btns .btn{flex:1}}

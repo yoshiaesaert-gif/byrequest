@@ -2154,5 +2154,11 @@ const nl: Record<string, string> = {
   "Your way to your first earnings": "Jouw weg naar je eerste inkomsten",
   "Popular": "Populair",
   "Not what you agreed? Report it before {time}: we check it independently first. Otherwise the payment goes to the creator automatically, 60 minutes after you first open it.": "Niet wat jullie afspraken? Meld het voor {time}: we bekijken het eerst onafhankelijk. Anders gaat de betaling automatisch naar de creator, 60 minuten nadat je het voor het eerst opent.",
+  "Cookies": "Cookies",
+  "Cookies, your choice": "Cookies, jij kiest",
+  "We use necessary cookies to keep you signed in and safe. With your permission we also measure visits (IP address for an estimated location, pages and clicks) to improve ByRequest. Never shared, never sold.": "We gebruiken noodzakelijke cookies om je ingelogd en veilig te houden. Met je toestemming meten we ook bezoeken (IP adres voor een geschatte locatie, pagina's en kliks) om ByRequest beter te maken. Nooit gedeeld, nooit verkocht.",
+  "Only necessary": "Enkel noodzakelijke",
+  "Accept all": "Alles accepteren",
+  "Cookie settings": "Cookie instellingen",
 };
 export default nl;

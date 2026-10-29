@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { consent } from "./consent-banner";
 
 /* First party visit tracking for the staff dashboard: page views, clicks and a heartbeat for time on site. */
 const get = (s: Storage, k: string) => { try { return s.getItem(k); } catch { return null; } };
@@ -9,8 +11,10 @@ const put = (s: Storage, k: string, v: string) => { try { s.setItem(k, v); } cat
 export default function Tracker() {
   const path = usePathname();
   const first = useRef(true);
+  const [ok, setOk] = useState(false);
+  useEffect(() => { const id = window.setTimeout(() => setOk(consent() === "all"), 0); const on = (e: Event) => setOk((e as CustomEvent).detail === "all"); window.addEventListener("brq:consent", on); return () => { clearTimeout(id); window.removeEventListener("brq:consent", on); }; }, []);
   useEffect(() => {
-    if (path.startsWith("/admin")) return;
+    if (!ok || path.startsWith("/admin")) return;
     let vid = get(localStorage, "brq_vid"); if (!vid) { vid = crypto.randomUUID(); put(localStorage, "brq_vid", vid); }
     const send = (k: "page" | "click" | "ping", l?: string) => {
       const body = JSON.stringify({ v: vid, s: get(sessionStorage, "brq_sid") ?? undefined, k, p: location.pathname + location.search, l, r: first.current ? document.referrer : undefined, lang: navigator.language });
@@ -27,6 +31,6 @@ export default function Tracker() {
     const tick = window.setInterval(() => { if (document.visibilityState === "visible") send("ping"); }, 20000);
     document.addEventListener("click", click, true);
     return () => { document.removeEventListener("click", click, true); clearInterval(tick); };
-  }, [path]);
+  }, [path, ok]);
   return null;
 }

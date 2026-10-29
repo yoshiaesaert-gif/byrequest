@@ -2154,5 +2154,11 @@ const fr: Record<string, string> = {
   "Your way to your first earnings": "Ton chemin vers tes premiers gains",
   "Popular": "Populaire",
   "Not what you agreed? Report it before {time}: we check it independently first. Otherwise the payment goes to the creator automatically, 60 minutes after you first open it.": "Pas ce qui était convenu ? Signale le avant {time} : nous vérifions d'abord de façon indépendante. Sinon le paiement part automatiquement au créateur, 60 minutes après ta première ouverture.",
+  "Cookies": "Cookies",
+  "Cookies, your choice": "Cookies, à toi de choisir",
+  "We use necessary cookies to keep you signed in and safe. With your permission we also measure visits (IP address for an estimated location, pages and clicks) to improve ByRequest. Never shared, never sold.": "Nous utilisons des cookies nécessaires pour te garder connecté et en sécurité. Avec ton accord, nous mesurons aussi les visites (adresse IP pour une localisation estimée, pages et clics) pour améliorer ByRequest. Jamais partagé, jamais vendu.",
+  "Only necessary": "Seulement nécessaires",
+  "Accept all": "Tout accepter",
+  "Cookie settings": "Réglages des cookies",
 };
 export default fr;

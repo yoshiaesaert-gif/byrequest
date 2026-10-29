@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getT } from "@/i18n/server";
 import LangSwitch from "./lang-switch";
+import { CookieSettingsLink } from "./consent-banner";
 import { DEMO_MODE } from "@/config/compliance";
 
 /* Site footer. Neutral wording, no imagery, nothing that reveals what ByRequest is on a shared screen. */
@@ -17,6 +18,7 @@ export default async function Footer() {
           <p>{t("Personal content made to order, between verified adults. Private by design.")}</p>
           <div className="ft-badges"><span>{t("18+ only")}</span><span>{t("ID verified creators")}</span><span>{t("End to end encrypted")}</span></div>
           <LangSwitch className="ft-lang" />
+          <CookieSettingsLink label={t("Cookie settings")} />
         </div>
         {col("Explore", [["/for-you", "The board"], ["/post", "Post a request"], ["/vault", "Your vault"], ["/deals", "Deals"]])}
         {col("Create", [["/settings#creator", "Become a creator"], ["/studio", "Studio"], ["/legal/creator_agreement", "Creator agreement"], ["/onboarding", "Creator setup"]])}
