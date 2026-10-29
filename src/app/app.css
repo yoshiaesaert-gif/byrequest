@@ -797,3 +797,18 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 .hw-track{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:6px}
 .hw-track span{white-space:nowrap;text-align:center;line-height:1.2}
 @media (max-width:560px){.hw-track{grid-template-columns:repeat(2,minmax(0,1fr));max-width:300px;margin-left:auto;margin-right:auto;gap:8px}.hw-track span{padding:9px 10px;font-size:.8rem}}
+.safe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.safe-card{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:18px 20px;text-decoration:none;color:inherit;transition:box-shadow .15s}
+.safe-card:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.safe-card b{display:block;font-size:1rem}.safe-card p{font-size:.86rem;color:var(--muted);margin-top:2px}
+.safe-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-text)}
+.safe-promises{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.safe-promises .card{padding:18px}.safe-promises b{display:block;margin-bottom:4px}
+.mi-tag{margin-left:auto;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+@media (max-width:900px){.safe-grid{grid-template-columns:1fr}.safe-promises{grid-template-columns:1fr 1fr}}
+.nf{min-height:100svh;display:grid;place-items:center;align-content:center;gap:28px;padding:24px;background:var(--paper)}
+.nf-logo img{height:40px;display:block}
+.nf-card{max-width:460px;text-align:center;padding:40px 32px;border-radius:28px;background:var(--surface);box-shadow:0 1px 0 var(--line),0 24px 60px -30px rgba(14,16,19,.25)}
+.nf-code{display:block;font-size:4rem;font-weight:900;letter-spacing:-.06em;background:linear-gradient(135deg,#5B4BFF,#B8A9FF);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.nf-card h1{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:14px 0 8px}
+.nf-card p{color:var(--muted)}
+.nf-acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}

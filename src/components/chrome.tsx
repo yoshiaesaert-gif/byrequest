@@ -38,7 +38,8 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
           <Link className="mi" href="/avatar"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Edit your avatar")}</Link>
           <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>{t("Inbox")}</Link>
           {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>{t("Vault")}</Link> : <Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>{t("Studio and earnings")}</Link>}
-          {staff ? <Link className="mi" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>{t("Trust and safety")}</Link> : null}
+          <Link className="mi" href="/safety"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>{t("Trust and safety")}</Link>
+          {staff ? <Link className="mi mi-admin" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-lock" /></svg>{t("Admin")}<span className="mi-tag">{t("Staff")}</span></Link> : null}
           <hr />
           <LangSwitch />
           <button className="mi" onClick={() => { setOpen(false); hide(); }}><svg className="ico" aria-hidden="true"><use href="#i-eyeoff" /></svg>{t("Quick hide")} <span className="muted t-sm" style={{ marginLeft: "auto" }}>{t("Esc twice")}</span></button>
