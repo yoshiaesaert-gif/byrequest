@@ -1,7 +1,7 @@
 "use server";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
-import { setCode } from "@/server/referrals";
+import { withdraw } from "@/server/referrals";
 import { queueNew } from "@/server/moderation";
 import { ENABLED_CATEGORIES } from "@/config/compliance";
 import { cookies } from "next/headers";
@@ -64,6 +64,7 @@ const Post = z.object({
   tint: z.enum(["ink", "violet", "ember", "ocean", "rose", "gold"]).default("ink"),
   openHours: z.coerce.number().int().refine((h) => [24, 72, 96].includes(h)).default(24),
   waiver: z.boolean().default(false),
+  useCredit: z.boolean().default(false),
 });
 
 export async function postRequest(input: z.input<typeof Post>): Promise<Result> {
@@ -72,10 +73,10 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     const p = Post.safeParse(input);
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
-    const { neutral, tint, waiver, budget, openHours, callMe, ...data } = p.data;
+    const { neutral, tint, waiver, budget, openHours, callMe, useCredit, ...data } = p.data;
     const cover = neutral ? `g-${tint}` : await chooseCover(data.category, data.title);   // a colour the buyer picked, or a mood photo picked for variety
     // Paid when posted: the payment partner holds it during review and while the request is open.
-    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, callMe: callMe || null, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver });
+    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, callMe: callMe || null, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver, useCredit });
     await queueNew(r.id);   // automatic check, then a person approves it (or it goes live by itself when staff allow that)
     redirect(`/requests/${r.id}/offers?posted=1`);
   });
@@ -287,6 +288,6 @@ export async function unblockUser(handle: string): Promise<Result> {
   });
 }
 
-export async function changeRefCode(code: string): Promise<Result> {
-  return guard(async () => { const u = await requireUser(); await setCode(u.id, code); revalidatePath("/invite"); return { ok: true }; });
+export async function withdrawBalance(): Promise<Result> {
+  return guard(async () => { const u = await requireUser(); await withdraw(u.id); revalidatePath("/invite"); return { ok: true, msg: "Transfer started. It shows on your account within a few days." }; });
 }

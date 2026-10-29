@@ -12,5 +12,5 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
   const sp = await searchParams;
   const code = sp.ref ?? (await cookies()).get(REF_COOKIE)?.value;
   const o = code ? await owner(code).catch(() => null) : null;
-  return <Landing initial={sp.as === "earn" ? "earn" : sp.as === "buy" ? "buy" : undefined} year={new Date().getFullYear()} invite={o && code ? { handle: o.handle, code: normalizeCode(code) } : undefined} />;
+  return <Landing initial={sp.as === "earn" ? "earn" : sp.as === "buy" ? "buy" : undefined} year={new Date().getFullYear()} invite={o && code ? { code: normalizeCode(code) } : undefined} />;
 }

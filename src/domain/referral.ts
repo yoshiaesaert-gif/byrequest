@@ -12,16 +12,21 @@ export const REF_COOKIE = "brq_ref";
 export const REF_COOKIE_DAYS = 30;
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";   // no 0/O or 1/I/L, easy to read aloud
-export function makeCode(handle: string, rnd: () => number = Math.random) {
-  const head = handle.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 5) || "BRQ";
-  let tail = ""; for (let i = 0; i < 4; i++) tail += ALPHABET[Math.floor(rnd() * ALPHABET.length)];
-  return `${head}-${tail}`;
+/* Codes are random, 8 characters in two groups (K7QM-2XPA). Nothing in them points to a person. */
+export function makeCode(rnd: () => number = Math.random) {
+  let c = ""; for (let i = 0; i < 8; i++) c += ALPHABET[Math.floor(rnd() * ALPHABET.length)];
+  return `${c.slice(0, 4)}-${c.slice(4)}`;
 }
-export const normalizeCode = (raw: string) => raw.trim().toUpperCase().replace(/\s+/g, "").slice(0, 16);
-/* Codes are short and easy to say: 3 to 12 letters or digits, one dash allowed (MILO-VPWU, SAM, LUCA10). */
-export const validCode = (c: string) => /^[A-Z0-9]{2,12}(-[A-Z0-9]{2,6})?$/.test(c) && c.replace("-", "").length >= 3;
-const RESERVED = /^(ADMIN|BYREQUEST|BRQ|STAFF|SUPPORT|HELP|TEAM|OFFICIAL)/;
-export const allowedCustom = (c: string) => validCode(c) && !RESERVED.test(c);
+export const normalizeCode = (raw: string) => {
+  const c = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  return c.length === 8 ? `${c.slice(0, 4)}-${c.slice(4)}` : c;
+};
+const CH = "[ABCDEFGHJKMNPQRSTUVWXYZ2-9]";
+export const validCode = (c: string) => new RegExp(`^${CH}{4}-${CH}{4}$`).test(c);   // only our own alphabet, so older name based codes never pass
+
+/* The bonus balance: transfer from €10, or use it to pay for a request. */
+export const WITHDRAW_MIN_CENTS = 1000;
+export const creditFor = (totalCents: number, balanceCents: number) => Math.max(0, Math.min(totalCents, balanceCents));
 
 /* The creator bonus: a share of what the creator nets, when the deal was paid out within the window. */
 export function creatorReward(creatorCents: number, pct: number, windowEndsAt: Date, paidAt: Date) {

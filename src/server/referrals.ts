@@ -1,12 +1,12 @@
 import "server-only";
 import { and, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
-import { makeCode, normalizeCode, validCode, allowedCustom, creatorReward, windowEnd, cleanConfig, weekStart, nextPayout, type RefConfig } from "@/domain/referral";
+import { makeCode, normalizeCode, validCode, creatorReward, windowEnd, cleanConfig, weekStart, nextPayout, WITHDRAW_MIN_CENTS, type RefConfig } from "@/domain/referral";
 import { RuleError } from "@/domain/rules";
 import { payments } from "./payments";
 import { access, log } from "./onboarding";
 
-const { users, referrals, referralRewards, referralEvents, ledger, notifications, deals, settings } = schema;
+const { users, referrals, referralRewards, referralEvents, ledger, notifications, deals, settings, walletEntries, requests } = schema;
 const KEY = "referral";
 
 /* The numbers of the programme, set by staff. Every change is in the audit log with before and after. */
@@ -31,39 +31,27 @@ async function event(tx: Tx | typeof db, code: string, ev: string, referralId: s
   await tx.insert(referralEvents).values({ code, event: ev, referralId, detail });
 }
 
-/* The personal code, made once and kept. */
+/* The personal code: random, made once and kept. Codes from before (with a username in them) are
+   replaced, so no code ever points to a person. */
 export async function codeFor(userId: string) {
-  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { refCode: true, handle: true } });
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { refCode: true } });
   if (!u) throw new Error("no user");
-  if (u.refCode) return u.refCode;
+  if (u.refCode && validCode(u.refCode)) return u.refCode;
   for (let i = 0; i < 8; i++) {
-    const c = makeCode(u.handle);
-    const [row] = await db.update(users).set({ refCode: c }).where(and(eq(users.id, userId), isNull(users.refCode))).returning({ c: users.refCode }).catch(() => []);
-    if (row?.c) return row.c;
+    const c = makeCode();
+    const [row] = await db.update(users).set({ refCode: c }).where(and(eq(users.id, userId), u.refCode ? eq(users.refCode, u.refCode) : isNull(users.refCode))).returning({ c: users.refCode }).catch(() => []);
+    if (row?.c) { if (u.refCode) await event(db, c, "code_replaced", null, { from: u.refCode }); return row.c; }
     const again = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { refCode: true } });
-    if (again?.refCode) return again.refCode;
+    if (again?.refCode && validCode(again.refCode)) return again.refCode;
   }
   throw new Error("could not make a code");
 }
 
-/* A personal code people can say out loud. The old link stops working, which the page says first. */
-export async function setCode(userId: string, raw: string) {
-  const c = normalizeCode(raw);
-  if (!allowedCustom(c)) throw new RuleError("Use 3 to 12 letters or numbers.");
-  const taken = await db.query.users.findFirst({ where: eq(users.refCode, c), columns: { id: true } });
-  if (taken && taken.id !== userId) throw new RuleError("That code is taken. Try another one.");
-  const before = await codeFor(userId);
-  await db.update(users).set({ refCode: c }).where(eq(users.id, userId));
-  await event(db, c, "code_changed", null, { from: before });
-  await log(db, `user:${userId}`, "referral.code_changed", userId, { from: before, to: c });
-  return c;
-}
-
-/* Who owns a code, for the landing banner. Only the public username, never more. */
+/* Who owns a code. Only used to check it; the person is never shown to the friend. */
 export async function owner(codeRaw: string) {
   const c = normalizeCode(codeRaw);
   if (!validCode(c)) return null;
-  return db.query.users.findFirst({ where: and(eq(users.refCode, c), isNull(users.bannedAt), isNull(users.deletedAt)), columns: { id: true, handle: true } });
+  return db.query.users.findFirst({ where: and(eq(users.refCode, c), isNull(users.bannedAt), isNull(users.deletedAt)), columns: { id: true } });
 }
 
 export async function linkOpened(codeRaw: string) {
@@ -88,7 +76,6 @@ export async function attach(newUserId: string, codeRaw: string | undefined, int
       await event(tx, code, "fee_gift_granted", r.id, { to: "invited buyer" });
     }
     await log(tx, "system", "referral.signup", newUserId, { referrer: o.id, code, intent });
-    await tx.insert(notifications).values({ userId: o.id, title: "A friend joined", body: "Someone signed up with your invite link.", href: "/invite" });
   });
 }
 
@@ -111,16 +98,15 @@ export async function onCreatorPaid(tx: Tx, d: typeof deals.$inferSelect, now = 
   // 2. The buyer was invited: their first paid out deal gives the inviter a service fee gift.
   const rb = await tx.query.referrals.findFirst({ where: eq(referrals.refereeId, d.buyerId) });
   if (rb && !rb.buyerRewardedAt && rb.referrerId !== d.creatorId && cfg.buyerGift) {
+    // Quietly put aside as well; it is given with the weekly statement, never on the day itself.
     await tx.update(referrals).set({ buyerRewardedAt: now }).where(eq(referrals.id, rb.id));
-    await tx.update(users).set({ freeFees: sql`${users.freeFees} + 1` }).where(eq(users.id, rb.referrerId));
-    await tx.insert(referralRewards).values({ referralId: rb.id, referrerId: rb.referrerId, dealId: d.id, kind: "free_fee", cents: 0, status: "granted" });
-    await event(tx, rb.code, "fee_gift_granted", rb.id, { to: "inviter", dealId: d.id });
-    await tx.insert(notifications).values({ userId: rb.referrerId, title: "Your friend's first deal is done", body: "Your next service fee is on us.", href: "/invite" });
+    await tx.insert(referralRewards).values({ referralId: rb.id, referrerId: rb.referrerId, dealId: d.id, kind: "free_fee", cents: 0, status: "on_hold" }).onConflictDoNothing();
+    await event(tx, rb.code, "fee_gift_earned", rb.id, { to: "inviter", dealId: d.id });
   }
 }
 
-/* A bonus is put aside, quietly. No message per deal: it is bundled into the weekly payout, so a
-   bonus never tells anyone what a friend earned on a single deal. */
+/* A bonus is put aside, quietly. No message per deal: it is bundled into the weekly statement, so a
+   bonus never tells anyone what a friend earned, or when. */
 async function reward(tx: Tx, rc: typeof referrals.$inferSelect, dealId: string, cents: number, pct: number) {
   const inserted = await tx.insert(referralRewards).values({ referralId: rc.id, referrerId: rc.referrerId, dealId, kind: "creator_share", cents, status: "on_hold" }).onConflictDoNothing().returning();
   if (!inserted.length) return;                     // this deal already earned its reward
@@ -129,26 +115,63 @@ async function reward(tx: Tx, rc: typeof referrals.$inferSelect, dealId: string,
   await log(tx, "system", "referral.reward", rc.referrerId, { dealId, cents, pct });
 }
 
-/* Worker: once a week, everything earned before this Monday is paid out as one amount per person,
-   to their own verified payout account. Without an approved payout setup it waits. */
-export async function payWeekly(now = new Date()) {
-  const cut = weekStart(now);
-  const due = await db.select({ referrerId: referralRewards.referrerId, cents: sql<number>`sum(${referralRewards.cents})::int`, ids: sql<string[]>`array_agg(${referralRewards.id})` })
-    .from(referralRewards).where(and(eq(referralRewards.status, "on_hold"), eq(referralRewards.kind, "creator_share"), lt(referralRewards.createdAt, cut))).groupBy(referralRewards.referrerId);
-  let paid = 0;
+/* Worker: once a week, everything set aside before this Monday lands on the bonus balance as one
+   line per person: "week bonus". Free service fees earned that week are given at the same moment. */
+export async function creditWeekly(now = new Date()) {
+  const cut = weekStart(now), weekOf = new Date(cut.getTime() - 7 * 86400_000);
+  const due = await db.select({ referrerId: referralRewards.referrerId, kind: referralRewards.kind, cents: sql<number>`sum(${referralRewards.cents})::int`, n: sql<number>`count(*)::int`, ids: sql<string[]>`array_agg(${referralRewards.id})` })
+    .from(referralRewards).where(and(eq(referralRewards.status, "on_hold"), lt(referralRewards.createdAt, cut))).groupBy(referralRewards.referrerId, referralRewards.kind);
+  let credited = 0;
   for (const r of due) {
-    if (!r.cents || !(await access(r.referrerId)).caps.receivePayouts) continue;
     await db.transaction(async (tx) => {
-      const p = await payments.payout({ creatorId: r.referrerId, cents: r.cents });
-      await tx.update(referralRewards).set({ status: "paid", payoutRef: p.ref, paidAt: now }).where(inArray(referralRewards.id, r.ids));
-      await tx.insert(ledger).values({ userId: r.referrerId, entry: "referral_payout", cents: r.cents });
-      await event(tx, "-", "weekly_payout", null, { referrer: r.referrerId, cents: r.cents, rewards: r.ids.length, ref: p.ref });
-      await log(tx, "system", "referral.payout", r.referrerId, { cents: r.cents, rewards: r.ids.length });
-      await tx.insert(notifications).values({ userId: r.referrerId, title: "Your weekly invite bonus is in", body: `€${(r.cents / 100).toFixed(2)} was added to your payout account.`, href: "/invite" });
+      await tx.update(referralRewards).set({ status: "paid", paidAt: now }).where(inArray(referralRewards.id, r.ids));
+      if (r.kind === "creator_share" && r.cents > 0) {
+        await tx.insert(walletEntries).values({ userId: r.referrerId, kind: "week_bonus", cents: r.cents, weekOf });
+        await tx.insert(ledger).values({ userId: r.referrerId, entry: "bonus_credited", cents: r.cents });
+        await tx.insert(notifications).values({ userId: r.referrerId, title: "Your week bonus is in", body: `€${(r.cents / 100).toFixed(2)} was added to your bonus balance.`, href: "/invite" });
+      } else if (r.kind === "free_fee") {
+        await tx.update(users).set({ freeFees: sql`${users.freeFees} + ${r.n}` }).where(eq(users.id, r.referrerId));
+        await tx.insert(walletEntries).values({ userId: r.referrerId, kind: "free_fee", cents: 0, weekOf, ref: String(r.n) });
+      }
+      await event(tx, "-", "week_credited", null, { referrer: r.referrerId, kind: r.kind, cents: r.cents, rewards: r.n });
+      await log(tx, "system", "referral.credited", r.referrerId, { kind: r.kind, cents: r.cents, rewards: r.n });
     });
-    paid++;
+    credited++;
   }
-  return paid;
+  return credited;
+}
+
+export async function balance(userId: string, tx: Tx | typeof db = db) {
+  const [b] = await tx.select({ c: sql<number>`coalesce(sum(${walletEntries.cents}),0)::int` }).from(walletEntries).where(eq(walletEntries.userId, userId));
+  return b?.c ?? 0;
+}
+
+/* Transfer the balance to the person's own verified payout account, from €10. */
+export async function withdraw(userId: string) {
+  const a = await access(userId);
+  if (!a.caps.receivePayouts) throw new RuleError("Set up your payouts first. Then you can transfer your balance.");
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);   // one transfer at a time per person
+    const cents = await balance(userId, tx);
+    if (cents < WITHDRAW_MIN_CENTS) throw new RuleError("You can transfer from €10.");
+    const p = await payments.payout({ creatorId: userId, cents });
+    await tx.insert(walletEntries).values({ userId, kind: "withdrawal", cents: -cents, ref: p.ref });
+    await tx.insert(ledger).values({ userId, entry: "referral_payout", cents });
+    await log(tx, `user:${userId}`, "wallet.withdraw", userId, { cents, ref: p.ref });
+    return cents;
+  });
+}
+
+/* Paying (part of) a request with the balance, and giving it back if that request is refunded. */
+export async function spend(tx: Tx, userId: string, requestId: string, cents: number) {
+  if (cents <= 0) return;
+  await tx.insert(walletEntries).values({ userId, kind: "spent", cents: -cents, ref: requestId });
+  await tx.insert(ledger).values({ requestId, userId, entry: "credit_spent", cents });
+}
+export async function giveBack(tx: Tx, userId: string, requestId: string, cents: number) {
+  if (cents <= 0) return;
+  await tx.insert(walletEntries).values({ userId, kind: "spent_back", cents, ref: requestId });
+  await tx.insert(ledger).values({ requestId, userId, entry: "credit_refunded", cents });
 }
 
 /* A gifted service fee was used, or given back after a refund. */
@@ -164,35 +187,38 @@ export async function feeGiftReturned(tx: Tx, userId: string, requestId: string,
   await event(tx, "-", "fee_gift_returned", null, { requestId, cents, userId });
 }
 
-/* Everything the invite page shows, discreet by design: friends by a shortened name and only
-   "joined" or "active"; money only as weekly totals that were paid out. */
+/* Everything the invite page shows. Discreet by design: nothing about friends at all, not who,
+   not when, not how many. Only the balance and a statement of weekly lines. */
 export async function overview(userId: string, now = new Date()) {
-  const [code, cfg] = await Promise.all([codeFor(userId), getConfig()]);
+  const [code, cfg, bal] = await Promise.all([codeFor(userId), getConfig(), balance(userId)]);
   const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { freeFees: true } });
-  const rows = await db.select({ r: referrals, handle: users.handle, isCreator: users.isCreator }).from(referrals).innerJoin(users, eq(users.id, referrals.refereeId)).where(eq(referrals.referrerId, userId)).orderBy(desc(referrals.createdAt));
-  const rewards = await db.select({ status: referralRewards.status, cents: referralRewards.cents, paidAt: referralRewards.paidAt }).from(referralRewards).where(and(eq(referralRewards.referrerId, userId), eq(referralRewards.kind, "creator_share")));
-  const opened = await db.select({ n: sql<number>`count(*)::int` }).from(referralEvents).where(and(eq(referralEvents.code, code), eq(referralEvents.event, "link_opened")));
-  const friends = await Promise.all(rows.map(async ({ r, handle, isCreator }) => ({
-    id: r.id, name: handle.slice(0, 2) + "•••", intent: r.intent, joined: r.createdAt,
-    active: r.intent === "earn" ? isCreator && (await access(r.refereeId)).status === "active" : !!r.buyerRewardedAt,
-  })));
-  const paid = rewards.filter((x) => x.status === "paid");
-  const last = paid.map((x) => x.paidAt!).sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
-  return {
-    code, cfg, freeFees: u?.freeFees ?? 0, opened: opened[0]?.n ?? 0, friends,
-    paidTotal: paid.reduce((s, x) => s + x.cents, 0),
-    lastPaid: last ? { at: last, cents: paid.filter((x) => x.paidAt?.getTime() === last.getTime()).reduce((s, x) => s + x.cents, 0) } : null,
-    waiting: rewards.some((x) => x.status === "on_hold"), payoutsReady: (await access(userId)).caps.receivePayouts,
-    nextPayout: nextPayout(now),
-  };
+  const lines = await db.select().from(walletEntries).where(eq(walletEntries.userId, userId)).orderBy(desc(walletEntries.createdAt)).limit(30);
+  return { code, cfg, balance: bal, freeFees: u?.freeFees ?? 0, lines, payoutsReady: (await access(userId)).caps.receivePayouts, nextCredit: nextPayout(now), minWithdraw: WITHDRAW_MIN_CENTS };
 }
 
-/* Back office: the whole programme, newest first. */
+/* Back office: what the programme brings in. Per invited person: active or not, deals, money moved,
+   what ByRequest kept and what the bonus cost. Per inviter: the same, added up. */
 export async function adminList() {
-  const ref = sql`(select handle from users where id = ${referrals.referrerId})`;
-  const fr = sql`(select handle from users where id = ${referrals.refereeId})`;
-  const rows = await db.select({ r: referrals, referrer: sql<string>`${ref}`, friend: sql<string>`${fr}` }).from(referrals).orderBy(desc(referrals.createdAt)).limit(200);
+  const rows = await db.execute(sql`
+    select r.id, r.code, r.intent, r.created_at, r.first_deal_at, r.window_ends_at,
+      ref.handle as referrer, fr.handle as friend,
+      (select count(*)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as deals,
+      (select coalesce(sum(d.deal_cents),0)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as gmv,
+      (select coalesce(sum(d.deal_cents + d.fee_cents - d.creator_cents),0)::int from deals d where d.status = 'released' and (d.creator_id = r.referee_id or d.buyer_id = r.referee_id)) as revenue,
+      (select coalesce(sum(w.cents),0)::int from referral_rewards w where w.referral_id = r.id and w.kind = 'creator_share') as bonus,
+      (select coalesce(sum(q.fee_gift_cents),0)::int from requests q where q.buyer_id = r.referee_id) as gifts
+    from referrals r join users ref on ref.id = r.referrer_id join users fr on fr.id = r.referee_id
+    order by r.created_at desc limit 300`);
+  type Row = { id: string; code: string; intent: string; created_at: Date; first_deal_at: Date | null; window_ends_at: Date | null; referrer: string; friend: string; deals: number; gmv: number; revenue: number; bonus: number; gifts: number };
+  const list = (rows.rows ?? rows) as unknown as Row[];
+  const by = new Map<string, { referrer: string; friends: number; active: number; deals: number; gmv: number; revenue: number; cost: number }>();
+  for (const r of list) {
+    const x = by.get(r.referrer) ?? { referrer: r.referrer, friends: 0, active: 0, deals: 0, gmv: 0, revenue: 0, cost: 0 };
+    x.friends++; if (r.deals > 0) x.active++; x.deals += r.deals; x.gmv += r.gmv; x.revenue += r.revenue; x.cost += r.bonus + r.gifts;
+    by.set(r.referrer, x);
+  }
   const events = await db.select().from(referralEvents).orderBy(desc(referralEvents.createdAt)).limit(200);
-  const totals = await db.select({ status: referralRewards.status, kind: referralRewards.kind, cents: sql<number>`coalesce(sum(${referralRewards.cents}),0)::int`, n: sql<number>`count(*)::int` }).from(referralRewards).groupBy(referralRewards.status, referralRewards.kind);
-  return { rows, events, totals };
+  const [wallet] = await db.select({ c: sql<number>`coalesce(sum(${walletEntries.cents}),0)::int` }).from(walletEntries);
+  const totals = list.reduce((t, r) => ({ friends: t.friends + 1, active: t.active + (r.deals > 0 ? 1 : 0), deals: t.deals + r.deals, gmv: t.gmv + r.gmv, revenue: t.revenue + r.revenue, cost: t.cost + r.bonus + r.gifts }), { friends: 0, active: 0, deals: 0, gmv: 0, revenue: 0, cost: 0 });
+  return { rows: list, inviters: [...by.values()].sort((a, b) => b.revenue - a.revenue), events, totals, openBalances: wallet?.c ?? 0 };
 }

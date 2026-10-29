@@ -117,6 +117,7 @@ export const requests = pgTable("requests", {
   payTotalCents: integer("pay_total_cents"),
   payFeeCents: integer("pay_fee_cents"),
   feeGiftCents: integer("fee_gift_cents").notNull().default(0),      // service fee paid by ByRequest (referral gift); given back if refunded
+  creditCents: integer("credit_cents").notNull().default(0),         // part paid from the bonus balance; goes back to the balance on a refund
   payVatCents: integer("pay_vat_cents"),
   payVatRate: integer("pay_vat_rate"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
@@ -282,6 +283,18 @@ export const referralRewards = pgTable("referral_rewards", {
   paidAt: timestamp("paid_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("referral_rewards_deal").on(t.referralId, t.dealId, t.kind), index("referral_rewards_referrer").on(t.referrerId)]);
 
+/* The bonus balance: invite bonuses land here once a week. It can be transferred to the person's own
+   payout account or used to pay for a request. Balance = sum of the rows; rows are never changed. */
+export const walletEntries = pgTable("wallet_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"week_bonus" | "free_fee" | "withdrawal" | "spent" | "spent_back">().notNull(),
+  cents: integer("cents").notNull(),               // plus adds to the balance, minus takes from it
+  weekOf: timestamp("week_of", { withTimezone: true }),
+  ref: text("ref"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("wallet_user").on(t.userId, t.createdAt)]);
+
 /* Audit trail of the programme: link opened, signed up, verified, first deal, reward, payout, gift used. */
 export const referralEvents = pgTable("referral_events", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -300,7 +313,7 @@ export const ledger = pgTable("ledger", {
   dealId: uuid("deal_id").references(() => deals.id),
   requestId: uuid("request_id"),                  // set for money moved before a deal exists (paid at posting, refunded)
   userId: uuid("user_id").references(() => users.id),
-  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable" | "referral_payout" | "referral_on_hold" | "fee_gift" | "tip_charge" | "tip_payout" | "tip_on_hold">().notNull(),
+  entry: text("entry").$type<"buyer_charge" | "escrow_hold" | "creator_payout" | "payout_on_hold" | "platform_revenue" | "buyer_refund" | "vat_payable" | "referral_payout" | "referral_on_hold" | "fee_gift" | "tip_charge" | "tip_payout" | "tip_on_hold" | "bonus_credited" | "credit_spent" | "credit_refunded">().notNull(),
   cents: integer("cents").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

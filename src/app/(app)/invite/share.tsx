@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useT } from "@/i18n/client";
 import { toast } from "@/components/chrome";
-import { changeRefCode } from "../actions";
+import { withdrawBalance } from "../actions";
 
 const Ico = ({ n }: { n: string }) => <svg className="ico sm" aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
@@ -34,17 +34,12 @@ export function ShareBox({ url, display, code, qr }: { url: string; display: str
   </div>);
 }
 
-/* Change the code into something easy to say. The old link stops working. */
-export function CodeEditor({ code }: { code: string }) {
+/* Transfer the whole balance to the person's own verified payout account. */
+export function Withdraw({ balance, min, ready }: { balance: number; min: number; ready: boolean }) {
   const t = useT();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [v, setV] = useState(code);
   const [pending, start] = useTransition();
-  if (!open) return <button type="button" className="linkbtn inv-edit" onClick={() => setOpen(true)}>{t("Make your own code, like SAM or LUCA10")}</button>;
-  return (<form className="card inv-codeform" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await changeRefCode(v); if (r.ok) { toast(t("Your new code is ready")); setOpen(false); router.refresh(); } else toast(t(r.error), "err"); }); }}>
-    <label htmlFor="rc"><b>{t("Your own code")}</b><span className="t-xs muted">{t("3 to 12 letters or numbers. Your current link stops working.")}</span></label>
-    <div className="inv-codeform-row"><input id="rc" className="input" value={v} maxLength={12} autoCapitalize="characters" autoComplete="off" onChange={(e) => setV(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""))} />
-      <button className="btn btn-primary" disabled={pending || v.length < 3 || v === code}>{pending ? t("Saving…") : t("Save")}</button></div>
-  </form>);
+  const ok = ready && balance >= min;
+  return <button type="button" className="btn btn-primary" disabled={!ok || pending} title={!ready ? t("To transfer, set up your payouts once.") : balance < min ? t("You can transfer from €10.") : undefined}
+    onClick={() => start(async () => { const r = await withdrawBalance(); if (r.ok) { toast(t(r.msg!)); router.refresh(); } else toast(t(r.error), "err"); })}>{pending ? t("Transferring…") : t("Transfer to my account")}</button>;
 }

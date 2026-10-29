@@ -8,7 +8,7 @@ import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
 import { blockedEither } from "./blocks";
-import { onCreatorPaid, payWeekly, feeGiftUsed, feeGiftReturned, getConfig as refConfig } from "./referrals";
+import { onCreatorPaid, creditWeekly, feeGiftUsed, feeGiftReturned, getConfig as refConfig, balance as walletBalance, spend as spendCredit, giveBack as giveCreditBack } from "./referrals";
 import { giftFee, tipSplit, TIP_MIN_CENTS, TIP_MAX_CENTS } from "@/domain/referral";
 
 /* Shown next to the checkbox at "Accept" and stored in the audit log with the deal. */
@@ -49,7 +49,7 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
    on the money already held. */
 type NewRequest = Omit<typeof requests.$inferInsert, "buyerId" | "status" | "payRef" | "payTotalCents" | "payFeeCents" | "payVatCents" | "payVatRate" | "paidAt" | "refundedAt">;
 
-export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean; totalCents?: number }) {
+export async function postPaid(buyerId: string, values: NewRequest, opts: { withdrawalWaiver: boolean; totalCents?: number; useCredit?: boolean }) {
   if (BUYER_AGE_CHECK && !(await isAgeVerified(buyerId))) throw new RuleError("Confirm your age once before you pay.");
   if (!opts.withdrawalWaiver) throw new RuleError("Confirm that the creator may start once chosen and that you lose the 14 day withdrawal right once it is delivered.");
   const buyer = await db.query.users.findFirst({ where: eq(users.id, buyerId), columns: { country: true, freeFees: true } });
@@ -58,11 +58,16 @@ export async function postPaid(buyerId: string, values: NewRequest, opts: { with
   // A service fee gift (referral programme) is used on the next request: ByRequest pays the fee.
   const m = !opts.totalCents && (buyer?.freeFees ?? 0) > 0 ? giftFee(base, (await refConfig()).feeGiftCapCents) : { ...base, giftCents: 0 };
   values = { ...values, dealCents: m.dealCents };
-  const charge = await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
   return db.transaction(async (tx) => {
-    const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, feeGiftCents: m.giftCents, paidAt: new Date() }).returning();
+    // The bonus balance pays first when the buyer asks for it; the card pays the rest.
+    let credit = 0;
+    if (opts.useCredit) { await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${buyerId}))`); credit = Math.max(0, Math.min(m.total, await walletBalance(buyerId, tx))); }
+    const card = m.total - credit;
+    const charge = card > 0 ? await payments.charge({ buyerId, cents: card, descriptor: STATEMENT_NAME }) : { ref: "balance_" + crypto.randomUUID().slice(0, 12) };
+    const [r] = await tx.insert(requests).values({ ...values, buyerId, status: "in_review", payRef: charge.ref, payTotalCents: m.total, payFeeCents: m.feeCents, payVatCents: m.vatCents, payVatRate: m.vatRate, feeGiftCents: m.giftCents, creditCents: credit, paidAt: new Date() }).returning();
     if (m.giftCents) await feeGiftUsed(tx, buyerId, r.id, m.giftCents);
-    await tx.insert(ledger).values([{ requestId: r.id, userId: buyerId, entry: "buyer_charge", cents: m.total }, { requestId: r.id, entry: "escrow_hold", cents: m.total }]);
+    if (credit) await spendCredit(tx, buyerId, r.id, credit);
+    await tx.insert(ledger).values([...(card > 0 ? [{ requestId: r.id, userId: buyerId, entry: "buyer_charge" as const, cents: card }] : []), { requestId: r.id, entry: "escrow_hold", cents: m.total }]);
     await log(tx, `user:${buyerId}`, "consumer.withdrawal_waived", buyerId, { request: r.id, text: WAIVER_TEXT });
     return r;
   });
@@ -75,9 +80,11 @@ export async function refundRequest(requestId: string, why: string) {
     if (!r?.payRef || r.refundedAt || !r.payTotalCents) return false;
     const deal = await tx.query.deals.findFirst({ where: eq(deals.requestId, requestId), columns: { id: true } });
     if (deal) return false;
-    await payments.refund({ ref: r.payRef, cents: r.payTotalCents });
+    const card = r.payTotalCents - r.creditCents;   // the part paid from the bonus balance goes back to the balance
+    if (card > 0) await payments.refund({ ref: r.payRef, cents: card });
     await tx.update(requests).set({ refundedAt: new Date() }).where(eq(requests.id, requestId));
-    await tx.insert(ledger).values({ requestId, userId: r.buyerId, entry: "buyer_refund", cents: r.payTotalCents });
+    if (card > 0) await tx.insert(ledger).values({ requestId, userId: r.buyerId, entry: "buyer_refund", cents: card });
+    await giveCreditBack(tx, r.buyerId, requestId, r.creditCents);
     if (r.feeGiftCents) await feeGiftReturned(tx, r.buyerId, requestId, r.feeGiftCents);   // the gift is not lost on a refund
     await log(tx, "system", "payment.request_refunded", r.buyerId, { request: requestId, why });
     await notify(tx, r.buyerId, "Refund on its way", "You were refunded in full.", `/requests/${requestId}/offers`);
@@ -345,8 +352,8 @@ export async function runDue(now = new Date()) {
     await system(tx, deal.id, "No delivery before the deadline. The buyer is refunded in full.");
   }).catch(() => {});
   await expireVault(now);
-  const referralPaid = await payWeekly(now);
-  return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded, referralPaid };
+  const referralCredited = await creditWeekly(now);
+  return { released: due.length, refunded: late.length, autoChosen: closed.chosen, requestsRefunded: closed.refunded, referralCredited };
 }
 
 async function expireVault(now: Date) {
@@ -398,9 +405,11 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
     await payTip(tx, d);
     if (!d.creatorRating) await notify(tx, d.creatorId, "How was this buyer?", "Rate them in a few taps. It helps every creator.", `/deals/${d.id}#rate`);
   } else if (ef.kind === "refund_buyer") {
-    const paid = d.dealCents + d.feeCents + d.vatCents;
-    await payments.refund({ ref: d.paymentRef, cents: paid });
-    await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: paid });
+    const rq = await tx.query.requests.findFirst({ where: eq(requests.id, d.requestId), columns: { creditCents: true } });
+    const credit = rq?.creditCents ?? 0;
+    const paid = d.dealCents + d.feeCents + d.vatCents - credit;
+    if (paid > 0) { await payments.refund({ ref: d.paymentRef, cents: paid }); await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: paid }); }
+    await giveCreditBack(tx, d.buyerId, d.requestId, credit);
     if (d.tipCents && d.tipRef) {                       // a tip on a deal that is refunded goes back too
       await payments.refund({ ref: d.tipRef, cents: d.tipCents });
       await tx.insert(ledger).values({ dealId: d.id, userId: d.buyerId, entry: "buyer_refund", cents: d.tipCents });

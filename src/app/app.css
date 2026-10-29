@@ -960,3 +960,11 @@ button.report-link{background:none;border:0;padding:0;cursor:pointer;font:inheri
 .bo-refcfg .input{max-width:90px}
 @media (max-width:900px){.bo-refcfg{grid-template-columns:1fr 1fr}}
 .inv-friends li.inv-more{display:block;font-size:.84rem;color:var(--muted)}
+.bal-row label{display:flex;gap:8px;align-items:center;cursor:pointer}.bal-row dd,.bal-row dt{color:#138a4c}
+.inv-use{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 6px}
+.inv-statement{padding:22px;display:flex;flex-direction:column;gap:6px}
+.inv-statement ul{list-style:none;margin:8px 0 0;padding:0}
+.inv-statement li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:.9rem}
+.inv-statement b.plus{color:#138a4c}.inv-statement b.min{color:var(--ink-2)}
+.inv-discreet{display:flex;gap:6px;align-items:flex-start;margin-top:auto;padding-top:10px}
+.inv-buyer-wide{margin:0 0 12px}

@@ -36,9 +36,10 @@ const DRAFT = "brq_post_draft";
 
 type Draft = { category: Cat; amount: number; title: string; details: string; callMe: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
-export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean }) {
+export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false, balance = 0 }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean; balance?: number }) {
   const t = useT();
   const [waived, setWaived] = useState(false);
+  const [useBal, setUseBal] = useState(balance > 0);
   const [i, setI] = useState(initial.title ? 1 : 0);
   const [w, setW] = useState<Draft>({
     category: initial.category, amount: initial.amount || RANGE[initial.category].def, title: initial.title, details: initial.details ?? "", callMe: "",
@@ -79,7 +80,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false 
   const opt = <K extends keyof Draft>(k: K, v: Draft[K], l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<Draft>)}>{t(l)}</button>;
   const submit = () => start(async () => {
     try {
-      const r = await postRequest({ category: w.category, amount: w.amount, title: w.title, details: w.details, callMe: w.callMe, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
+      const r = await postRequest({ category: w.category, useCredit: useBal && balance > 0, amount: w.amount, title: w.title, details: w.details, callMe: w.callMe, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
       if (r && !r.ok) toast(t(r.error), "err"); else sessionStorage.removeItem(DRAFT);
     } catch (e) {
       if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) { sessionStorage.removeItem(DRAFT); throw e; }
@@ -93,7 +94,8 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false 
         <div><dt>{t("Service fee {rate}%", { rate: 10 })}</dt><dd className="num">{q.giftCents ? <><s className="muted">{euros2(base.feeCents)}</s> {euros2(q.feeCents)}</> : euros2(q.feeCents)}</dd></div>
         {q.giftCents ? <div className="gift-row"><dt><svg className="ico sm" aria-hidden="true"><use href="#i-gift" /></svg>{t("Free service fee, a gift from your invite")}</dt><dd className="num">−{euros2(q.giftCents)}</dd></div> : null}
         <div><dt>{t("VAT {rate}%", { rate: q.vatRate / 100 })}</dt><dd className="num">{euros2(q.vatCents)}</dd></div>
-        <div className="tot"><dt>{t("You pay")}</dt><dd className="num">{euros2(q.total)}</dd></div></dl>
+        {balance > 0 ? <div className="bal-row"><dt><label><input type="checkbox" checked={useBal} onChange={(e) => setUseBal(e.target.checked)} /> {t("Pay with your bonus balance")}</label></dt><dd className="num">{useBal ? "−" + euros2(Math.min(balance, q.total)) : euros2(balance)}</dd></div> : null}
+        <div className="tot"><dt>{t("You pay")}</dt><dd className="num">{euros2(q.total - (useBal ? Math.min(balance, q.total) : 0))}</dd></div></dl>
       <p>{t("The service fee covers payment protection, the review of every request and delivery, and support.")}</p>
     </div>);
   const card = (
@@ -184,13 +186,13 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false 
         <aside className="wz-aside">
           <span className="wz-cap">{t("Live preview")}</span>
           {card}
-          <div className="wz-price"><span>{t("Budget")} <b className="num">€{price}</b></span><span className="wz-pay-l">{t("You pay")} <b className="num">{euros2(q.total)}</b></span></div>
+          <div className="wz-price"><span>{t("Budget")} <b className="num">€{price}</b></span><span className="wz-pay-l">{t("You pay")} <b className="num">{euros2(q.total - (useBal ? Math.min(balance, q.total) : 0))}</b></span></div>
           <div className="wz-tips"><b><Ico n="spark" c="sm" />{t("Tips")}</b><ul>{TIPS[step].map((x) => <li key={x}>{t(x)}</li>)}</ul></div>
         </aside>
       </div>
       <div className="wz-foot">
         <button className="btn btn-secondary" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>{t("Back")}</button>
-        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending || !ageOk || !waived}>{pending ? t("Securing payment…") : t("Pay {amount} and post", { amount: euros2(q.total) })}</button>
+        {step === "review" ? <button className="btn btn-brand btn-lg" onClick={submit} disabled={pending || !ageOk || !waived}>{pending ? t("Securing payment…") : t("Pay {amount} and post", { amount: euros2(q.total - (useBal ? Math.min(balance, q.total) : 0)) })}</button>
           : <button className="btn btn-primary btn-lg" onClick={() => setI(i + 1)} disabled={!canNext}>{t("Continue")}</button>}
       </div>
     </div>
