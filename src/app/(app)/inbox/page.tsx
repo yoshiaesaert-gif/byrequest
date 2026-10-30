@@ -12,7 +12,7 @@ export default async function Inbox() {
   const u = await requireUser();
   const [notes, convs] = await Promise.all([inbox(u.id), conversations(u.id)]);
   const L = await textsIn(convs.map((c) => c.title), locale);
-  const sys = (b: string) => { const amount = b.match(/€\d+(?:\.\d{2})?/)?.[0]; return amount ? t(b.replace(amount, "{amount}"), { amount }) : t(b); };
+  const sys = (b: string) => { const many = b.match(/^You have (\d+) new messages\.$/); if (many) return t("You have {n} new messages.", { n: many[1] }); const amount = b.match(/€\d+(?:\.\d{2})?/)?.[0]; return amount ? t(b.replace(amount, "{amount}"), { amount }) : t(b); };
   const chats = convs.map((c) => ({
     id: c.id, title: L(c.title), other: c.other, status: c.status, unread: c.unread,
     avatar: <Av a={c.other_avatar as Parameters<typeof Av>[0]["a"]} name={c.other} size={48} />,

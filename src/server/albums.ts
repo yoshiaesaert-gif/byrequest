@@ -19,7 +19,7 @@ const { previewAlbums, previewPhotos, offers, requests, media } = schema;
    A buyer can ask at most PREVIEW_LIMIT candidates per request, so a preview is a way to choose,
    never a free gallery. */
 export const PHOTO_SECONDS = 10;
-export const PREVIEW_LIMIT = 3;
+export const PREVIEW_LIMIT = 5;
 export const ALBUM_MAX = 6;
 const GRACE_MS = 4000;            // a photo may load again within its own 10 seconds (slow network), never after
 
@@ -80,7 +80,7 @@ export async function requestAlbum(buyerId: string, offerId: string) {
   const r = o && await db.query.requests.findFirst({ where: eq(requests.id, o.requestId) });
   if (!o || !r || r.buyerId !== buyerId || o.status !== "pending" || r.status !== "open") throw new RuleError("You can ask for a preview only while choosing between offers.");
   if (await blockedEither(buyerId, o.creatorId)) throw new RuleError("You can ask for a preview only while choosing between offers.");
-  if ((await asked(buyerId, r.id)) >= PREVIEW_LIMIT) throw new RuleError("You already asked 3 candidates for a preview on this request.");
+  if ((await asked(buyerId, r.id)) >= PREVIEW_LIMIT) throw new RuleError("You already asked 5 candidates for a preview on this request.");
   await db.transaction(async (tx) => {
     await tx.insert(previewAlbums).values({ offerId, buyerId, creatorId: o.creatorId, kind: "looks" });
     await notify(tx, o.creatorId, "Preview request", "A buyer who is choosing would like to see a bit more.", "/studio#previews");

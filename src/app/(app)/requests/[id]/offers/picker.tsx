@@ -6,13 +6,15 @@ import { acceptOffer } from "../../../actions";
 import { toast } from "@/components/chrome";
 import { VAULT_LABEL, VAULT_ORDER, type VaultPeriod } from "@/domain/rules";
 import { useT } from "@/i18n/client";
+import ChatPane from "@/components/chat-pane";
+import AlbumAsk from "../../../c/[handle]/album-ask";
 
-type O = { id: string; status: string; showsFace: boolean; vault: VaultPeriod; etaHours: number; note: string; handle: string; look: string | null; rating: number | null; deals: number; visibility: string };
+type O = { id: string; album: { id: string; status: string } | null; status: string; showsFace: boolean; vault: VaultPeriod; etaHours: number; note: string; handle: string; look: string | null; rating: number | null; deals: number; visibility: string };
 const eur2 = (c: number) => "€" + (c / 100).toFixed(2);
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eta = (h: number, t: ReturnType<typeof useT>) => (h < 72 ? t("Within {n} hours", { n: h }) : t("Within {n} days", { n: Math.round(h / 24) }));
 
-export default function Picker({ requestId, open, dealId, money, offers, ageOk, waiver, paid }: { paid: boolean; requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; vat: number; vatPct: number; total: number }; offers: O[]; ageOk: boolean; waiver: string }) {
+export default function Picker({ requestId, open, dealId, money, offers, ageOk, waiver, paid, meId, previewsLeft }: { meId: string; previewsLeft: number; paid: boolean; requestId: string; open: boolean; dealId: string | null; money: { deal: number; fee: number; vat: number; vatPct: number; total: number }; offers: O[]; ageOk: boolean; waiver: string }) {
   const [waived, setWaived] = useState(false);
   const t = useT();
   const SORTS = ["Best match", "Top rated", "No face", "Longest access", "Fastest"];
@@ -28,6 +30,8 @@ export default function Picker({ requestId, open, dealId, money, offers, ageOk, 
     return l;
   }, [offers, sort]);
   const o = offers.find((x) => x.id === sel);
+  const [chatOf, setChatOf] = useState<string | null>(null);
+  const chatO = offers.find((x) => x.id === chatOf);
 
   return (
     <div className="two">
@@ -56,6 +60,7 @@ export default function Picker({ requestId, open, dealId, money, offers, ageOk, 
           <Link href={`/deals/${dealId}`} className="btn btn-primary btn-block">{t("Open deal")}</Link></>)
           : o ? (<>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>{o.look ? <img src={o.look} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} /> : null}<div><b>{o.handle}</b><div className="t-sm muted">{o.showsFace ? t("Face shown") : t("No face")} · {t("Vault")} {t(VAULT_LABEL[o.vault])} · {eta(o.etaHours, t).toLowerCase()}</div></div></div>
+            {open && o.status === "pending" ? <button type="button" className="btn btn-secondary btn-block" onClick={() => setChatOf(o.id)}><Ico n="inbox" c="sm" />{t("Chat with {name}", { name: o.handle })}</button> : null}
             <div className="breakdown"><div><span className="muted">{t("Budget")}</span><span className="num">{eur2(money.deal)}</span></div><div><span className="muted">{t("Service fee")}</span><span className="num">{eur2(money.fee)}</span></div><div><span className="muted">{t("VAT {rate}%", { rate: money.vatPct })}</span><span className="num">{eur2(money.vat)}</span></div><div className="tot"><span>{paid ? t("Paid") : t("Total, VAT included")}</span><span className="num">{eur2(money.total)}</span></div></div>
             {paid ? (<>
               <p className="t-sm muted">{t("Already paid when you posted. Choosing starts the deal on the money that is held.")}</p>
@@ -71,6 +76,19 @@ export default function Picker({ requestId, open, dealId, money, offers, ageOk, 
             <div className="safe-row"><Link href={`/report?type=profile&ref=${encodeURIComponent(o.handle)}`} className="report-link"><Ico n="alert" c="sm" />{t("Report {name}", { name: o.handle })}</Link><BlockButton handle={o.handle} /></div></>)
           : <p className="t-sm muted">{t("Select an offer to see the total.")}</p>}
       </div></aside>
+      {chatO ? <CandidateChat o={chatO} meId={meId} left={previewsLeft} onClose={() => setChatOf(null)} /> : null}
     </div>
   );
+}
+
+/* Talk to a candidate before choosing, and ask for the private preview album right in the chat. */
+function CandidateChat({ o, meId, left, onClose }: { o: O; meId: string; left: number; onClose: () => void }) {
+  const t = useT();
+  return (<div className="cx-sheet" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <ChatPane variant="inline" endpoint={`/api/chat/offer/${o.id}`} meId={meId} name={o.handle} initial={{ v: "", status: null, typing: false, otherKey: null, closed: false, msgs: [] }} e2e onClose={onClose}
+      avatar={o.look ? <img src={o.look} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
+      lock={t("End to end encrypted")} intro={t("Ask what you want to know before you choose. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.")}
+      empty={t("No messages yet. Say hello to {name}.", { name: o.handle })}
+      actions={<AlbumAsk offerId={o.id} handle={o.handle} album={o.album} left={left} />} />
+  </div>);
 }

@@ -6,7 +6,7 @@ import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import { request } from "@/server/queries";
 import { access } from "@/server/onboarding";
-import { BigNum, BuyerLine, Chips, Cover, I, leftLabel } from "@/components/ui";
+import { Av, BigNum, BuyerLine, Chips, Cover, I, leftLabel } from "@/components/ui";
 import { CAT_LABEL, VAULT_LABEL, euros, split } from "@/domain/rules";
 import OfferForm from "./offer-form";
 import OfferTalk from "./talk";
@@ -109,7 +109,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
               <Link href="/settings#creator" className="btn btn-primary btn-block">{t("Complete my profile")}</Link>
             </>)
             : <OfferForm requestId={r.id} minVault={r.minVault} faceRequired={r.face === "required"} dueHours={r.dueHours} existing={mine ? { showsFace: mine.showsFace, vault: mine.vault, etaHours: mine.etaHours, note: mine.note, status: mine.status, at: mine.createdAt.toISOString() } : null} rivals={offers.length - (mine ? 1 : 0)} defaults={{ showsFace: profile?.showsFace ?? false, vault: profile?.defaultVault ?? "30d" }} />}
-          {mine ? <OfferTalk offerId={mine.id} uid={u.id} /> : null}
+          {mine ? <OfferTalk offerId={mine.id} uid={u.id} name={raw.buyerHandle} house={raw.buyerHouse} avatar={<Av a={raw.buyerAvatar} name={raw.buyerHandle} size={40} />} previewAsked={!!(await db.query.previewAlbums.findFirst({ where: and(eq(schema.previewAlbums.offerId, mine.id), eq(schema.previewAlbums.status, "requested")), columns: { id: true } }))} /> : null}
           <div className="protect"><span><I n="shield" c="sm" />{t("The buyer’s payment is secured before you start")}</span><span><I n="lock" c="sm" />{t("Chat is end to end encrypted")}</span><span><I n="eyeoff" c="sm" />{t("Buyers see your username and avatar only")}</span></div>
         </div>
       </aside>

@@ -39,7 +39,7 @@ export function ChatList({ chats, team }: { chats: Chat[]; team?: { preview: str
 
 export function NoteList({ notes }: { notes: Note[] }) {
   const t = useT(); const { short, group, client } = useClock();
-  const withAmount = (b: string) => { const amount = b.match(/€\d+(?:\.\d{2})?/)?.[0]; return amount ? t(b.replace(amount, "{amount}"), { amount }) : t(b); };
+  const withAmount = (b: string) => { const many = b.match(/^You have (\d+) new messages\.$/); if (many) return t("You have {n} new messages.", { n: many[1] }); const amount = b.match(/€\d+(?:\.\d{2})?/)?.[0]; return amount ? t(b.replace(amount, "{amount}"), { amount }) : t(b); };
   const out: React.ReactNode[] = []; let g = "";
   for (const n of notes) {
     const h = client ? group(n.at) : "";

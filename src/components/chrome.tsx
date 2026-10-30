@@ -112,6 +112,9 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
         if (!r.ok) return;
         const j = (await r.json()) as { latest: Note | null };
         if (!alive || !j.latest) return;
+        // Already looking at that chat or page: nothing to announce, it is on screen.
+        const here = window.location.pathname, target = j.latest.href.split("#")[0];
+        if (seen.current && seen.current !== j.latest.id && (here === target || here.startsWith(target + "/"))) { markNoteRead(j.latest.id).catch(() => {}); seen.current = j.latest.id; return; }
         if (seen.current && seen.current !== j.latest.id) { setNote(j.latest); router.refresh(); window.setTimeout(() => setNote(null), 5200); }
         seen.current = j.latest.id;
       } catch {}
@@ -120,10 +123,11 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
     return () => { alive = false; window.clearInterval(h); };
   }, [router]);
 
+  const body = (b: string) => { const m = b.match(/^You have (\d+) new messages\.$/); return m ? tx("You have {n} new messages.", { n: m[1] }) : tx(b); };
   return (<>
     <Link href={note?.href ?? "/inbox"} className={"notif" + (note ? " show" : "")} role="status" aria-live="polite" onClick={() => { if (note) markNoteRead(note.id).catch(() => {}); setNote(null); }} tabIndex={note ? 0 : -1}>
       <img src="/icon.png" alt="" className="notif-ic" />
-      <span className="notif-t"><b>{discreet || !note ? "ByRequest" : tx(note.title)}</b><span>{discreet || !note ? tx("You have a new message") : tx(note.body)}</span></span>
+      <span className="notif-t"><b>{discreet || !note ? "ByRequest" : tx(note.title)}</b><span>{discreet || !note ? tx("You have a new message") : body(note.body)}</span></span>
       <span className="notif-time">{tx("now")}</span>
     </Link>
     {t ? <div className="toast-glass" onClick={() => setT(null)}><div className={"toast" + (t.kind === "err" ? " err" : "")} role="status" aria-live="polite"><span className="toast-i"><svg className="ico" aria-hidden="true"><use href={t.kind === "err" ? "#i-alert" : "#i-check"} /></svg></span><span>{t.msg}</span></div></div> : null}

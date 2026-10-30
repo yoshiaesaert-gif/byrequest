@@ -443,3 +443,11 @@ export const offerMessages = pgTable("offer_messages", {
   readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("offer_messages_offer").on(t.offerId, t.createdAt)]);
+
+/* Who is looking at a chat right now and who is typing. One row per chat and person; scope is "deal:<id>" or "offer:<id>". */
+export const chatLive = pgTable("chat_live", {
+  scope: text("scope").notNull(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  seenAt: timestamp("seen_at", { withTimezone: true }),
+  typingAt: timestamp("typing_at", { withTimezone: true }),
+}, (t) => [primaryKey({ columns: [t.scope, t.userId] })]);

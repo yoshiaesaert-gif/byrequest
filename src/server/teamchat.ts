@@ -11,11 +11,12 @@ const seal = (secretB64: string) => { const n = nacl.randomBytes(nacl.secretbox.
 const unseal = (v: string) => { const [n, c] = v.split("."); const o = nacl.secretbox.open(decodeBase64(c), decodeBase64(n), box()); if (!o) throw new Error("team key"); return encodeUTF8(o); };
 import { RuleError } from "@/domain/rules";
 import { notify } from "./deals";
+import { notifyChat, scopeOf, clearTyping } from "./chatnotify";
 import { log } from "./onboarding";
 
 /* Staff answer as a team profile (a request posted by ByRequest itself). Team profiles have a key pair
    held by the server, so creators chat with them end to end like with anyone; only staff can open it. */
-async function teamKeys(userId: string) {
+export async function teamKeys(userId: string) {
   const u = await db.query.users.findFirst({ where: eq(S.users.id, userId) });
   if (!u?.house) throw new RuleError("Only team profiles can be answered from the back office.");
   if (u.chatKey && u.publicKey) return { pub: u.publicKey, secret: decodeBase64(unseal(u.chatKey)) };
@@ -25,8 +26,8 @@ async function teamKeys(userId: string) {
 }
 
 // Try the key the message was sealed with, then the person's current key.
-const LOST = "(Sent before they switched to another phone or browser. It can no longer be opened: send it again.)";
-function openWith(body: string, nonce: string, keys: (string | null | undefined)[], secret: Uint8Array) {
+export const LOST = "(Sent before they switched to another phone or browser. It can no longer be opened: send it again.)";
+export function openWith(body: string, nonce: string, keys: (string | null | undefined)[], secret: Uint8Array) {
   for (const k of keys) { if (!k) continue; try { const o = nacl.box.open(decodeBase64(body), decodeBase64(nonce), decodeBase64(k), secret); if (o) return encodeUTF8(o); } catch { /* try the next key */ } }
   return null;
 }
@@ -63,7 +64,8 @@ export async function teamSend(staffId: string, dealId: string, text: string) {
   const body = nacl.box(decodeUTF8(t), nonce, decodeBase64(th.creator.publicKey), k.secret);
   await db.transaction(async (tx) => {
     await tx.insert(S.messages).values({ dealId, senderId: th.buyer.id, kind: "e2e", nonce: encodeBase64(nonce), body: encodeBase64(body), peerKey: th.creator.publicKey });
-    await notify(tx, th.creator.id, "New message", "You have a new message.", `/deals/${dealId}`);
+    await clearTyping(scopeOf("deal", dealId), th.buyer.id);
+    await notifyChat(tx, { userId: th.creator.id, scope: scopeOf("deal", dealId), href: `/deals/${dealId}`, title: "New message" });
     await log(tx, `staff:${staffId}`, "house.chat_sent", th.creator.id, { dealId });
   });
 }
@@ -78,7 +80,7 @@ export async function applicationsOf(creatorId: string) {
 }
 
 /* ---------- questions before a choice, on one application ---------- */
-async function offerParties(offerId: string) {
+export async function offerParties(offerId: string) {
   const o = await db.query.offers.findFirst({ where: eq(S.offers.id, offerId) });
   const r = o ? await db.query.requests.findFirst({ where: eq(S.requests.id, o.requestId) }) : null;
   if (!o || !r) return null;
@@ -111,7 +113,8 @@ export async function teamOfferSend(staffId: string, offerId: string, text: stri
   const body = nacl.box(decodeUTF8(t), nonce, decodeBase64(x.creator.publicKey), k.secret);
   await db.transaction(async (tx) => {
     await tx.insert(S.offerMessages).values({ offerId, senderId: x.buyer.id, nonce: encodeBase64(nonce), body: encodeBase64(body), peerKey: x.creator.publicKey });
-    await notify(tx, x.creator.id, "A question about your application", "The buyer sent you a message.", `/requests/${x.r.id}#talk`);
+    await clearTyping(scopeOf("offer", offerId), x.buyer.id);
+    await notifyChat(tx, { userId: x.creator.id, scope: scopeOf("offer", offerId), href: `/requests/${x.r.id}#talk`, title: "A question about your application" });
     await log(tx, `staff:${staffId}`, "house.offer_message", x.creator.id, { offerId });
   });
 }

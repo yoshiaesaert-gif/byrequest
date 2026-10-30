@@ -68,7 +68,7 @@ export function Feed({ items }: { items: Ev[] }) {
   const now = useSyncExternalStore(noop, () => Date.now(), () => 0);
   if (!items.length) return <p className="dz-empty">Nothing from outside yet</p>;
   const rel = (iso: string) => { if (!now) return ""; const m = Math.round((now - new Date(iso).getTime()) / 60000); return m < 1 ? "now" : m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); };
-  const group = (iso: string) => { const d = new Date(iso).toDateString(); return d === new Date().toDateString() ? "Today" : d === new Date(Date.now() - 86400_000).toDateString() ? "Yesterday" : "Earlier"; };
+  const group = (iso: string) => { const d = new Date(iso).toDateString(); return d === new Date().toDateString() ? "Today" : d === new Date(now - 86400_000).toDateString() ? "Yesterday" : "Earlier"; };
   const out: React.ReactNode[] = []; let g = "";
   items.forEach((f, n) => {
     const h = now ? group(f.at) : "";

@@ -183,6 +183,13 @@
       "when": 1793410000000,
       "tag": "0025_inner_circle",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793420000000,
+      "tag": "0026_chat_live",
+      "breakpoints": true
     }
   ]
 }

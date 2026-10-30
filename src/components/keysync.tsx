@@ -55,7 +55,7 @@ export function KeySync({ uid, accountPub, passkeys, locked }: { uid: string; ac
         if (passkeys && !locked && !asked && browserSupportsWebAuthn()) setOfferLock(true);
         return;
       }
-      setState("locked"); setOpen(true);
+      setState("locked");   // the sheet opens only when a locked message is tapped or sent to, never over a chat that works
     }, 0);
     const reopen = () => setOpen(true);
     window.addEventListener("brq:unlock", reopen);

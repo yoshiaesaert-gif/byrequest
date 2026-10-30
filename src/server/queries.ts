@@ -30,9 +30,9 @@ export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | 
 export async function request(id: string) {
   const r = await db.query.requests.findFirst({ where: eq(requests.id, id) });
   if (!r) return r;
-  const b = await db.query.users.findFirst({ where: eq(users.id, r.buyerId), columns: { house: true, buyerRatingSum: true, buyerRatingCount: true } });
+  const b = await db.query.users.findFirst({ where: eq(users.id, r.buyerId), columns: { house: true, handle: true, avatar: true, buyerRatingSum: true, buyerRatingCount: true } });
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(deals).where(and(eq(deals.buyerId, r.buyerId), eq(deals.status, "released")));
-  return { ...r, house: false, buyer: { sum: b?.buyerRatingSum ?? 0, count: b?.buyerRatingCount ?? 0, deals: n } };
+  return { ...r, house: false, buyerHouse: !!b?.house, buyerHandle: b?.handle ?? "", buyerAvatar: b?.avatar ?? null, buyer: { sum: b?.buyerRatingSum ?? 0, count: b?.buyerRatingCount ?? 0, deals: n } };
 }
 
 export async function offersFor(requestId: string) {
