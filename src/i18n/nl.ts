@@ -2322,5 +2322,13 @@ const nl: Record<string, string> = {
   "A buyer sent a request to you only. Nobody else sees it.": "Een koper stuurde een request enkel naar jou. Niemand anders ziet het.",
   "First pick for you": "Voorrang voor jou",
   "A buyer from your Inner Circle posted a new request. For 3 hours only you and their other favourites see it.": "Een koper die jou in zijn Inner Circle heeft, plaatste een nieuw request. 3 uur lang zien enkel jij en zijn andere favorieten het.",
+  "Order again": "Opnieuw bestellen",
+  "Order again from {name}": "Opnieuw bestellen bij {name}",
+  "Everything from last time is filled in. Change what you like and add new instructions in the description.": "Alles van vorige keer staat al ingevuld. Pas aan wat je wil en zet nieuwe instructies in de beschrijving.",
+  "No answer within 24 hours? Then it goes to the board so others can apply.": "Geen antwoord binnen 24 uur? Dan komt het op het bord zodat anderen kunnen reageren.",
+  "A returning buyer": "Een vaste klant",
+  "You worked for this buyer before. On repeat orders you keep 85% instead of 80%.": "Je werkte al voor deze koper. Bij herhaalbestellingen hou je 85% in plaats van 80%.",
+  "Your request is now on the board": "Je request staat nu op het bord",
+  "The creator did not answer within 24 hours, so other creators can now apply.": "De creator reageerde niet binnen 24 uur, dus nu kunnen andere creators reageren.",
 };
 export default nl;

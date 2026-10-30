@@ -93,3 +93,10 @@ export function Stars({ sum, count, t = same }: { sum: number; count: number; t?
 export function Empty({ icon, title, text, action }: { icon: string; title: string; text: string; action?: React.ReactNode }) {
   return <div className="empty card"><span className="empty-i"><I n={icon} c="lg" /></span><b className="t-h3">{title}</b><p className="muted t-sm">{text}</p>{action}</div>;
 }
+
+/* Under your own messages: one grey tick when delivered, two green ticks once the other side read it. */
+export function Ticks({ read, t = same }: { read: boolean; t?: Tr }) {
+  return read
+    ? <span className="tick read" aria-label={t("Read")} title={t("Read")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L17 7M9.5 16l1 1 10.5-10.5" /></svg></span>
+    : <span className="tick" aria-label={t("Delivered")} title={t("Delivered")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19.5 7" /></svg></span>;
+}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useT } from "@/i18n/client";
 import { myKeys, open, seal } from "@/components/e2e";
 import { offerThread, sendOfferMessage } from "../../actions";
+import { Ticks } from "@/components/ui";
 import { toast } from "@/components/chrome";
 
 type Thread = NonNullable<Awaited<ReturnType<typeof offerThread>>>;
@@ -27,7 +28,7 @@ export default function OfferTalk({ offerId, uid }: { offerId: string; uid: stri
   });
   return (<section className="talk" id="talk">
     <div className="talk-h"><b>{t("Questions from the buyer")}</b><span>{t("Only you and {name} can read this.", { name: th.other.handle })}</span></div>
-    <div className="talk-msgs">{th.msgs.map((m) => <div key={m.id} className={"talk-m" + (m.mine ? " mine" : "")}><span>{say(m)}</span></div>)}<div ref={end} /></div>
+    <div className="talk-msgs">{th.msgs.map((m) => <div key={m.id} className={"talk-m" + (m.mine ? " mine" : "")}><span>{say(m)}</span>{m.mine ? <small className="talk-meta"><Ticks read={m.read} t={t} /></small> : null}</div>)}<div ref={end} /></div>
     <form className="talk-f" onSubmit={(e) => { e.preventDefault(); if (text.trim()) send(); }}><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Answer {name}", { name: th.other.handle })} maxLength={1500} /><button className="btn btn-primary" disabled={p || !text.trim()}>{t("Send")}</button></form>
   </section>);
 }

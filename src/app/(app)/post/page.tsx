@@ -12,9 +12,13 @@ export default async function Post({ searchParams }: { searchParams: Promise<Rec
   const u = await requireUser();
   const sp = await searchParams;
   // ?to=handle: a personal request, only when this creator accepts them.
+  // ?again=dealId: order the same again from the same creator, with room for new instructions.
+  const prev = sp.again ? await db.query.deals.findFirst({ where: eq(schema.deals.id, sp.again) }) : null;
+  const old = prev && prev.buyerId === u.id ? await db.query.requests.findFirst({ where: eq(schema.requests.id, prev.requestId) }) : null;
+  if (old && prev) { const c = await db.query.users.findFirst({ where: eq(schema.users.id, prev.creatorId), columns: { handle: true } }); sp.to = c?.handle; sp.c = old.category; sp.amount = String(old.amount); sp.title = old.title; sp.d = old.details; sp.budget = String(Math.round(old.dealCents / 100)); }
   const target = sp.to ? await db.query.users.findFirst({ where: eq(schema.users.handle, sp.to.toLowerCase()), columns: { id: true, handle: true } }) : null;
   const to = target && (await canSendPersonal(u.id, target.id)) ? target.handle : null;
   const circle = to ? 0 : await circleSize(u.id);
   const c = ["video", "photos", "voice", "custom"].includes(sp.c ?? "") ? sp.c! : "video";
-  return <Wizard initial={{ category: c as "video", amount: Number(sp.amount) || 0, title: sp.title ?? "", details: sp.d ?? "", budget: Number(sp.budget) || 0 }} vatBp={vatRate(u.country ?? "BE")} freeFee={u.freeFees > 0} balance={await balance(u.id)} ageOk={!BUYER_AGE_CHECK || (await isAgeVerified(u.id))} waiver={WAIVER_TEXT} to={to} circle={circle} />;
+  return <Wizard initial={{ category: c as "video", amount: Number(sp.amount) || 0, title: sp.title ?? "", details: sp.d ?? "", budget: Number(sp.budget) || 0 }} vatBp={vatRate(u.country ?? "BE")} freeFee={u.freeFees > 0} balance={await balance(u.id)} ageOk={!BUYER_AGE_CHECK || (await isAgeVerified(u.id))} waiver={WAIVER_TEXT} to={to} circle={circle} again={!!old && !!to} />;
 }

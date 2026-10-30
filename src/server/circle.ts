@@ -68,3 +68,17 @@ export async function onLive(tx: Tx, r: { id: string; buyerId: string; forCreato
   await tx.update(S.requests).set({ circleUntil: new Date(Date.now() + HEAD_START * 3_600_000) }).where(eq(S.requests.id, r.id));
   await tx.insert(S.notifications).values(fans.map((f) => ({ userId: f.id, title: "First pick for you", body: "A buyer from your Inner Circle posted a new request. For 3 hours only you and their other favourites see it.", href: `/requests/${r.id}` })));
 }
+
+/* A personal request the creator left unanswered for a day goes to the board, so the buyer still gets it made. */
+export const PERSONAL_HOURS = 24;
+export async function releasePersonal() {
+  const due = await db.select({ id: S.requests.id, buyerId: S.requests.buyerId, closesAt: S.requests.closesAt }).from(S.requests)
+    .where(and(sql`${S.requests.forCreatorId} is not null`, eq(S.requests.status, "open"), sql`${S.requests.reviewedAt} < now() - interval '24 hours'`,
+      sql`not exists (select 1 from offers o where o.request_id = ${S.requests.id} and o.creator_id = ${S.requests.forCreatorId})`));
+  for (const r of due) {
+    const min = new Date(Date.now() + 48 * 3_600_000);
+    await db.update(S.requests).set({ forCreatorId: null, closesAt: r.closesAt < min ? min : r.closesAt }).where(eq(S.requests.id, r.id));
+    await db.insert(S.notifications).values({ userId: r.buyerId, title: "Your request is now on the board", body: "The creator did not answer within 24 hours, so other creators can now apply.", href: `/requests/${r.id}/offers` });
+  }
+  return due.length;
+}

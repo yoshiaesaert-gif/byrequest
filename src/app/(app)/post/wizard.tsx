@@ -36,7 +36,7 @@ const DRAFT = "brq_post_draft";
 
 type Draft = { category: Cat; amount: number; title: string; details: string; callMe: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
-export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false, balance = 0, to = null, circle = 0 }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean; balance?: number; to?: string | null; circle?: number }) {
+export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false, balance = 0, to = null, circle = 0, again = false }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean; balance?: number; to?: string | null; circle?: number; again?: boolean }) {
   const t = useT();
   const [circleFirst, setCircleFirst] = useState(true);
   const [waived, setWaived] = useState(false);
@@ -111,7 +111,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false,
       <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{t("Step {n} of {m}", { n: i + 1, m: STEPS.length })}</span></div>
       <div className="wz-grid">
         <div className="wz-body" key={step}>
-          {to ? <div className="ic-for"><b>{t("Personal request for {name}", { name: to })}</b><span>{t("Only {name} sees it. Not on the board, nobody else.", { name: to })}</span></div> : null}
+          {to ? <div className="ic-for"><b>{again ? t("Order again from {name}", { name: to }) : t("Personal request for {name}", { name: to })}</b><span>{again ? t("Everything from last time is filled in. Change what you like and add new instructions in the description.") : t("Only {name} sees it. Not on the board, nobody else.", { name: to })} {t("No answer within 24 hours? Then it goes to the board so others can apply.")}</span></div> : null}
           {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
             <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: RANGE[c.k].def, price: null }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
               <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>{t("Worn items")}</b><span className="s">{t("Coming soon")}</span></div></button></div></>)}

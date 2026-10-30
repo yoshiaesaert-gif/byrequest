@@ -1,6 +1,7 @@
 /* Pure business rules. No database, no I/O, so every rule here is unit tested. */
 
 export const CREATOR_SHARE = 0.8;
+export const REPEAT_SHARE = 0.85;           // a buyer who comes back to the same creator: the creator keeps more
 export const BUYER_FEE = 0.1;
 export const OBJECTION_HOURS = 24;           // the latest moment of automatic release
 export const VIEW_RELEASE_MINUTES = 60;      // after the buyer first opens the delivery, release follows within the hour
@@ -10,10 +11,10 @@ export type Category = "video" | "photos" | "voice" | "custom" | "worn";
 export type VaultPeriod = "7d" | "30d" | "1y" | "forever";
 export type DealStatus = "held" | "reviewing" | "delivered" | "disputed" | "released" | "refunded";
 
-export function split(dealCents: number) {
+export function split(dealCents: number, repeat = false) {
   if (!Number.isInteger(dealCents) || dealCents <= 0) throw new Error("deal value must be a positive number of cents");
   const feeCents = Math.round(dealCents * BUYER_FEE);
-  const creatorCents = Math.round(dealCents * CREATOR_SHARE);
+  const creatorCents = Math.round(dealCents * (repeat ? REPEAT_SHARE : CREATOR_SHARE));
   return { dealCents, feeCents, buyerPays: dealCents + feeCents, creatorCents, platformCents: dealCents + feeCents - creatorCents };
 }
 

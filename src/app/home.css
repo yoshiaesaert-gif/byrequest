@@ -396,3 +396,4 @@
 .ic-first input{margin-top:3px;accent-color:#6D4AFF;width:18px;height:18px}
 .ic-first>span{display:grid;gap:2px}
 .ic-deal{grid-template-columns:1fr auto;align-items:center;gap:14px}.ic-deal>div{display:grid;gap:2px}.ic-deal .ic-btn{width:auto}@media (max-width:640px){.ic-deal{grid-template-columns:1fr}}
+.ic-acts{display:flex;gap:8px;flex-wrap:wrap}.ic-acts .btn{width:auto}.ic-for.rep{background:linear-gradient(135deg,#E9F9EF,#F6FDF8);box-shadow:inset 0 0 0 1px #CDEFD9}.ic-for.rep b{color:#166534}.ic-for.rep span{color:#3F6B4E}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { mayView, inCircle } from "@/server/circle";
+import { mayView, inCircle, workedWith } from "@/server/circle";
 import { notFound, redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -43,7 +43,8 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   const unpublished = r.status === "in_review" || r.status === "rejected";
   if (unpublished && !staff) notFound();
   const profile = u.isCreator ? await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, u.id) }) : null;
-  const m = split(r.dealCents);
+  const repeat = u.isCreator ? await workedWith(r.buyerId, u.id) : false;   // a returning buyer: the creator keeps more
+  const m = split(r.dealCents, repeat);
   const open = r.status === "open" && r.closesAt > new Date();
   const card = { ...r, offers: offers.length };
 
@@ -52,6 +53,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
     {unpublished ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{r.status === "in_review" ? t("Not published: waiting for review") : t("Not published: rejected")}</b><div className="t-sm">{t("Only the team and the buyer see this page.")}</div></div><Link href={`/admin/requests/${id}`} className="btn btn-primary btn-sm">{t("Review in back office")}</Link></div> : null}
     {raw.forCreatorId ? <div className="ic-for"><b>{t("A personal request for you")}</b><span>{t("This buyer sent it to you only. Nobody else sees it.")}</span></div>
       : early ? <div className="ic-for"><b>{t("Inner Circle first")}</b><span>{t("This buyer added you to their Inner Circle. Until {time} only their favourites see this request.", { time: raw.circleUntil!.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" }) })}</span></div> : null}
+    {repeat ? <div className="ic-for rep"><b>{t("A returning buyer")}</b><span>{t("You worked for this buyer before. On repeat orders you keep 85% instead of 80%.")}</span></div> : null}
     {mine && mine.status === "pending" ? <a href="#offer" className="applied-flag"><I n="check" />{t("You applied for this request")}<span className="applied-go">{t("View")}</span></a> : null}
     <div className="two">
       <div>
@@ -86,7 +88,7 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
       <aside className="sticky" id="offer">
         <div className="card checkout">
           <dl className="earnsplit"><div><dt>{t("Budget")}</dt><dd className="num">{euros(m.dealCents)}</dd></div>
-            <div><dt>{t("Platform fee {rate}%", { rate: 20 })}</dt><dd className="num">−{euros(m.dealCents - m.creatorCents)}</dd></div>
+            <div><dt>{t("Platform fee {rate}%", { rate: repeat ? 15 : 20 })}</dt><dd className="num">−{euros(m.dealCents - m.creatorCents)}</dd></div>
             <div className="tot"><dt>{t("You receive")}</dt><dd className="num">{euros(m.creatorCents)}</dd></div></dl>
           {!open ? <p className="t-sm muted">{t("This request is closed.")}</p>
             : !u.isCreator ? (<>

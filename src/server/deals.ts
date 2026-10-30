@@ -1,9 +1,9 @@
 import "server-only";
-import { mayView, inCircle } from "./circle";
+import { mayView, inCircle, workedWith } from "./circle";
 import { profileMissing } from "@/domain/looks-detail";
 import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
-import { quote, quoteFromTotal, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
+import { quote, quoteFromTotal, split, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
 import { payments, STATEMENT_NAME } from "./payments";
 import { ingest, remove, type Stored } from "./media";
 import { issueDecision } from "./decisions";
@@ -113,10 +113,12 @@ export async function acceptOffer(buyerId: string, offerId: string, opts: { with
   const fresh = quote(r.dealCents, vatRate(buyer?.country ?? "BE"));
   const m = paid ? { ...quote(r.dealCents, r.payVatRate ?? fresh.vatRate), total: r.payTotalCents!, feeCents: r.payFeeCents!, vatCents: r.payVatCents!, vatRate: r.payVatRate! } : fresh;
   const charge = paid ? { ref: r.payRef! } : await payments.charge({ buyerId, cents: m.total, descriptor: STATEMENT_NAME });
+  // A returning buyer: the creator keeps a bigger share, the buyer pays the same.
+  const repeat = await workedWith(buyerId, o.creatorId);
   return db.transaction(async (tx) => {
     const [d] = await tx.insert(deals).values({
       requestId: r.id, offerId: o.id, buyerId, creatorId: o.creatorId,
-      dealCents: m.dealCents, feeCents: m.feeCents, creatorCents: m.creatorCents,
+      dealCents: m.dealCents, feeCents: m.feeCents, creatorCents: split(m.dealCents, repeat).creatorCents,
       vatCents: m.vatCents, vatRate: m.vatRate, withdrawalWaivedAt: paid ? r.paidAt! : new Date(),
       paymentRef: charge.ref, dueAt: addHours(new Date(), o.etaHours),
     }).returning();

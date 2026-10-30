@@ -47,7 +47,7 @@ export async function teamThread(dealId: string) {
   const msgs = rows.map((m) => {
     if (m.kind !== "e2e" || !m.nonce) return { id: m.id, mine: false, system: true, text: m.body, at: m.createdAt };
     const text = openWith(m.body, m.nonce, [m.peerKey, creator.publicKey], k.secret) ?? LOST;
-    return { id: m.id, mine: m.senderId === buyer.id, system: false, text, at: m.createdAt };
+    return { id: m.id, mine: m.senderId === buyer.id, system: false, text, at: m.createdAt, read: !!d.creatorReadAt && d.creatorReadAt >= m.createdAt };
   });
   return { d, buyer, creator, title: r.title, msgs };
 }
@@ -95,7 +95,7 @@ export async function teamOfferThread(offerId: string) {
   await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, x.creator.id), isNull(S.offerMessages.readAt)));
   const msgs = rows.map((m) => {
     const text = openWith(m.body, m.nonce, [m.peerKey, x.creator.publicKey], k.secret) ?? LOST;
-    return { id: m.id, mine: m.senderId === x.buyer.id, system: false, text, at: m.createdAt };
+    return { id: m.id, mine: m.senderId === x.buyer.id, system: false, text, at: m.createdAt, read: !!m.readAt };
   });
   return { ...x, msgs };
 }
@@ -126,7 +126,7 @@ export async function offerThreadFor(userId: string, offerId: string) {
   if (other.house && x.creator.publicKey) { const k = await teamKeys(other.id); await reseal(await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)), x.creator.publicKey, k.secret, "offer"); }
   const rows = await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)).orderBy(asc(S.offerMessages.createdAt));
   await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, other.id), isNull(S.offerMessages.readAt)));
-  return { other: { id: other.id, handle: other.handle, publicKey: fresh?.publicKey ?? null }, msgs: rows.map((m) => ({ id: m.id, mine: m.senderId === userId, nonce: m.nonce, body: m.body, at: m.createdAt.toISOString() })) };
+  return { other: { id: other.id, handle: other.handle, publicKey: fresh?.publicKey ?? null }, msgs: rows.map((m) => ({ id: m.id, mine: m.senderId === userId, nonce: m.nonce, body: m.body, at: m.createdAt.toISOString(), read: !!m.readAt })) };
 }
 
 export async function offerSendFrom(userId: string, offerId: string, sealed: { nonce: string; body: string }) {

@@ -4,12 +4,10 @@ import { overview } from "@/server/backoffice";
 import { euros } from "@/domain/rules";
 import { when } from "@/components/ui";
 import { activity, type Metric } from "@/server/activity";
-import { Chg, Spark } from "./visitors/charts";
-import { Trend } from "./activity";
+import { ActivityBoard, Feed } from "./activity";
 
 const LABEL: Record<Metric, string> = { signups: "New accounts", active: "Active people", requests: "Requests posted", offers: "Offers sent", messages: "Messages sent", deals: "Deals started" };
 const HINT: Record<Metric, string> = { signups: "external sign ups", active: "signed in and on the site", requests: "by external buyers", offers: "by external creators", messages: "chats and questions, never read", deals: "with an external side" };
-const FEED: Record<string, string> = { signup: "signed up", request: "posted a request", offer: "applied for", message: "sent a message" };
 
 const age = (d: Date | null) => { if (!d) return null; const h = (Date.now() - d.getTime()) / 3600_000; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`; };
 
@@ -33,15 +31,9 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     <section className="ax">
       <div className="ax-top"><div><span className="ax-eye"><i />External activity</span><h2>What real people do right now</h2><p>Only accounts outside the team: internal accounts and team profiles are left out. Compared up to the same time of day.</p></div>
         <div className="ax-people"><div><b className="num">{a.people.accounts}</b><span>external accounts</span></div><div><b className="num">{a.people.creators}</b><span>creators</span></div><div><b className="num">{a.people.buyers}</b><span>buyers</span></div></div></div>
-      <div className="ax-tiles">{order.map((k) => { const x = a.m[k]; return (
-        <div key={k} className="dz-card ax-tile"><span className="dz-lbl">{LABEL[k]} today</span><b className="num">{x.today}</b><small>{HINT[k]}</small>
-          <div className="dz-tile-c"><Chg a={x.today} b={x.yday} suffix=" vs yesterday" /><Chg a={x.today} b={x.lweek} suffix=" vs last week" /></div>
-          <div className="ax-w"><span>7 days <b className="num">{x.w7}</b></span><Chg a={x.w7} b={x.p7} suffix=" w/w" /></div>
-          <Spark data={x.daily} /></div>); })}</div>
-      <div className="ax-cols">
-        <div className="dz-card"><div className="dz-h"><h3>Per day</h3><span>Last 30 days · pick a metric · hover a bar</span></div><Trend series={order.map((k) => ({ k, label: LABEL[k], total: a.m[k].daily.reduce((s, r) => s + r.v, 0), rows: a.m[k].daily }))} /></div>
-        <div className="dz-card ax-feed"><div className="dz-h"><h3>Latest from outside</h3><span>newest first</span></div>
-          {a.feed.length ? <ol>{a.feed.map((f, n) => <li key={n}><span className={"ax-dot " + f.kind} /><span><Link href={`/admin/users/${f.uid}`}>{f.who}</Link> {FEED[f.kind]}{f.what ? <em> {f.what}</em> : null}</span><time>{when(new Date(f.at))}</time></li>)}</ol> : <p className="dz-empty">Nothing from outside yet</p>}</div>
+      <div className="ax-main">
+        <div className="ax-left"><ActivityBoard hour={a.hour} metrics={order.map((k) => ({ k, label: LABEL[k], hint: HINT[k], ...a.m[k], more: k === "offers" ? "/admin/offers" : k === "requests" ? "/admin/requests?tab=all&source=external" : k === "signups" ? "/admin/users" : undefined }))} /></div>
+        <section className="dz-card ax-feed"><div className="dz-h"><h3>Latest from outside</h3><span>live</span></div><Feed items={a.feed} /></section>
       </div>
     </section>
 

@@ -2322,5 +2322,13 @@ const fr: Record<string, string> = {
   "A buyer sent a request to you only. Nobody else sees it.": "Un acheteur t'a envoyé une demande à toi seul. Personne d'autre ne la voit.",
   "First pick for you": "Priorité pour toi",
   "A buyer from your Inner Circle posted a new request. For 3 hours only you and their other favourites see it.": "Un acheteur qui t'a dans son Inner Circle a publié une nouvelle demande. Pendant 3 heures, seuls toi et ses autres favoris la voient.",
+  "Order again": "Commander à nouveau",
+  "Order again from {name}": "Commander à nouveau chez {name}",
+  "Everything from last time is filled in. Change what you like and add new instructions in the description.": "Tout est déjà rempli comme la dernière fois. Modifie ce que tu veux et ajoute de nouvelles instructions dans la description.",
+  "No answer within 24 hours? Then it goes to the board so others can apply.": "Pas de réponse sous 24 heures ? Elle passe alors sur le tableau pour que d'autres puissent postuler.",
+  "A returning buyer": "Un client fidèle",
+  "You worked for this buyer before. On repeat orders you keep 85% instead of 80%.": "Tu as déjà travaillé pour cet acheteur. Sur les commandes répétées, tu gardes 85 % au lieu de 80 %.",
+  "Your request is now on the board": "Ta demande est maintenant sur le tableau",
+  "The creator did not answer within 24 hours, so other creators can now apply.": "Le créateur n'a pas répondu sous 24 heures, d'autres créateurs peuvent maintenant postuler.",
 };
 export default fr;
