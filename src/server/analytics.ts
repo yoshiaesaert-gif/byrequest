@@ -83,17 +83,17 @@ export async function dashboard() {
   const top = async (col: ReturnType<typeof sql>, where = sql`true`, n = 8) => (await db.execute<{ k: string; n: number }>(sql`select ${col} k, count(*)::int n from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(6)} and ${where} group by 1 order by 2 desc limit ${n}`)).rows;
   const [countries, cities, devices, browsers, referrers, codes, landings] = await Promise.all([
     top(sql`coalesce(${visits.country}, 'Unknown')`), top(sql`coalesce(${visits.city} || ', ' || ${visits.country}, 'Unknown')`), top(sql`${visits.device}`), top(sql`${visits.browser} || ' · ' || ${visits.os}`),
-    top(sql`coalesce(${visits.referrer}, 'Direct')`), top(sql`${visits.refCode}`, sql`${visits.refCode} is not null`), top(sql`split_part(${visits.landing}, '?', 1)`)]);
+    top(sql`coalesce(${visits.referrer}, 'Direct')`), top(sql`${visits.refCode} || coalesce(' · ' || (select u2.handle from users u2 where u2.ref_code = ${visits.refCode}), '')`, sql`${visits.refCode} is not null`), top(sql`split_part(${visits.landing}, '?', 1)`)]);
   const ev = async (kind: string) => (await db.execute<{ k: string; n: number }>(sql`select ${kind === "page" ? sql`split_part(${visitEvents.path}, '?', 1)` : sql`coalesce(${visitEvents.label}, ${visitEvents.path})`} k, count(*)::int n from ${visitEvents} where ${visitEvents.visitId} not in (select id from visits where not (${GUEST})) and ${visitEvents.at} >= ${dayStart(6)} and ${visitEvents.kind} = ${kind} group by 1 order by 2 desc limit 10`)).rows;
   const [pages, clicks] = await Promise.all([ev("page"), ev("click")]);
   const live = await db.select({ n: sql<number>`count(distinct ${visits.visitorId})::int` }).from(visits).where(and(GUEST, gt(visits.lastAt, new Date(Date.now() - 5 * 60_000))));
-  const recent = await db.select({ v: visits, handle: users.handle, internal: users.internal }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(GUEST).orderBy(desc(visits.lastAt)).limit(40);
+  const recent = await db.select({ v: visits, handle: users.handle, internal: users.internal, inviter: sql<string | null>`(select u2.handle from users u2 where u2.ref_code = ${visits.refCode})` }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(GUEST).orderBy(desc(visits.lastAt)).limit(40);
   const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${TZ})::int h`)).rows[0].h);
   return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, pages, clicks, live: live[0].n, recent };
 }
 
 export async function visitDetail(id: string) {
-  const v = await db.select({ v: visits, handle: users.handle }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(eq(visits.id, id)).limit(1);
+  const v = await db.select({ v: visits, handle: users.handle, inviter: sql<string | null>`(select u2.handle from users u2 where u2.ref_code = ${visits.refCode})` }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(eq(visits.id, id)).limit(1);
   if (!v[0]) return null;
   const events = await db.select().from(visitEvents).where(eq(visitEvents.visitId, id)).orderBy(visitEvents.at).limit(500);
   const others = await db.select({ id: visits.id, startedAt: visits.startedAt, pages: visits.pages }).from(visits).where(eq(visits.visitorId, v[0].v.visitorId)).orderBy(desc(visits.startedAt)).limit(20);
