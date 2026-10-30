@@ -1531,3 +1531,19 @@ html.cx-lock .hb-launch{display:none}
 .pl-empty{margin:0;padding:34px;text-align:center;color:var(--muted)}.pl-foot{margin:0}
 @media (max-width:900px){.pl-head{display:none}.pl-row{grid-template-columns:28px minmax(0,1fr) auto;gap:8px;padding:10px 14px}.pl-page,.pl-who{display:none}.pl-row>span:nth-of-type(4){display:none}.pl-detail{padding-left:16px}}
 .pl-bulk .btn-primary{background:#B8F5D9;color:#0B2A1E}
+
+/* Help popup header, final: logo, title with role pill, gear and close side by side */
+.hb header{gap:10px;padding:14px 14px 14px 16px}
+.hb header>div:not(.hb-gear){flex:1;min-width:0}
+.hb header .hb-gear{flex:0 0 auto;display:block}
+.hb header b{display:flex;align-items:center;gap:8px}
+.hb-mode{padding:2px 9px;border-radius:999px;font-size:.66rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.hb-mode.creator{background:#ECEAFF;color:#3F2BA8}.hb-mode.buyer{background:#E3F4EC;color:#0B6B47}
+.hb header>button,.hb header .hb-gear>button{width:34px;height:34px}
+.hb-role{display:none}
+/* Gear menu: light and quiet */
+.hb-gm{width:228px;padding:6px;border-radius:14px}
+.hb header .hb-gm a,.hb header .hb-gm button{padding:9px 12px;gap:0}
+.hb-gm b{font-size:.86rem;font-weight:500;letter-spacing:-.005em;color:#0E1013}
+.hb-gm span{font-size:.72rem;font-weight:400;color:#8A8E96}
+.hb-chips button{font-weight:500}
