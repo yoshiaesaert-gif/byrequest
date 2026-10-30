@@ -28,6 +28,7 @@ export async function POST(req: Request) {
   } catch (e) {
     if (e instanceof RuleError) return Response.json({ error: e.message }, { status: 400 });
     // The assistant is down: never lose the message, give it to the team.
+    console.error("help bot failed:", e instanceof Error ? e.message : e, "key set:", botReady());
     try { await file(turns[turns.length - 1].content); return Response.json({ reply: null, filed: true }); } catch { return Response.json({ error: "That did not work. Please try again." }, { status: 500 }); }
   }
 }
