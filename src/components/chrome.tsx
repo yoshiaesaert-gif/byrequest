@@ -6,7 +6,11 @@ import { setMode, markNoteRead } from "@/app/(app)/actions";
 import { signOut } from "@/app/signin/actions";
 
 /* ---------- toasts: any client component can call toast("…") ---------- */
-export function toast(msg: string, kind: "ok" | "err" = "ok") { window.dispatchEvent(new CustomEvent("brq:toast", { detail: { msg, kind } })); }
+/* After a new version goes live, an open tab can still call an action that no longer exists: reload quietly instead of showing the raw error. */
+const STALE = /Server Action .* was not found|failed-to-find-server-action/i;
+export function toast(msg: string, kind: "ok" | "err" = "ok") {
+  if (STALE.test(msg)) { msg = "ByRequest was just updated. One moment…"; kind = "ok"; window.setTimeout(() => window.location.reload(), 1400); }
+  window.dispatchEvent(new CustomEvent("brq:toast", { detail: { msg, kind } })); }
 
 function useEsc(fn: () => void) { useEffect(() => { const h = (e: KeyboardEvent) => e.key === "Escape" && fn(); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [fn]); }
 

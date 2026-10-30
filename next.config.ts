@@ -9,7 +9,8 @@ const deploymentId = existsSync(".build-id") ? readFileSync(".build-id", "utf8")
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   deploymentId,
-  experimental: { serverActions: { bodySizeLimit: "600mb" } },
+  /* Pages you just visited reopen from the browser for a short while; chats poll on their own. */
+  experimental: { serverActions: { bodySizeLimit: "600mb" }, staleTimes: { dynamic: 15, static: 300 } },
   async headers() {
     return [{
       source: "/:path*",

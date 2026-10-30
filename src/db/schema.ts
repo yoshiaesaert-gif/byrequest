@@ -31,7 +31,7 @@ export const users = pgTable("users", {
   marketingOptIn: boolean("marketing_opt_in").notNull().default(false),
   bannedAt: timestamp("banned_at", { withTimezone: true }),
   banReason: text("ban_reason"),
-  avatar: jsonb("avatar").$type<{ kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean }>(),
+  avatar: jsonb("avatar").$type<{ kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean; src: string }>(),
   publicKey: text("public_key"),          // NaCl box public key, base64. The secret key never leaves the device.
   prefs: jsonb("prefs").$type<Prefs>().notNull().default({ frost: true, discreetPush: true, neutralTab: false }),
   ratingSum: integer("rating_sum").notNull().default(0),

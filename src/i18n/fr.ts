@@ -2366,5 +2366,11 @@ const fr: Record<string, string> = {
   "Chosen": "Choisi",
   "Not chosen": "Non retenu",
   "Share photos": "Partager des photos",
+  "Choose a photo first": "Choisissez d'abord une photo",
+  "Saved. This is how others see you.": "Enregistré. Voilà comment les autres vous voient.",
+  "Not saved yet. Your avatar changes only after you save.": "Pas encore enregistré. Votre avatar ne change qu'après l'enregistrement.",
+  "No photo yet": "Pas encore de photo",
+  "Your photo is cropped to a small round picture. Blur is applied before it is saved.": "Votre photo est recadrée en une petite image ronde. Le flou est appliqué avant l'enregistrement.",
+  "ByRequest was just updated. One moment…": "ByRequest vient d'être mis à jour. Un instant…",
 };
 export default fr;

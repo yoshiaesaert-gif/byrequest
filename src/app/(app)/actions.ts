@@ -255,8 +255,9 @@ export async function setPref(key: "frost" | "discreetPush" | "neutralTab" | "ma
   revalidatePath("/", "layout");
 }
 
-export async function setAvatar(a: { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown> }) {
+export async function setAvatar(a: { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown> } | { kind: "photo"; blur: boolean; src: string }) {
   const u = await requireUser();
+  if (a.kind === "photo" && !(/^data:image\/(webp|jpeg);base64,[A-Za-z0-9+/=]+$/.test(a.src) && a.src.length < 90_000)) throw new Error("That photo cannot be used");
   await db.update(schema.users).set({ avatar: a }).where(eq(schema.users.id, u.id));
   revalidatePath("/", "layout");
 }

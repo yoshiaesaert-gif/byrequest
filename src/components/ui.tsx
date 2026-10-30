@@ -7,7 +7,7 @@ export function I({ n, c }: { n: string; c?: "sm" | "lg" }) {
 }
 
 const LOOKS = new Set(ALL_LOOKS);
-type Avatar = { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean } | null | undefined;
+type Avatar = { kind: "3d"; look: string } | { kind: "built"; spec: Record<string, unknown>; svg?: string } | { kind: "photo"; blur: boolean; src: string } | null | undefined;
 
 /** Data URL for a stored avatar SVG; adds the namespace an <img> needs to render it. */
 export function svgSrc(svg: string) {
@@ -21,6 +21,8 @@ export function Av({ a, name, size = 40, square }: { a: Avatar; name: string; si
     return <img className="av3d" src={`/av/${a.look}.webp`} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
   if (a?.kind === "built" && a.svg)   // pre-rendered SVG; an <img> keeps its internal ids isolated
     return <img className="av3d" src={svgSrc(a.svg)} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
+  if (a?.kind === "photo" && a.src.startsWith("data:image/"))
+    return <img className="av3d" src={a.src} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flex: "0 0 auto" }} />;
   return <span className="avx" style={{ width: size, height: size, borderRadius: r, fontSize: size * 0.42 }} aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>;
 }
 

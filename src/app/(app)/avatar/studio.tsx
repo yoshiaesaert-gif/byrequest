@@ -14,7 +14,8 @@ type Engine = { studio: (root: HTMLElement, opts: Record<string, unknown>) => un
 export default function Studio({ current }: { current: string | null }) {
   const root = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  const state = useRef<{ look: string | null; spec: Record<string, unknown> | null }>({ look: current ?? "kai", spec: null });
+  const state = useRef<{ look: string | null; spec: Record<string, unknown> | null; mode: string; photo: { src: string; blur: boolean } | null }>({ look: current ?? "kai", spec: null, mode: current ? "3d" : "av", photo: null });
+  const [saved, setSaved] = useState(false);
   const [pending, start] = useTransition();
   const t = useT();
   // The engine writes its own labels in English; translate its text nodes as they appear.
@@ -37,18 +38,22 @@ export default function Studio({ current }: { current: string | null }) {
     const E = (window as unknown as { BRQAvatar?: Engine }).BRQAvatar;
     if (!ready || !E || !root.current) return;
     const order = current ? [current, ...LOOKS.filter((l) => l !== current)] : LOOKS;
-    E.studio(root.current, { initial: E.presets.milo, looks: order.map((id) => ({ id, src: `/av/${id}.webp` })), onLook: (l: { id: string }) => { state.current = { look: l.id, spec: null }; }, onChange: (a: Record<string, unknown>) => { state.current = { ...state.current, spec: a }; } });
+    E.studio(root.current, { initial: E.presets.milo, looks: order.map((id) => ({ id, src: `/av/${id}.webp` })), onLook: (l: { id: string }) => { state.current = { ...state.current, look: l.id, spec: null }; setSaved(false); }, onChange: (a: Record<string, unknown>) => { state.current = { ...state.current, spec: a }; setSaved(false); }, onMode: (m: string) => { state.current.mode = m; setSaved(false); }, onPhoto: (p: { src: string; blur: boolean }) => { state.current.photo = p; setSaved(false); } });
   }, [ready, current]);
   const save = () => start(async () => {
     const s = state.current;
+    if (s.mode === "ph") {
+      if (!s.photo) { toast(t("Choose a photo first")); return; }
+      await setAvatar({ kind: "photo", src: s.photo.src, blur: s.photo.blur }); setSaved(true); toast(t("Avatar saved")); return;
+    }
     // "Build" is the part editor when no 3D looks are offered; read the mode, not the (translated) label.
     const built = root.current?.querySelector(".on[data-mode]")?.getAttribute("data-mode") === "av" && !root.current?.querySelector('[data-mode="3d"]');
     await setAvatar(built && s.spec ? { kind: "built", spec: s.spec } : { kind: "3d", look: s.look ?? "kai" });
-    toast(t("Avatar saved"));
+    setSaved(true); toast(t("Avatar saved"));
   });
   return (<>
     <Script src="/avatar.js" strategy="afterInteractive" onReady={() => setReady(true)} />
-    <button className="btn btn-primary btn-lg btn-block" style={{ marginBottom: 16 }} onClick={save} disabled={pending}>{pending ? t("Saving…") : t("Save avatar")}</button>
     <div className="st" ref={root} />
+    <div className="av-save"><span className="t-sm muted">{saved ? t("Saved. This is how others see you.") : t("Not saved yet. Your avatar changes only after you save.")}</span><button className="btn btn-primary btn-lg" onClick={save} disabled={pending}>{pending ? t("Saving…") : saved ? t("Saved") : t("Save avatar")}</button></div>
   </>);
 }

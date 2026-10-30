@@ -2366,5 +2366,11 @@ const nl: Record<string, string> = {
   "Chosen": "Gekozen",
   "Not chosen": "Niet gekozen",
   "Share photos": "Foto's delen",
+  "Choose a photo first": "Kies eerst een foto",
+  "Saved. This is how others see you.": "Opgeslagen. Zo zien anderen je.",
+  "Not saved yet. Your avatar changes only after you save.": "Nog niet opgeslagen. Je avatar verandert pas na opslaan.",
+  "No photo yet": "Nog geen foto",
+  "Your photo is cropped to a small round picture. Blur is applied before it is saved.": "Je foto wordt bijgesneden tot een klein rond beeld. Vervaging gebeurt voor het opslaan.",
+  "ByRequest was just updated. One moment…": "ByRequest is zonet bijgewerkt. Even geduld…",
 };
 export default nl;

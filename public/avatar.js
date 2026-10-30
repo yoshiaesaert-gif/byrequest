@@ -288,11 +288,11 @@ function studio(root,opts){
     (st.res?'<div class="st-res">'+st.res.map(function(o,i){return '<button data-pick="'+i+'" aria-label="Choose avatar '+(i+1)+'">'+avatarSVG(o)+'</button>'}).join("")+'</div>':'')+'</div>'}
   function draw(){
     var tabsEl=root.querySelector(".st-tabs"),sl=tabsEl?tabsEl.scrollLeft:0,pn=root.querySelector(".st-panel"),ps=pn?pn.scrollTop:0;
-    var face=st.photoMode&&st.photo?'<img src="'+st.photo+'" alt=""'+(st.blur?' class="blur"':'')+'>':avatarSVG(st.A);
+    var face=st.photoMode?(st.photo?'<img src="'+st.photo+'" alt="">':'<div class="st-blank"><span>No photo yet</span></div>'):avatarSVG(st.A);
     var LK=opts.looks||[], is3=st.m==="3d"&&LK.length>0;
     var modes='<div class="st-mode">'+(LK.length?'<button class="'+(is3?'on':'')+'" data-mode="3d">3D look</button>':'')+'<button class="'+(st.m==="av"?'on':'')+'" data-mode="av">Build</button><button class="'+(st.m==="ph"?'on':'')+'" data-mode="ph">Photo</button></div>';
     var body='<div class="st-stage"><div class="st-big">'+face+'</div>'+(st.photoMode?'':'<div class="st-actions"><button class="st-btn st-brand" data-surprise="1">Surprise me</button><button class="st-btn" data-shuffle="1">Shuffle</button></div>')+'</div>'+
-      (st.photoMode?'<div class="st-panel"><label class="st-upload"><input type="file" accept="image/*" data-file="1"><b>Choose a photo</b><span>Your face is optional. A mood photo works too.</span></label><div class="st-group"><div class="st-row"><b>Blur my photo</b><button class="st-tog'+(st.blur?' on':'')+'" data-blur="1" role="switch" aria-checked="'+st.blur+'" aria-label="Blur my photo"></button></div></div><p class="st-note">Photos are reviewed before they go live.</p></div>':
+      (st.photoMode?'<div class="st-panel"><label class="st-upload"><input type="file" accept="image/*" data-file="1"><b>Choose a photo</b><span>Your face is optional. A mood photo works too.</span></label><div class="st-group"><div class="st-row"><b>Blur my photo</b><button class="st-tog'+(st.blur?' on':'')+'" data-blur="1" role="switch" aria-checked="'+st.blur+'" aria-label="Blur my photo"></button></div></div><p class="st-note">Your photo is cropped to a small round picture. Blur is applied before it is saved.</p></div>':
       '<div class="st-tabs" role="tablist">'+STABS.map(function(t){return '<button role="tab" class="'+(st.tab===t[0]?'on':'')+'" data-tab="'+t[0]+'" aria-selected="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><div class="st-panel">'+panel()+'</div>');
     var three=is3?'<div class="st-stage"><div class="st-big"><img src="'+LK[st.look].src+'" alt=""></div><div class="st-actions"><button class="st-btn st-brand" data-rnd3="1">Surprise me</button><button class="st-btn" data-mode="av">Fine tune</button></div></div>'+
       '<div class="st-panel"><div class="st-group"><h4>Pick a 3D look</h4><div class="st-looks">'+LK.map(function(l,n){return '<button class="st-look'+(n===st.look?' on':'')+'" data-look="'+n+'" aria-pressed="'+(n===st.look)+'" aria-label="Look '+(n+1)+'"><img src="'+l.src+'" alt="" loading="lazy"></button>'}).join('')+'</div></div><p class="st-note">Every look is a starting point. Change hair, skin, glasses or clothes in Fine tune.</p></div>':'';
@@ -303,12 +303,12 @@ function studio(root,opts){
   }
   root.addEventListener("click",function(e){var b=e.target.closest("button,[data-close]");if(!b||!root.contains(b))return;var d=b.dataset;
     if(d.close&&(e.target===b||b.tagName==="BUTTON")){st.sheet=false;draw();return}
-    if(d.mode){st.m=d.mode;st.photoMode=d.mode==="ph";draw();return}
+    if(d.mode){st.m=d.mode;st.photoMode=d.mode==="ph";if(opts.onMode)opts.onMode(st.m);draw();return}
     if(d.look){st.look=+d.look;if(opts.onLook)opts.onLook(opts.looks[st.look]);draw();return}
     if(d.rnd3){var nn=st.look;while(opts.looks.length>1&&nn===st.look)nn=Math.floor(Math.random()*opts.looks.length);st.look=nn;if(opts.onLook)opts.onLook(opts.looks[st.look]);draw();return}
     if(d.tab){st.tab=d.tab;draw();return}
     if(d.t){st.A[d.t]=!st.A[d.t];draw();return}
-    if(d.blur){st.blur=!st.blur;draw();return}
+    if(d.blur){st.blur=!st.blur;bake();draw();return}
     if(d.surprise){st.sheet=true;st.res=null;draw();return}
     if(d.shuffle){st.A=generate({age:"any",pres:"any",len:"any",style:pk(["Casual","Sporty","Smart","Street","Artsy"]),facial:"Any",glasses:"Any",skin:-1});draw();return}
     if(d.q){st.Q[d.q]=d.v;draw();return}
@@ -316,7 +316,12 @@ function studio(root,opts){
     if(d.pick){st.A=st.res[+d.pick];st.sheet=false;draw();return}
     if(d.k){st.A[d.k]=d.n?+d.v:d.v;if(d.k==="hat"&&d.v==="hijab")st.A.ears="none";draw()}
   });
-  root.addEventListener("change",function(e){if(!e.target.dataset.file)return;var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){st.photo=r.result;draw()};r.readAsDataURL(f)});
+  root.addEventListener("change",function(e){if(!e.target.dataset.file)return;var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){st.orig=im;bake();draw()};im.src=r.result};r.readAsDataURL(f)});
+  /* Square crop at 256px. Blur is baked in (shrink, then enlarge smoothly) so the sharp original is never stored. */
+  function bake(){if(!st.orig)return;var im=st.orig,s=Math.min(im.width,im.height),sx=(im.width-s)/2,sy=(im.height-s)/2,N=256;
+    var c=document.createElement("canvas");c.width=c.height=N;var x=c.getContext("2d");x.imageSmoothingQuality="high";
+    if(st.blur){var k=document.createElement("canvas");k.width=k.height=14;var kx=k.getContext("2d");kx.imageSmoothingQuality="high";kx.drawImage(im,sx,sy,s,s,0,0,14,14);x.drawImage(k,0,0,14,14,0,0,N,N)}else x.drawImage(im,sx,sy,s,s,0,0,N,N);
+    var u=c.toDataURL("image/webp",.82);if(u.indexOf("image/webp")<0)u=c.toDataURL("image/jpeg",.82);st.photo=u;if(opts.onPhoto)opts.onPhoto({src:u,blur:st.blur})}
   draw();
   return {get:function(){return cl(st.A)},set:function(o){st.A=cl(o);draw()},state:st};
 }
