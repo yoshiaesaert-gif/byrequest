@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: "Personal content made to order, between adults. Discreet by design.",
   robots: { index: false, follow: false },
   icons: { icon: "/icon.png", apple: "/apple-icon.png" },
+  appleWebApp: { capable: true, title: "ByRequest", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#F6F6F3" };

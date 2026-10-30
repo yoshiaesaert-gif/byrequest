@@ -17,6 +17,7 @@ function useEsc(fn: () => void) { useEffect(() => { const h = (e: KeyboardEvent)
 import { useT } from "@/i18n/client";
 import LangSwitch from "./lang-switch";
 import { openProblem } from "./problem";
+import { openInstall } from "./install";
 
 export function MenuButton({ handle, avatar, big, mode, isCreator, verified, compact, staff }: { handle: string; avatar: React.ReactNode; big: React.ReactNode; mode: "buy" | "sell"; isCreator: boolean; verified: boolean; compact?: boolean; staff?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -43,6 +44,7 @@ export function MenuButton({ handle, avatar, big, mode, isCreator, verified, com
           <Link className="mi" href="/inbox"><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg>{t("Inbox")}</Link>
           {buy ? <Link className="mi" href="/vault"><svg className="ico" aria-hidden="true"><use href="#i-vault" /></svg>{t("Vault")}</Link> : <><Link className="mi" href="/earnings"><svg className="ico" aria-hidden="true"><use href="#i-wallet" /></svg>{t("Earnings")}</Link><Link className="mi" href="/studio"><svg className="ico" aria-hidden="true"><use href="#i-spark" /></svg>{t("Studio")}</Link></>}
           <Link className="mi" href="/safety"><svg className="ico" aria-hidden="true"><use href="#i-shield" /></svg>{t("Trust and safety")}</Link>
+          <button className="mi" onClick={() => { setOpen(false); openInstall(); }}><svg className="ico" aria-hidden="true"><use href="#i-down" /></svg>{t("Get the app")}</button>
           <button className="mi" onClick={() => { setOpen(false); openProblem(); }}><svg className="ico" aria-hidden="true"><use href="#i-help" /></svg>{t("Help and support")}</button>
           {staff ? <Link className="mi mi-admin" href="/admin"><svg className="ico" aria-hidden="true"><use href="#i-lock" /></svg>{t("Admin")}<span className="mi-tag">{t("Staff")}</span></Link> : null}
           <hr />
