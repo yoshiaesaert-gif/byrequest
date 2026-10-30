@@ -1666,3 +1666,27 @@ html.cx-lock .hb-launch{display:none}
 .sp-tile.hot{box-shadow:inset 0 0 0 1.5px #F0A060;background:linear-gradient(180deg,#FFF8EC,#fff)}.sp-tile.hot b{color:#C2410C}
 .sp-bar i{background:linear-gradient(90deg,#FFB86B,#F07FA8)}.sp-bar.late i{background:#C2410C}
 .sp-badge{background:#C2410C}
+/* Studio hero, flowing: gold into magenta into violet, fine curved streaks and a slow drift. Pure CSS, still when reduced motion is on. */
+.sp-next{position:relative;overflow:hidden;isolation:isolate;color:#fff;
+  background:linear-gradient(118deg,#FFD66B 0%,#F59A3E 14%,#E0559A 34%,#A63BD8 58%,#5B34E0 80%,#8A3FE8 100%);background-size:180% 180%;animation:spflow 16s ease-in-out infinite alternate}
+.sp-next::before{content:"";position:absolute;inset:-40%;z-index:-1;pointer-events:none;
+  background:repeating-radial-gradient(circle at 8% 0%,rgba(255,255,255,0) 0 13px,rgba(255,255,255,.22) 14px,rgba(255,255,255,0) 15.5px 22px);
+  -webkit-mask-image:radial-gradient(70% 80% at 18% 20%,#000 0%,rgba(0,0,0,.55) 45%,transparent 75%);mask-image:radial-gradient(70% 80% at 18% 20%,#000 0%,rgba(0,0,0,.55) 45%,transparent 75%);
+  mix-blend-mode:soft-light;animation:spstreak 22s ease-in-out infinite alternate}
+.sp-next::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(40% 70% at 10% 0%,rgba(255,236,170,.75),transparent 70%),radial-gradient(45% 80% at 95% 110%,rgba(120,70,255,.6),transparent 70%),linear-gradient(180deg,rgba(255,255,255,.08),transparent 40%);
+  animation:spglow 12s ease-in-out infinite alternate}
+.sp-next>span{color:rgba(255,255,255,.82)}
+.sp-next>b{text-shadow:0 1px 20px rgba(60,20,120,.25)}
+.sp-next>small{color:rgba(255,255,255,.88)}
+.sp-cta{background:#fff;color:#2A1060;box-shadow:0 8px 24px -10px rgba(40,10,90,.6)}.sp-cta:hover{background:#F6F0FF}
+@keyframes spflow{0%{background-position:0% 30%}100%{background-position:100% 70%}}
+@keyframes spstreak{0%{transform:rotate(0deg) scale(1)}100%{transform:rotate(-6deg) scale(1.08) translate(2%,1%)}}
+@keyframes spglow{0%{opacity:.85;transform:translateX(0)}100%{opacity:1;transform:translateX(3%)}}
+@media (prefers-reduced-motion:reduce){.sp-next,.sp-next::before,.sp-next::after{animation:none}}
+/* the same streaks, quieter, on hot tiles and the time bars */
+.sp-tile.hot{background:linear-gradient(135deg,#FFF6E0,#FFE6F1 60%,#F1E8FF);box-shadow:inset 0 0 0 1.5px #E7A6D8}.sp-tile.hot b{background:linear-gradient(90deg,#E0559A,#7A3FE8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sp-bar i{background:linear-gradient(90deg,#F59A3E,#E0559A,#7A3FE8)}
+.sp-badge{background:linear-gradient(135deg,#E0559A,#7A3FE8)}
+.sp-earn em{color:#A63BD8}
+.sp-next::before{background:repeating-radial-gradient(circle at 4% -8%,rgba(255,255,255,0) 0 16px,rgba(255,255,255,.38) 17px,rgba(255,255,255,0) 19px 26px);mix-blend-mode:overlay}
