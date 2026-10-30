@@ -71,3 +71,9 @@ export async function issueAnswer(id: string, text: string): Promise<{ error?: s
   try { await I.answerIssue(id, text, user.handle); } catch (e) { if (e instanceof RuleError) return { error: e.message }; throw e; }
   revalidatePath("/admin/problems"); return {};
 }
+
+export async function issuesStatus(ids: string[], status: "open" | "handling" | "done") {
+  const { user } = await requireStaff();
+  await I.setIssues(ids, status, user.handle);
+  revalidatePath("/admin/problems");
+}

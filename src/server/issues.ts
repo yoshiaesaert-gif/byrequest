@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gt, count } from "drizzle-orm";
+import { and, desc, eq, gt, count, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { RuleError } from "@/domain/rules";
 import { TEAM_HREF } from "./queries";
@@ -17,7 +17,7 @@ export async function reportIssue(userId: string, handle: string, input: { messa
 }
 
 export async function openIssues() {
-  return db.select({ i: techIssues, handle: users.handle }).from(techIssues).leftJoin(users, eq(users.id, techIssues.userId)).orderBy(desc(techIssues.createdAt)).limit(100);
+  return db.select({ i: techIssues, handle: users.handle }).from(techIssues).leftJoin(users, eq(users.id, techIssues.userId)).orderBy(desc(techIssues.createdAt)).limit(500);
 }
 
 export async function setIssue(id: string, status: "open" | "handling" | "done", by: string) {
@@ -32,4 +32,9 @@ export async function answerIssue(id: string, text: string, by: string) {
   if (!body) throw new RuleError("Write a short answer first.");
   await db.insert(notifications).values({ userId: i.userId, title: "About your report", body, href: TEAM_HREF });
   await setIssue(id, "done", by);
+}
+
+export async function setIssues(ids: string[], status: "open" | "handling" | "done", by: string) {
+  if (!ids.length) return;
+  await db.update(techIssues).set({ status, handledBy: by, handledAt: status === "done" ? new Date() : null }).where(inArray(techIssues.id, ids.slice(0, 200)));
 }
