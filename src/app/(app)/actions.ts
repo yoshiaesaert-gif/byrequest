@@ -1,6 +1,5 @@
 "use server";
 import * as TCH from "@/server/teamchat";
-import { openKey, publicFor, sealKey } from "@/server/chatkey";
 import { cleanDetail } from "@/domain/looks-detail";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
@@ -188,13 +187,31 @@ export async function sendMessage(dealId: string, nonce: string, body: string): 
 }
 
 /* The device sends the key it has; the account keeps the first one it ever got, and every device gets that one. */
-export async function syncChatKey(secretB64: string): Promise<{ secret: string }> {
+/* Username: free to change, checked live while typing. Old links to the profile stop working. */
+const HANDLE = /^[a-z0-9._]{3,20}$/;
+const RESERVED = /^(admin|administrator|byrequest|support|help|team|staff|official|moderator|mod|system|root|null|undefined|settings|me)$/;
+export async function handleCheck(raw: string): Promise<{ ok: boolean; error?: string }> {
   const u = await requireUser();
-  const kept = openKey(u.id, u.keyBox);
-  if (kept) { if (u.publicKey !== publicFor(kept)) await db.update(schema.users).set({ publicKey: publicFor(kept) }).where(eq(schema.users.id, u.id)); return { secret: kept }; }
-  if (!/^[A-Za-z0-9+/=]{43,44}$/.test(secretB64)) throw new Error("bad key");
-  await db.update(schema.users).set({ keyBox: sealKey(u.id, secretB64), publicKey: publicFor(secretB64) }).where(eq(schema.users.id, u.id));
-  return { secret: secretB64 };
+  const h = raw.trim().toLowerCase();
+  if (h === u.handle) return { ok: true };
+  if (!HANDLE.test(h)) return { ok: false, error: "3 to 20 letters, numbers, dots or underscores." };
+  if (RESERVED.test(h) || /^[._]|[._]$|\.\./.test(h)) return { ok: false, error: "This username is not available." };
+  const taken = await db.query.users.findFirst({ where: eq(schema.users.handle, h), columns: { id: true } });
+  return taken ? { ok: false, error: "That username is taken." } : { ok: true };
+}
+export async function changeHandle(raw: string): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    const h = raw.trim().toLowerCase();
+    if (h === u.handle) return;
+    const c = await handleCheck(h);
+    if (!c.ok) throw new RuleError(c.error!);
+    try { await db.update(schema.users).set({ handle: h }).where(eq(schema.users.id, u.id)); }
+    catch { throw new RuleError("That username is taken."); }      // lost a race with someone else
+    await db.insert(schema.audit).values({ actor: `user:${u.id}`, action: "user.handle_changed", subjectUserId: u.id, detail: { from: u.handle, to: h } });
+    revalidatePath("/", "layout");
+    return { ok: true, msg: "Username changed" };
+  });
 }
 
 export async function setPublicKey(pk: string) {

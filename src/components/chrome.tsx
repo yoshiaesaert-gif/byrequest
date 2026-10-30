@@ -2,9 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setMode, syncChatKey, markNoteRead } from "@/app/(app)/actions";
-import { encodeBase64 } from "tweetnacl-util";
-import { myKeys, pub } from "@/components/e2e";
+import { setMode, markNoteRead } from "@/app/(app)/actions";
 import { signOut } from "@/app/signin/actions";
 
 /* ---------- toasts: any client component can call toast("…") ---------- */
@@ -80,13 +78,6 @@ export function Live({ uid, discreet, neutralTab }: { uid: string; discreet: boo
   }, []);
 
   useEffect(() => { if (neutralTab) document.title = "Notes"; }, [neutralTab]);
-
-  /* Registers this device's chat public key. The secret key never leaves the browser. */
-  useEffect(() => {
-    // One key per account: if this device had another one, take the account's key and reload once so every chat opens.
-    const mine = encodeBase64(myKeys(uid).secretKey);
-    syncChatKey(mine).then((r) => { if (r.secret !== mine) { try { localStorage.setItem(`brq_sk_${uid}`, r.secret); } catch { /* private mode */ } location.reload(); } }).catch(() => {});
-  }, [uid]);
 
   /* Hold to peek on touch: frosted covers clear while a finger rests on them. */
   useEffect(() => {

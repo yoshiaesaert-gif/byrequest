@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
 const lookOf = (u: { avatar: unknown }) => ((u.avatar as { look?: string } | null)?.look ?? "");
 const PROMISES = [
   { i: "held", t: "Money held until it matches", d: "Our payment partner holds it. You pay only for what was agreed, checked and reviewed." },
-  { i: "e2e", t: "Chats nobody else can read", d: "Encrypted, and nobody at ByRequest reads them." },
+  { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted on your device. Not even ByRequest can open them." },
   { i: "vault", t: "A vault that stays yours", d: "No download, no forwarding, your name on every view." },
   { i: "adults", t: "Verified adults only", d: "Every creator verifies ID and age once. Their legal name stays private." },
   { i: "billing", t: "Discreet everywhere", d: "BRQ DIGITAL on your statement, neutral alerts, quick hide on every screen." },
@@ -44,7 +44,7 @@ const PROMISES_CREATOR = [
   { i: "held", t: "The money is there before you start", d: "The buyer pays when choosing you. The payment partner holds it and pays you after the check." },
   { i: "billing", t: "Your name stays yours", d: "Buyers only see your username and avatar. Your legal name and ID are never shown." },
   { i: "adults", t: "Verified buyers", d: "Every buyer confirms their age. You see their stars and deals, never who they are." },
-  { i: "e2e", t: "Chats nobody else can read", d: "Encrypted. Contact details never need to be shared." },
+  { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted. Contact details never need to be shared." },
   { i: "vault", t: "Your work is protected", d: "No download, no forwarding, the buyer's name as watermark on every view." },
   { i: "fair", t: "Fair when it goes wrong", d: "A person decides on objections. If your delivery matches the offer, you are paid." },
 ] as const;

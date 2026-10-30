@@ -884,3 +884,20 @@ p{margin:0}
 .pf-save{flex-wrap:nowrap}.pf-save.is-dirty{background:#fff}
 @media (max-width:900px){.pf-save.is-dirty .btn-secondary{display:none}.pf-save .btn{white-space:nowrap}}
 .pf-ok{font-size:.8125rem;font-weight:600;color:#16804A;margin-right:auto}
+/* Username field with live check */
+.hf{display:grid;gap:8px;padding:6px 0 16px}
+.hf-in{position:relative}
+.hf-in .input{padding-left:30px}
+.hf-at{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;pointer-events:none}
+.hf-in.is-ok .input{box-shadow:inset 0 0 0 1.5px #16A34A,0 0 0 3px rgba(22,163,74,.14)}
+.hf-in.is-bad .input{box-shadow:inset 0 0 0 1.5px #DC2626,0 0 0 3px rgba(220,38,38,.12)}
+.hf-msg{margin:0;color:var(--muted)}.hf-msg.ok{color:#15803D}.hf-msg.bad{color:#DC2626}
+.hf .btn{justify-self:start}
+/* Chat key: unlock on a new device, approve from an old one */
+.ks{align-items:stretch;text-align:left}
+.ks-i{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:#EEEBFF;color:#4434E6}
+.ks-b{display:grid;gap:10px}
+.ks-code{display:grid;gap:8px;justify-items:center;text-align:center;padding:18px;border-radius:16px;background:var(--sunken,#F4F5F7)}
+.ks-code b{font-size:2rem;letter-spacing:.12em;font-weight:800}
+.ks-f{display:flex;justify-content:space-between;gap:8px}
+.bub-open{all:unset;cursor:pointer;text-decoration:underline;text-underline-offset:3px}

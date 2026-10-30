@@ -72,11 +72,38 @@ export async function authenticate(response: AuthenticationResponseJSON) {
   if (!v.verified) throw new RuleError("Sign in with your passkey failed. Try again.");
   await db.update(passkeys).set({ counter: v.authenticationInfo.newCounter, lastUsedAt: new Date() }).where(eq(passkeys.id, pk.id));
   await startSession(u.id);
-  return u;
+  return { ...u, keyBox: pk.keyBox, credId: pk.id };
 }
 
-export const listPasskeys = (userId: string) => db.select({ id: passkeys.id, name: passkeys.name, createdAt: passkeys.createdAt, lastUsedAt: passkeys.lastUsedAt }).from(passkeys).where(eq(passkeys.userId, userId)).orderBy(passkeys.createdAt);
+export const listPasskeys = (userId: string) => db.select({ id: passkeys.id, name: passkeys.name, locked: passkeys.keyBox, createdAt: passkeys.createdAt, lastUsedAt: passkeys.lastUsedAt }).from(passkeys).where(eq(passkeys.userId, userId)).orderBy(passkeys.createdAt);
 export async function removePasskey(userId: string, id: string) {
   await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)));
   await db.insert(schema.audit).values({ actor: `user:${userId}`, action: "auth.passkey_removed", subjectUserId: userId });
+}
+
+/* Chat key unlock: an assertion with one of this account's own passkeys. The browser asks the
+   passkey for its PRF secret at the same time and uses it to lock or unlock the chat key; the
+   server only stores and returns the locked box. */
+export async function unlockOptions(userId: string) {
+  const { rpID } = await rp();
+  const mine = await db.select({ id: passkeys.id, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId));
+  if (!mine.length) throw new RuleError("Add a passkey first.");
+  const o = await generateAuthenticationOptions({ rpID, userVerification: "required", allowCredentials: mine.map((m) => ({ id: m.id, transports: (m.transports ?? undefined) as AuthenticatorTransportFuture[] | undefined })) });
+  await keep(o.challenge, `unlock:${userId}`);
+  return o;
+}
+export async function unlockVerify(userId: string, response: AuthenticationResponseJSON) {
+  const { rpID, origin } = await rp();
+  const challenge = await take(`unlock:${userId}`);
+  const pk = await db.query.passkeys.findFirst({ where: and(eq(passkeys.id, response.id), eq(passkeys.userId, userId)) });
+  if (!pk) throw new RuleError("This passkey is not known here.");
+  const v = await verifyAuthenticationResponse({ response, expectedChallenge: challenge, expectedOrigin: origin, expectedRPID: rpID, requireUserVerification: false,
+    credential: { id: pk.id, publicKey: isoBase64URL.toBuffer(pk.publicKey), counter: pk.counter, transports: (pk.transports ?? undefined) as AuthenticatorTransportFuture[] | undefined } });
+  if (!v.verified) throw new RuleError("That did not work. Try again.");
+  await db.update(passkeys).set({ counter: v.authenticationInfo.newCounter, lastUsedAt: new Date() }).where(eq(passkeys.id, pk.id));
+  return { id: pk.id, box: pk.keyBox };
+}
+export async function saveKeyBox(userId: string, id: string, box: string) {
+  if (!/^[A-Za-z0-9+/=]{30,40}\.[A-Za-z0-9+/=]{60,120}$/.test(box)) throw new RuleError("bad box");
+  await db.update(passkeys).set({ keyBox: box }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)));
 }

@@ -169,6 +169,13 @@
       "when": 1793348327356,
       "tag": "0023_account_key",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793400000000,
+      "tag": "0024_true_e2e",
+      "breakpoints": true
     }
   ]
 }

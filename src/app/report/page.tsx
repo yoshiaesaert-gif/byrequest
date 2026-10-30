@@ -28,7 +28,7 @@ export default async function Report({ searchParams }: { searchParams: Promise<{
       </fieldset>
       <input type="hidden" name="type" value={sp.type ?? ""} /><input type="hidden" name="ref" value={sp.ref ?? ""} />
       {sp.ref ? <p className="t-sm muted">{t("About:")} {sp.type} {sp.ref.slice(0, 8)}</p> : null}
-      <div className="field"><label htmlFor="d">{t("What happened")}</label><textarea id="d" name="details" className="input" rows={5} style={{ height: "auto", padding: 14 }} required placeholder={t("A username, a link, what was said. From a chat, you can paste the messages you want to share: we never read your chats, so we only see what you paste.")} /></div>
+      <div className="field"><label htmlFor="d">{t("What happened")}</label><textarea id="d" name="details" className="input" rows={5} style={{ height: "auto", padding: 14 }} required placeholder={t("A username, a link, what was said. From a chat, you can paste the messages you want to share: chats are end to end encrypted, so we only see what you paste.")} /></div>
       {!me ? <div className="field"><label htmlFor="c">{t("How can we reach you? Optional")}</label><input id="c" name="contact" className="input" placeholder={t("Email or phone")} /></div> : null}
       <button className="btn btn-primary btn-lg">{t("Send report")}</button>
       <p className="t-xs muted">{t("Contact details are stored encrypted and used only for this report. You can also report anonymously.")}</p>

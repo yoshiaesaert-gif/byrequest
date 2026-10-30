@@ -16,7 +16,7 @@ export default async function Footer() {
         <div className="ft-brand">
           <img className="ft-logo" src="/logo_white.png" alt="byrequest" />
           <p>{t("Personal content made to order, between verified adults. Private by design.")}</p>
-          <div className="ft-badges"><span>{t("18+ only")}</span><span>{t("ID verified creators")}</span><span>{t("Encrypted")}</span></div>
+          <div className="ft-badges"><span>{t("18+ only")}</span><span>{t("ID verified creators")}</span><span>{t("End to end encrypted")}</span></div>
           <LangSwitch className="ft-lang" />
           <CookieSettingsLink label={t("Cookie settings")} />
         </div>

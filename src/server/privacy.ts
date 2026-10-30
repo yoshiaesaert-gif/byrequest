@@ -38,7 +38,7 @@ export async function exportData(userId: string) {
     requests: reqs, offers, deals, consents, notifications, decisions, appeals, verificationChecks: checks,
     invites: { yourCode: u.refCode, joinedWithCode: invitedBy[0] ?? null, friendsInvited: invites, rewards, bonusBalanceStatement: wallet, freeServiceFees: u.freeFees },
     peopleYouBlocked: blocked.map((b) => ({ who: b.anonymous ? "a buyer, blocked from a request" : b.handle, at: b.at })),
-    messagesYouSent: { note: "Encrypted, and readable on every device you sign in on.", items: msgs },
+    messagesYouSent: { note: "End to end encrypted. Only your own devices can read them; ByRequest cannot.", items: msgs },
   };
 }
 

@@ -9,7 +9,7 @@ import { access } from "@/server/onboarding";
 import { Av, I, when } from "@/components/ui";
 import { myBlocks } from "@/server/blocks";
 import { UnblockButton } from "@/components/block-button";
-import { Toggle, BecomeCreator, ProfileForm, Marketing, Reminders } from "./parts";
+import { Toggle, BecomeCreator, ProfileForm, Marketing, Reminders, HandleForm } from "./parts";
 
 export default async function Settings() {
   const { t, locale } = await getT();
@@ -22,9 +22,10 @@ export default async function Settings() {
         {a ? <span className={"badge " + (a.status === "active" ? "ok" : "amber")}>{t(a.status === "active" ? "Verified creator" : "Creator setup not finished")}</span> : null}
         <div className="stats"><div><b className="num">{u.ratingCount ? (u.ratingSum / u.ratingCount).toFixed(1) : "–"}</b><span>{t("Rating")}</span></div><div><b className="num">{u.ratingCount}</b><span>{t("Ratings")}</span></div><div><b className="num">{new Date().getFullYear() - u.birthYear}</b><span>{t("Age")}</span></div></div></div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+        <div className="card group" id="username"><h3 className="t-h3">{t("Username")}</h3><HandleForm key={u.handle} handle={u.handle} /></div>
         <div className="card group" id="passkeys"><h3 className="t-h3">{t("Sign in")}</h3><PasskeyManager keys={keys.map((k) => ({ id: k.id, name: k.name, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))} /></div>
         <div className="card group"><h3 className="t-h3">{t("Privacy")}</h3>
-          <div className="setrow"><div><b>{t("Encrypted chats")}</b><span className="s">{t("Always on. We never read your messages")}</span></div><span className="badge ok"><I n="lock" c="sm" />{t("On")}</span></div>
+          <div className="setrow"><div><b>{t("End to end encrypted chats")}</b><span className="s">{t("Always on. Not even ByRequest can read your messages")}</span></div><span className="badge ok"><I n="lock" c="sm" />{t("On")}</span></div>
           <Toggle k="frost" on={u.prefs.frost} b="Frosted covers" s="Covers stay behind glass until you hover or hold" />
           <Toggle k="discreetPush" on={u.prefs.discreetPush} b="Discreet notifications" s="Alerts only say: You have a new message" />
           <Toggle k="neutralTab" on={u.prefs.neutralTab} b="Neutral tab name" s="Your browser tab shows Notes" />

@@ -45,7 +45,6 @@ export const users = pgTable("users", {
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff
   internal: boolean("internal").notNull().default(false),        // created by the ByRequest team (tests, demo, staff); new sign ups are external
   chatKey: text("chat_key"),                                       // team profiles only: their chat secret key, sealed, so staff can answer as them
-  keyBox: text("key_box"),                                         // the chat secret key, sealed on the server, so every device of this account reads the same chats
   notifyMailedAt: timestamp("notify_mailed_at", { withTimezone: true }),   // last notification email, to send at most one per half hour
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   refCode: text("ref_code"),                                         // personal invite code, made on first visit to /invite
@@ -408,7 +407,19 @@ export const passkeys = pgTable("passkeys", {
   name: text("name").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  keyBox: text("key_box"),                                            // the chat secret key, locked in the browser with this passkey's PRF secret; the server cannot open it
 }, (t) => [index("passkeys_user").on(t.userId)]);
+
+/* A new device asking an existing one for the chat key. The old device seals the key to `pub`, a
+   one time key of the new device; both screens show the same short code derived from it. */
+export const deviceLinks = pgTable("device_links", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  pub: text("pub").notNull(),
+  device: text("device").notNull(),
+  box: text("box"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("device_links_user").on(t.userId)]);
 
 /* Questions before a choice: the buyer and a candidate talk about one application. End to end
    encrypted like deal chats (box between their public keys); team profiles answer from the back office. */

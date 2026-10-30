@@ -2,7 +2,7 @@
 import { useT } from "@/i18n/client";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { setPref, becomeCreator, saveProfile, setMarketing } from "../actions";
+import { setPref, becomeCreator, saveProfile, setMarketing, handleCheck, changeHandle } from "../actions";
 import { toast } from "@/components/chrome";
 import { GENDER, BODY_HAIR, PUBIC, CUT, CUP, LABEL, BUILD, HAIR, EYES, TATTOOS, HEIGHTS, type Detail } from "@/domain/looks-detail";
 
@@ -24,6 +24,28 @@ export function Marketing({ on }: { on: boolean }) {
   const t = useT();
   const [v, setV] = useState(on);
   return <div className="setrow"><div><b>{t("Tips and news by email")}</b><span className="s">{t("Optional. Never required for using ByRequest or for creator approval")}</span></div><button className={"toggle" + (v ? " is-on" : "")} role="switch" aria-checked={v} aria-label={t("Tips and news by email")} onClick={async () => { setV(!v); await setMarketing(!v); }} /></div>;
+}
+
+/* Username with a live check: free or taken shows while typing, saving only when it is free. */
+export function HandleForm({ handle }: { handle: string }) {
+  const t = useT();
+  const [v, setV] = useState(handle);
+  const [st, setSt] = useState<{ ok: boolean; error?: string } | null>(null);
+  const [busy, start] = useTransition();
+  const val = v.trim().toLowerCase();
+  const changed = val !== handle;
+  useEffect(() => {
+    if (!changed) return;
+    let live = true;
+    const id = window.setTimeout(() => handleCheck(val).then((r) => { if (live) setSt(r); }).catch(() => {}), 350);
+    return () => { live = false; clearTimeout(id); };
+  }, [val, changed]);
+  const state = !changed ? null : st;
+  return (<form className="hf" onSubmit={(e) => { e.preventDefault(); if (!changed || !state?.ok) return; start(async () => { const r = await changeHandle(val); if (r.ok) { toast(t("Username changed")); setSt(null); } else { toast(t(r.error), "err"); setSt({ ok: false, error: r.error }); } }); }}>
+    <div className={"hf-in" + (state ? (state.ok ? " is-ok" : " is-bad") : "")}><span className="hf-at">@</span><input className="input" value={v} maxLength={20} autoComplete="off" autoCapitalize="none" spellCheck={false} aria-label={t("Username")} onChange={(e) => { setV(e.target.value.replace(/\s/g, "")); setSt(null); }} /></div>
+    <p className={"t-xs hf-msg" + (state ? (state.ok ? " ok" : " bad") : "")} aria-live="polite">{!changed ? t("Others only see this name. Never use your real name.") : !state ? t("Checking…") : state.ok ? t("This username is free") : t(state.error ?? "That username is taken.")}</p>
+    <button className="btn btn-primary btn-sm" disabled={!changed || !state?.ok || busy}>{busy ? t("Saving…") : t("Change username")}</button>
+  </form>);
 }
 
 export function BecomeCreator() {

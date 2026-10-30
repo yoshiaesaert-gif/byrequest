@@ -4,14 +4,20 @@ import { startAuthentication, startRegistration, browserSupportsWebAuthn, browse
 import { useLocale, useT } from "@/i18n/client";
 import { passkeyLoginOptions, passkeyLogin, passkeyRegisterOptions, passkeyRegister, passkeyRemove } from "@/app/signin/passkey-actions";
 import { toast } from "./chrome";
+import nacl from "tweetnacl";
+import { PRF_SALT, unlockKey, keepKey, pub } from "./e2e";
 
 const Key = () => <svg className="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 20 3M17 6l3 3M14.5 8.5l2 2" /></svg>;
 const cancelled = (e: unknown) => e instanceof Error && (e.name === "NotAllowedError" || e.name === "AbortError");
 
 async function signIn(autofill: boolean) {
   const o = await passkeyLoginOptions(); if (!o.ok) throw new Error(o.error);
-  const resp = await startAuthentication({ optionsJSON: o.data!, useBrowserAutofill: autofill });
-  const r = await passkeyLogin(resp); if (!r.ok) throw new Error(r.error);
+  // The same tap also asks the passkey for its PRF secret, which opens the chat key on this device.
+  const resp = await startAuthentication({ optionsJSON: { ...o.data!, extensions: { prf: { eval: { first: PRF_SALT } } } as never }, useBrowserAutofill: autofill });
+  const prf = (resp.clientExtensionResults as { prf?: { results?: { first?: ArrayBuffer } } }).prf?.results?.first;
+  const r = await passkeyLogin({ ...resp, clientExtensionResults: {} }); if (!r.ok) throw new Error(r.error);
+  const d = r.data!;
+  if (prf && d.box) { const sk = unlockKey(prf, d.box); if (sk && pub(nacl.box.keyPair.fromSecretKey(sk)) === d.account) keepKey(d.uid, sk); }
   location.href = "/";
 }
 
@@ -37,6 +43,7 @@ async function add(t: (s: string) => string) {
   const o = await passkeyRegisterOptions(); if (!o.ok) throw new Error(o.error);
   const resp = await startRegistration({ optionsJSON: o.data! });
   const r = await passkeyRegister(resp); if (!r.ok) throw new Error(r.error);
+  try { localStorage.removeItem("brq_lock_ask"); } catch { /* private mode */ }
   toast(t("Passkey saved. Next time you sign in with one tap."));
 }
 

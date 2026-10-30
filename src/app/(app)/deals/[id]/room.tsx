@@ -71,7 +71,8 @@ export default function Room(p: Props) {
   const send = (e?: React.FormEvent) => {
     e?.preventDefault();
     const t = text.trim();
-    if (!t || !kp) return;
+    if (!kp) { window.dispatchEvent(new Event("brq:unlock")); return; }
+    if (!t) return;
     if (!warned && RISKY.some((r) => r.test(t))) { setWarned(true); return; }
     setWarned(false);
     if (!p.other.publicKey) { toast(tr("{name} has not opened ByRequest on a device yet. Try again soon.", { name: p.other.handle }), "err"); return; }
@@ -118,9 +119,9 @@ export default function Room(p: Props) {
       : (!p.deal.ratedBuyer ? <CreatorReview dealId={p.deal.id} name={p.other.handle} /> : null)) : null}
     <ReviewDone stars={p.deal.stars} tipCents={buyer ? p.deal.tipCents : p.deal.tipCreatorCents} name={p.other.handle} buyer={buyer} />
     <div className="card chatbox">
-      <div className="chat-bar"><span className="chat-lock"><Ico n="lock" c="sm" />{tr("Encrypted")}</span><span className="chat-acts"><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
+      <div className="chat-bar"><span className="chat-lock"><Ico n="lock" c="sm" />{tr("End to end encrypted")}</span><span className="chat-acts"><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
       <div className="msgs" ref={box} aria-live="polite">
-        <p className="chat-e2e">{tr("This chat is between you and {name}. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}</p>
+        <p className="chat-e2e">{tr("Only you and {name} can read this chat. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}</p>
         {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
         {!chat && !pendingMsgs.length && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
       </div>
@@ -165,7 +166,7 @@ function thread(p: Props, plain: Record<string, string | null>, pend: { id: stri
       ? <span className="tick read" aria-label={tr("Read")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L17 7M9.5 16l1 1 10.5-10.5" /></svg></span>
       : <span className="tick" aria-label={tr("Sent")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19.5 7" /></svg></span>;
     out.push(<div key={m.id} className={"bub " + (mine ? "me" : "them") + (m.text ? "" : " locked") + (last ? " tail" : " grp") + (big ? " big" : "") + (m.pending ? " sending" : "")}>
-      <span className="bub-t">{m.text ?? (kp ? tr("Encrypted on another device") : tr("Decrypting…"))}</span>
+      <span className="bub-t">{m.text ?? (kp ? tr("Encrypted on another device") : client ? <button type="button" className="bub-open" onClick={() => window.dispatchEvent(new Event("brq:unlock"))}>{tr("Locked on this device. Tap to open")}</button> : tr("Decrypting…"))}</span>
       {client ? <span className="bub-m"><time dateTime={m.at}>{time(at)}</time>{tick}</span> : null}
     </div>);
   });

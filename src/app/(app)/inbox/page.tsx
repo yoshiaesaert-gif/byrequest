@@ -21,7 +21,7 @@ export default async function Inbox() {
   }));
   const unreadChats = chats.filter((c) => c.unread).length;
   return (<div className="wrap inbox">
-    <div className="page-h"><div><h1 className="t-h1">{t("Inbox")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Every chat belongs to a deal and is encrypted. Payments outside ByRequest are never protected.")}</p></div>
+    <div className="page-h"><div><h1 className="t-h1">{t("Inbox")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Every chat belongs to a deal and is end to end encrypted. Payments outside ByRequest are never protected.")}</p></div>
       {notes.some((n) => !n.readAt) ? <form action={markAllRead}><button className="btn btn-secondary btn-sm">{t("Mark all as read")}</button></form> : null}</div>
     <div className="ib-grid">
       <section className="card ib-col"><div className="ib-h"><h2 className="t-h3">{t("Chats")}</h2>{unreadChats ? <span className="ib-badge num">{unreadChats}</span> : null}</div>
