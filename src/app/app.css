@@ -1332,3 +1332,48 @@ html.cx-lock,html.cx-lock body{overflow:hidden}
 .cl-meta .cl-n{position:static;transform:none;margin:0;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#4434E6;color:#fff;font-size:.72rem;font-weight:800;line-height:1;display:grid;place-items:center;font-style:normal}
 .cl-meta .cl-n.none{background:transparent;height:22px}
 .cl-row.unread .cl-meta time{color:#4434E6;font-weight:700}
+
+/* ===== Conversation page: chat left, actions right ===== */
+.sh{padding-bottom:40px}
+.sh-head{display:flex;align-items:center;gap:14px;margin:6px 0 18px}
+.sh-head h1{margin:2px 0 0;font-size:1.6rem;letter-spacing:-.03em;line-height:1.15}
+.sh-av{width:52px;height:52px;border-radius:50%;overflow:hidden;flex:0 0 auto}
+.sh-av>*{width:100%;height:100%}
+.sh-grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;align-items:start}
+.sh-main{position:sticky;top:84px;min-width:0}
+.sh .cx{height:clamp(520px,calc(100dvh - 210px),840px)}
+.sh-side{display:grid;gap:14px;min-width:0}
+.sh-card{padding:18px 20px;display:grid;gap:12px}
+.sh-ct{margin:0;font-size:.74rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.sh-card.is-violet{background:linear-gradient(135deg,#F4EEFF,#FBF8FF);box-shadow:inset 0 0 0 1px #E4DAFF}
+.sh-card.is-green{background:linear-gradient(135deg,#E9F9EF,#F6FDF8);box-shadow:inset 0 0 0 1px #CDEFD9}
+.sh-person{display:flex;align-items:center;gap:12px}
+.sh-person .cx-av{width:48px;height:48px}
+.sh-person b{display:block;font-size:1.02rem}
+.sh-person span{font-size:.8rem;color:var(--muted)}
+.sh-btns{display:grid;gap:8px}
+.sh-links{display:flex;gap:16px;flex-wrap:wrap;font-size:.84rem}
+.sh-links a,.sh-links button{color:var(--muted);text-decoration:none;background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.sh-links a:hover,.sh-links button:hover{color:var(--ink);text-decoration:underline}
+.sh-skel-card i{display:block;height:14px;border-radius:7px;background:linear-gradient(90deg,#EEF0F3,#F7F8FA,#EEF0F3);background-size:200% 100%;animation:csk 1.4s infinite}
+.sh-skel-card i.w60{width:60%;height:18px}.sh-skel-card i.w80{width:80%}.sh-skel-card i.w40{width:40%}
+@keyframes csk{to{background-position:-200% 0}}
+.cx-skel{display:grid;gap:12px;padding:8px 4px}
+.cx-skel i{display:block;height:38px;width:55%;border-radius:20px;background:linear-gradient(90deg,#EEF0F3,#F7F8FA,#EEF0F3);background-size:200% 100%;animation:csk 1.4s infinite}
+.cx-skel i:nth-child(even){justify-self:end;width:42%}
+.cx-bt{display:block;margin-bottom:3px}
+@media (max-width:1100px){.sh-grid{grid-template-columns:minmax(0,1fr) 320px}}
+@media (max-width:900px){.sh-grid{grid-template-columns:1fr}.sh-main{position:static}.sh .cx{height:min(70dvh,640px)}.sh-head h1{font-size:1.35rem}}
+.talk-link{display:flex;align-items:center;gap:12px;margin:14px 0;padding:14px 16px;border-radius:18px;background:#F7F3FF;box-shadow:inset 0 0 0 1px #E4DAFF;color:inherit;text-decoration:none}
+.talk-link-i{width:40px;height:40px;border-radius:12px;background:#4434E6;color:#fff;display:grid;place-items:center;flex:0 0 auto}
+.talk-link span:nth-child(2){display:grid;flex:1;min-width:0;line-height:1.3}.talk-link small{color:var(--muted)}
+
+/* Preview album card inside the right column: light, quiet, Apple like */
+.sh-side .cp-al{display:grid;grid-template-columns:44px 1fr;gap:6px 14px;align-items:start;padding:18px 20px;border-radius:20px;background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(14,16,19,.04),inset 0 0 0 1px var(--line)}
+.sh-side .cp-al.is-ready{background:linear-gradient(135deg,#F4EEFF,#FBF8FF);box-shadow:inset 0 0 0 1px #E4DAFF}
+.sh-side .cp-al-i{grid-row:1/3;width:44px;height:44px;border-radius:14px;background:#ECEAFF;color:#4434E6;display:grid;place-items:center}
+.sh-side .cp-al b{font-size:.98rem;letter-spacing:-.01em}
+.sh-side .cp-al p{margin:2px 0 0;color:var(--muted);line-height:1.45}
+.sh-side .cp-al .btn{grid-column:1/-1;margin:8px 0 0;width:100%}
+.sh-side .cp-al .btn-primary,.sh-side .cp-al .btn-brand{background:#4434E6;color:#fff}
+.sh-side .cp-al .muted{opacity:1}

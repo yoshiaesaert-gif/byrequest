@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { inCircle } from "@/server/circle";
-import { chatState } from "@/server/chat";
 import { CircleButton } from "../../c/[handle]/circle-button";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
+import { Suspense } from "react";
+import { ChatShell, SideCard, SideSkeleton } from "@/components/chat-shell";
+import DealChat from "./chat";
+import { BlockButton, UnblockButton } from "@/components/block-button";
 import { db, schema } from "@/db";
 import { requireUser } from "@/server/auth";
 import { deal } from "@/server/queries";
@@ -17,43 +20,60 @@ import { blockedEither, iBlocked } from "@/server/blocks";
 import { getT } from "@/i18n/server";
 import { textsIn } from "@/server/translate";
 
-export default async function DealPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ accepted?: string; from?: string }> }) {
+type Search = Promise<{ accepted?: string; from?: string }>;
+
+export default async function DealPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Search }) {
   const { id } = await params;
-  const [u, { t, locale }] = await Promise.all([requireUser(), getT()]);
+  const [u, { t, locale }, sp] = await Promise.all([requireUser(), getT(), searchParams]);
   const x = await deal(id, u.id);
   if (!x) notFound();
   const buyer = x.d.buyerId === u.id;
   const other = buyer ? x.creator : x.buyer;
-  // Everything else at once: a chat has to open instantly.
-  const [L, chat, a, parts, lastDelivery, hold] = await Promise.all([
-    textsIn([x.r.title], locale),
-    chatState(u.id, "deal", id),
-    buyer ? null : access(u.id),
-    buyer ? [] : listFor(u.id),
+  const [L, blocked] = await Promise.all([textsIn([x.r.title], locale), blockedEither(u.id, other.id).then(async (b) => (b ? ((await iBlocked(u.id, other.id)) ? "me" as const : "them" as const) : null))]);
+  const closed = blocked ? <div className="chat-closed" role="status"><I n="block" c="sm" /><div><b>{t("This chat is closed")}</b><span>{blocked === "me" ? t("You blocked {name}. The deal stays protected: delivery, review and refund work as usual.", { name: other.handle }) : t("New messages are not possible. The deal stays protected: delivery, review and refund work as usual.")}</span></div>{blocked === "me" ? <UnblockButton handle={other.handle} /> : null}</div> : undefined;
+  const avatar = <Av a={other.avatar} name={other.handle} size={52} />;
+  return (<>
+    {sp.accepted ? <div className="wrap" style={{ paddingBottom: 0 }}><div className="banner ok"><I n="check" /><div className="grow"><b>{t("Payment secured.")}</b><div className="t-sm">{t("{amount} is held by the payment partner until delivery. It shows as BRQ DIGITAL.", { amount: euros(x.d.dealCents + x.d.feeCents + x.d.vatCents) })}</div></div></div></div> : null}
+    <ChatShell back={sp.from === "inbox" ? "/inbox" : "/deals"} backLabel={sp.from === "inbox" ? t("Inbox") : buyer ? t("Deals") : t("Applications")} eyebrow={t("Deal with {name}", { name: other.handle })} title={L(x.r.title)} avatar={avatar}
+      chat={<DealChat dealId={id} meId={u.id} name={other.handle} avatar={<Av a={other.avatar} name={other.handle} size={40} />} house={other.house} status={x.d.status} held={x.d.status === "held"} fromInbox={sp.from === "inbox"} closed={closed} />}
+      side={<Suspense fallback={<><SideSkeleton /><SideSkeleton /></>}><DealSide id={id} userId={u.id} meHandle={u.handle} buyer={buyer} blocked={blocked} /></Suspense>} />
+  </>);
+}
+
+/* The right column: what happens next, the person, the deal. Loads beside the chat, never in front of it. */
+async function DealSide({ id, userId, meHandle, buyer, blocked }: { id: string; userId: string; meHandle: string; buyer: boolean; blocked: "me" | "them" | null }) {
+  const { t, locale } = await getT();
+  const x = await deal(id, userId);
+  if (!x) return null;
+  const other = buyer ? x.creator : x.buyer;
+  const [a, parts, lastDelivery, hold] = await Promise.all([
+    buyer ? null : access(userId),
+    buyer ? [] : listFor(userId),
     db.query.deliveries.findFirst({ where: eq(schema.deliveries.dealId, id), orderBy: desc(schema.deliveries.createdAt) }),
     buyer ? null : db.query.ledger.findFirst({ where: eq(schema.ledger.dealId, id), columns: { entry: true }, orderBy: desc(schema.ledger.createdAt) }),
   ]);
-  const accepted = (await searchParams).accepted;
   const done = buyer && (x.d.status === "delivered" || x.d.status === "released");
-  const circled = done ? await inCircle(u.id, x.d.creatorId) : false;
-  return (<div className="wrap">
-    {(await searchParams).from === "inbox" ? <Link href="/inbox" className="back"><I n="left" c="sm" />{t("Inbox")}</Link> : <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? t("Deals") : t("Applications")}</Link>}
-    {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Payment secured.")}</b><div className="t-sm">{t("{amount} is held by the payment partner until delivery. It shows as BRQ DIGITAL.", { amount: euros(x.d.dealCents + x.d.feeCents + x.d.vatCents) })}</div></div></div> : null}
-    {done ? <div className="ic-for ic-deal"><div><b>{circled ? t("{name} is in your Inner Circle", { name: other.handle }) : t("Happy with {name}?", { name: other.handle })}</b><span>{t("Your Inner Circle sees your new requests 3 hours before everyone else, and you can send them personal requests.")}</span></div><div className="ic-acts"><Link href={`/post?again=${x.d.id}`} className="btn btn-primary">{t("Order again")}</Link><CircleButton handle={other.handle} on={circled} /></div></div> : null}
-    <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">{t("Deal with {name}", { name: other.handle })}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{L(x.r.title)}</h1></div></div></div>
-    <div className="two">
-      <Room
-        me={{ id: u.id, handle: u.handle, role: buyer ? "buyer" : "creator" }}
-        other={{ id: other.id, handle: other.handle, house: other.house }}
-        blocked={(await blockedEither(u.id, other.id)) ? ((await iBlocked(u.id, other.id)) ? "me" : "them") : null}
+  const circled = done ? await inCircle(userId, x.d.creatorId) : false;
+  return (<>
+    <Room
+        me={{ id: userId, handle: meHandle, role: buyer ? "buyer" : "creator" }}
+        other={{ id: other.id, handle: other.handle }}
+        blocked={blocked}
         deal={{ id: x.d.id, status: x.d.status, dueAt: x.d.dueAt.toISOString(), objectUntil: x.d.objectUntil?.toISOString() ?? null, creatorCents: x.d.creatorCents, rated: !!x.d.buyerRating, ratedBuyer: !!x.d.creatorRating, category: x.r.category, amount: x.r.amount, stars: x.d.buyerRating, tipCents: x.d.tipCents, tipCreatorCents: x.d.tipCreatorCents, vatRate: x.d.vatRate, tipOpen: !x.d.deliveredAt || Date.now() - x.d.deliveredAt.getTime() < TIP_DAYS * 86400_000 }}
         delivery={lastDelivery ? { review: lastDelivery.review, onlyCreator: lastDelivery.onlyCreator } : null}
         canUpload={a?.caps.upload ?? false} missing={a?.missing ?? []} payoutHeld={hold?.entry === "payout_on_hold"}
         participants={parts.map((p) => ({ id: p.id, label: p.label, identity: p.identity }))}
         dispute={x.dispute ? { outcome: x.dispute.outcome } : null}
-        chat={chat && "msgs" in chat ? chat : { v: "", status: x.d.status, typing: false, otherKey: other.publicKey, closed: false, msgs: [] }} avatar={<Av a={other.avatar} name={other.handle} size={40} />} fromInbox={(await searchParams).from === "inbox"}
-      />
-      <aside className="sticky"><div className="card dsum">
+
+    />
+    {done ? <SideCard tone="violet"><div className="sh-person"><span className="cx-av"><Av a={other.avatar} name={other.handle} size={48} /></span><div><b>{circled ? t("{name} is in your Inner Circle", { name: other.handle }) : t("Happy with {name}?", { name: other.handle })}</b><span>{t("Your Inner Circle sees your new requests 3 hours before everyone else, and you can send them personal requests.")}</span></div></div>
+      <div className="sh-btns"><Link href={`/post?again=${x.d.id}`} className="btn btn-primary">{t("Order again")}</Link><CircleButton handle={other.handle} on={circled} /></div></SideCard> : null}
+    <SideCard title={buyer ? t("Your creator") : t("The buyer")}>
+      <div className="sh-person"><span className="cx-av"><Av a={other.avatar} name={other.handle} size={48} /></span><div><b>{other.handle}</b><span>{other.ratingCount ? `★ ${(other.ratingSum / other.ratingCount).toFixed(1)} · ${t("{n} ratings", { n: other.ratingCount })}` : t("New")}</span></div></div>
+      <div className="sh-btns">{buyer ? <Link href={`/c/${other.handle}`} className="btn btn-secondary">{t("View profile")}</Link> : null}</div>
+      <div className="sh-links"><Link href={`/report?type=deal&ref=${id}`}>{t("Report")}</Link>{blocked !== "me" ? <BlockButton handle={other.handle} /> : null}</div>
+    </SideCard>
+    <div className="card dsum" style={{ boxShadow: "none", padding: 0, border: 0 }}>
         <div className="dsum-media"><Cover cover={x.r.cover} /><span className="dsum-tag">{t(CAT_LABEL[x.r.category])} · {amountLabel(x.r.category, x.r.amount, t)}</span></div>
         <dl className="dsum-dl">
           <div><dt>{t("Face")}</dt><dd>{x.o.showsFace ? t("Face shown") : t("No face")}</dd></div>
@@ -73,7 +93,6 @@ export default async function DealPage({ params, searchParams }: { params: Promi
             <div className="tot"><dt>{t("You earn")}</dt><dd className="num">{euros(x.d.creatorCents)}</dd></div>
           </>)}
         </dl>
-      </div></aside>
-    </div>
-  </div>);
+      </div>
+  </>);
 }

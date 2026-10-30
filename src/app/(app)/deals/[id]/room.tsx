@@ -1,34 +1,26 @@
 "use client";
-import { BlockButton, UnblockButton } from "@/components/block-button";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { object } from "../../actions";
 import { BuyerReview, CreatorReview, TipCard, ReviewDone } from "./review";
 import { toast } from "@/components/chrome";
-import ChatPane, { type PaneState } from "@/components/chat-pane";
 import { when } from "@/components/ui";
 import { useLocale, useT } from "@/i18n/client";
 
 type Props = {
   me: { id: string; handle: string; role: "buyer" | "creator" };
-  other: { id: string; handle: string; house: boolean };
+  other: { id: string; handle: string };
   deal: { id: string; status: string; dueAt: string; objectUntil: string | null; creatorCents: number; rated: boolean; ratedBuyer: boolean; category: string; amount: number; stars: number | null; tipCents: number; tipCreatorCents: number; vatRate: number; tipOpen: boolean };
   delivery: { review: string; onlyCreator: boolean } | null;
   canUpload: boolean; missing: string[]; payoutHeld: boolean;
   participants: { id: string; label: string; identity: string }[];
   dispute: { outcome: string } | null;
-  chat: PaneState;
-  avatar: React.ReactNode;
-  fromInbox: boolean;
   blocked: "me" | "them" | null;   // the chat stops after a block; the deal itself keeps its protection
 };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const eur = (c: number) => "€" + Math.round(c / 100);
 const noop = () => () => {};
-/* The chat is end to end encrypted, so ByRequest cannot scan it. This check runs only on the
-   sender's device, before encryption, and only warns: nothing is sent to the server. */
-const RISKY = [/\b(?:\+?\d[\d\s().-]{7,}\d)\b/, /[\w.+-]+@[\w-]+\.[\w.]{2,}/, /\b(?:whats\s?app|telegram|signal|snap(?:chat)?|insta(?:gram)?|onlyfans|tiktok|paypal|tikkie|payconiq|revolut|iban|bitcoin|crypto)\b/i, /\b(?:meet|meeting|in person|irl|hotel|my place|your place|afspreken|ontmoeten|langskomen)\b/i];
 const REASONS = ["Not what was agreed", "Face does not match the offer", "Unusable, for example black or silent", "Someone other than the creator"];
 
 export default function Room(p: Props) {
@@ -72,12 +64,6 @@ export default function Room(p: Props) {
       ? (!p.deal.rated ? <BuyerReview dealId={p.deal.id} name={p.other.handle} vatBp={p.deal.vatRate} canTip={canTip} /> : canTip ? <TipCard dealId={p.deal.id} name={p.other.handle} vatBp={p.deal.vatRate} /> : null)
       : (!p.deal.ratedBuyer ? <CreatorReview dealId={p.deal.id} name={p.other.handle} /> : null)) : null}
     <ReviewDone stars={p.deal.stars} tipCents={buyer ? p.deal.tipCents : p.deal.tipCreatorCents} name={p.other.handle} buyer={buyer} />
-    <ChatPane variant="deal" endpoint={`/api/chat/deal/${p.deal.id}`} meId={p.me.id} name={p.other.handle} avatar={p.avatar} initial={p.chat} e2e={!p.other.house} fromInbox={p.fromInbox}
-      lock={p.other.house ? tr("Private chat") : tr("End to end encrypted")} guards={RISKY} onStatus={() => router.refresh()}
-      intro={tr("Only you and {name} can read this chat. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}
-      empty={s === "held" ? tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle }) : undefined}
-      extras={<><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</>}
-      closedNode={p.blocked ? <div className="chat-closed" role="status"><Ico n="block" c="sm" /><div><b>{tr("This chat is closed")}</b><span>{p.blocked === "me" ? tr("You blocked {name}. The deal stays protected: delivery, review and refund work as usual.", { name: p.other.handle }) : tr("New messages are not possible. The deal stays protected: delivery, review and refund work as usual.")}</span></div>{p.blocked === "me" ? <UnblockButton handle={p.other.handle} /> : null}</div> : undefined} />
     {sheet === "object" ? <ObjectSheet dealId={p.deal.id} onClose={() => setSheet(null)} /> : null}
     {sheet === "upload" ? <UploadSheet p={p} onClose={() => setSheet(null)} /> : null}
   </div>);

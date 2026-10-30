@@ -28,7 +28,7 @@ async function resolve(userId: string, kind: Kind, id: string): Promise<Ctx | nu
   const x = await offerParties(id);
   if (!x || (x.buyer.id !== userId && x.creator.id !== userId)) return null;
   const isBuyer = x.buyer.id === userId;
-  return { kind, id, scope: scopeOf(kind, id), me: isBuyer ? x.buyer : x.creator, other: isBuyer ? x.creator : x.buyer, buyer: x.buyer, creator: x.creator, href: isBuyer ? `/requests/${x.r.id}/offers` : `/requests/${x.r.id}#talk`,
+  return { kind, id, scope: scopeOf(kind, id), me: isBuyer ? x.buyer : x.creator, other: isBuyer ? x.creator : x.buyer, buyer: x.buyer, creator: x.creator, href: isBuyer ? `/requests/${x.r.id}/offers/${id}` : `/requests/${x.r.id}/talk`,
     status: null, readAt: null, closed: x.r.status !== "open" && x.o.status !== "accepted", requestId: x.r.id };
 }
 
@@ -114,7 +114,7 @@ export async function postMessage(userId: string, kind: Kind, id: string, input:
       const link = c.kind === "deal" ? `/admin/chat/${c.id}` : `/admin/offer-chat/${c.id}`;
       for (const st of await tx.select({ userId: S.staff.userId }).from(S.staff)) await notifyChat(tx, { userId: st.userId, scope: c.scope + ":staff", href: link, title: `${c.me.handle} replied` });
     } else if (c.kind === "deal") await notifyChat(tx, { userId: c.other.id, scope: c.scope, href: c.href, title: "New message" });
-    else await notifyChat(tx, { userId: c.other.id, scope: c.scope, href: c.other.id === c.buyer.id ? `/requests/${c.requestId}/offers` : `/requests/${c.requestId}#talk`, title: c.other.id === c.buyer.id ? "A candidate replied" : "A question about your application" });
+    else await notifyChat(tx, { userId: c.other.id, scope: c.scope, href: c.other.id === c.buyer.id ? `/requests/${c.requestId}/offers/${c.id}` : `/requests/${c.requestId}/talk`, title: c.other.id === c.buyer.id ? "A candidate replied" : "A question about your application" });
     return m;
   });
   return { id: msg.id, at: at.toISOString() };

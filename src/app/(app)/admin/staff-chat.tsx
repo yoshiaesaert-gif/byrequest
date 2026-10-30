@@ -9,6 +9,6 @@ export default function StaffChat({ kind, id, creatorId, creator, as, avatar, in
     catch { return { ok: false, error: "Check your connection." }; }
   };
   const typing = () => { fetch("/api/chat/team", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, id }), keepalive: true }).catch(() => {}); };
-  return <ChatPane variant="inline" endpoint={`/api/chat/team/thread?kind=${kind}&id=${id}`} meId="" name={creator} avatar={avatar} initial={initial} e2e={false} send={send} onTyping={typing}
+  return <ChatPane endpoint={`/api/chat/team/thread?kind=${kind}&id=${id}`} meId="" name={creator} avatar={avatar} initial={initial} e2e={false} send={send} onTyping={typing}
     lock={`You write as ${as}`} placeholder={`Write as ${as}`} empty="No messages yet. Write the first one." actions={actions} />;
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { asked, PREVIEW_LIMIT } from "@/server/albums";
 import { notFound } from "next/navigation";
 import { eq, and, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -14,15 +13,13 @@ import Picker from "./picker";
 import { getT } from "@/i18n/server";
 import { cached, textsIn } from "@/server/translate";
 
-export default async function Offers({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ posted?: string }> }) {
+export default async function Offers({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ posted?: string; pick?: string }> }) {
   const { id } = await params;
   const u = await requireUser();
   const { t, locale } = await getT();
   const r = await request(id);
   if (!r || r.buyerId !== u.id) notFound();
   const list = await offersFor(id);
-  const albums = list.length ? await db.select({ id: schema.previewAlbums.id, offerId: schema.previewAlbums.offerId, status: schema.previewAlbums.status }).from(schema.previewAlbums).where(and(eq(schema.previewAlbums.buyerId, u.id), inArray(schema.previewAlbums.offerId, list.map((x) => x.o.id)))) : [];
-  const previewsLeft = Math.max(0, PREVIEW_LIMIT - (await asked(u.id, id)));
   const L = await textsIn([r?.title], locale);
   const notes = await cached(list.map((x) => x.o.note).filter(Boolean), locale);
   const deal = r.status === "matched" ? await db.query.deals.findFirst({ where: eq(schema.deals.requestId, id) }) : null;
@@ -40,7 +37,7 @@ export default async function Offers({ params, searchParams }: { params: Promise
     <Picker
       requestId={r.id} open={open} paid={!!r.payRef && !r.refundedAt} dealId={deal?.id ?? null}
       money={{ deal: m.dealCents, fee: m.feeCents, vat: m.vatCents, vatPct: m.vatRate / 100, total: m.total }} ageOk={ageOk} waiver={WAIVER_TEXT}
-      meId={u.id} previewsLeft={previewsLeft} offers={list.map(({ o, u: c, p }) => ({ id: o.id, album: albums.find((a) => a.offerId === o.id) ?? null, status: o.status, showsFace: o.showsFace, vault: o.vault, etaHours: o.etaHours, note: notes.get(o.note) ?? o.note, handle: c.handle, look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? svgSrc(c.avatar.svg) : null, rating: c.ratingCount ? c.ratingSum / c.ratingCount : null, deals: c.ratingCount, visibility: p.visibility }))}
+      pick={(await searchParams).pick} offers={list.map(({ o, u: c, p }) => ({ id: o.id,  status: o.status, showsFace: o.showsFace, vault: o.vault, etaHours: o.etaHours, note: notes.get(o.note) ?? o.note, handle: c.handle, look: c.avatar?.kind === "3d" ? `/av/${c.avatar.look}.webp` : c.avatar?.kind === "built" && c.avatar.svg ? svgSrc(c.avatar.svg) : null, rating: c.ratingCount ? c.ratingSum / c.ratingCount : null, deals: c.ratingCount, visibility: p.visibility }))}
     />
   </div>);
 }

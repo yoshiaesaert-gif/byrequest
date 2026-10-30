@@ -114,7 +114,7 @@ export async function teamOfferSend(staffId: string, offerId: string, text: stri
   await db.transaction(async (tx) => {
     await tx.insert(S.offerMessages).values({ offerId, senderId: x.buyer.id, nonce: encodeBase64(nonce), body: encodeBase64(body), peerKey: x.creator.publicKey });
     await clearTyping(scopeOf("offer", offerId), x.buyer.id);
-    await notifyChat(tx, { userId: x.creator.id, scope: scopeOf("offer", offerId), href: `/requests/${x.r.id}#talk`, title: "A question about your application" });
+    await notifyChat(tx, { userId: x.creator.id, scope: scopeOf("offer", offerId), href: `/requests/${x.r.id}/talk`, title: "A question about your application" });
     await log(tx, `staff:${staffId}`, "house.offer_message", x.creator.id, { offerId });
   });
 }
@@ -143,7 +143,7 @@ export async function offerSendFrom(userId: string, offerId: string, sealed: { n
     if (toBuyer && x.buyer.house) {
       // Team requests: the staff hear about it, with a link straight to the conversation.
       for (const st of await tx.select({ userId: S.staff.userId }).from(S.staff)) await notify(tx, st.userId, `${x.creator.handle} replied`, `About "${x.r.title}" (${x.buyer.handle}).`, `/admin/offer-chat/${offerId}`);
-    } else await notify(tx, toBuyer ? x.buyer.id : x.creator.id, toBuyer ? "A candidate replied" : "A question about your application", "You have a new message.", toBuyer ? `/requests/${x.r.id}/offers` : `/requests/${x.r.id}#talk`);
+    } else await notify(tx, toBuyer ? x.buyer.id : x.creator.id, toBuyer ? "A candidate replied" : "A question about your application", "You have a new message.", toBuyer ? `/requests/${x.r.id}/offers/${offerId}` : `/requests/${x.r.id}/talk`);
   });
 }
 
