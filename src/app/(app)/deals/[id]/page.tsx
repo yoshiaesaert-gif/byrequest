@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { resealTeamDeal } from "@/server/teamchat";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -17,6 +18,7 @@ import { textsIn } from "@/server/translate";
 export default async function DealPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ accepted?: string; from?: string }> }) {
   const { id } = await params;
   const [u, { t, locale }] = await Promise.all([requireUser(), getT()]);
+  await resealTeamDeal(id).catch(() => {});   // team chats follow the creator to a new device
   const x = await deal(id, u.id);
   if (!x) notFound();
   const buyer = x.d.buyerId === u.id;

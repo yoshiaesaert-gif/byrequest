@@ -24,6 +24,13 @@ async function teamKeys(userId: string) {
   return { pub: encodeBase64(kp.publicKey), secret: kp.secretKey };
 }
 
+// Try the key the message was sealed with, then the person's current key.
+const LOST = "(Sent before they switched to another phone or browser. It can no longer be opened: send it again.)";
+function openWith(body: string, nonce: string, keys: (string | null | undefined)[], secret: Uint8Array) {
+  for (const k of keys) { if (!k) continue; try { const o = nacl.box.open(decodeBase64(body), decodeBase64(nonce), decodeBase64(k), secret); if (o) return encodeUTF8(o); } catch { /* try the next key */ } }
+  return null;
+}
+
 /* Give every team profile its key pair, so creators can write to them before staff ever open a chat. */
 export async function ensureTeamKeys() {
   const team = await db.select({ id: S.users.id }).from(S.users).where(eq(S.users.house, true));
@@ -39,8 +46,7 @@ export async function teamThread(dealId: string) {
   const rows = await db.select().from(S.messages).where(eq(S.messages.dealId, dealId)).orderBy(asc(S.messages.createdAt));
   const msgs = rows.map((m) => {
     if (m.kind !== "e2e" || !m.nonce) return { id: m.id, mine: false, system: true, text: m.body, at: m.createdAt };
-    let text = "(This message could not be opened: it was sent before the team key existed.)";
-    try { const o = creator.publicKey ? nacl.box.open(decodeBase64(m.body), decodeBase64(m.nonce), decodeBase64(creator.publicKey), k.secret) : null; if (o) text = encodeUTF8(o); } catch { /* stays unreadable */ }
+    const text = openWith(m.body, m.nonce, [m.peerKey, creator.publicKey], k.secret) ?? LOST;
     return { id: m.id, mine: m.senderId === buyer.id, system: false, text, at: m.createdAt };
   });
   return { d, buyer, creator, title: r.title, msgs };
@@ -56,7 +62,7 @@ export async function teamSend(staffId: string, dealId: string, text: string) {
   const nonce = nacl.randomBytes(nacl.box.nonceLength);
   const body = nacl.box(decodeUTF8(t), nonce, decodeBase64(th.creator.publicKey), k.secret);
   await db.transaction(async (tx) => {
-    await tx.insert(S.messages).values({ dealId, senderId: th.buyer.id, kind: "e2e", nonce: encodeBase64(nonce), body: encodeBase64(body) });
+    await tx.insert(S.messages).values({ dealId, senderId: th.buyer.id, kind: "e2e", nonce: encodeBase64(nonce), body: encodeBase64(body), peerKey: th.creator.publicKey });
     await notify(tx, th.creator.id, "New message", "You have a new message.", `/deals/${dealId}`);
     await log(tx, `staff:${staffId}`, "house.chat_sent", th.creator.id, { dealId });
   });
@@ -88,8 +94,7 @@ export async function teamOfferThread(offerId: string) {
   const rows = await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)).orderBy(asc(S.offerMessages.createdAt));
   await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, x.creator.id), isNull(S.offerMessages.readAt)));
   const msgs = rows.map((m) => {
-    let text = "(This message could not be opened.)";
-    try { const o = x.creator.publicKey ? nacl.box.open(decodeBase64(m.body), decodeBase64(m.nonce), decodeBase64(x.creator.publicKey), k.secret) : null; if (o) text = encodeUTF8(o); } catch { /* unreadable */ }
+    const text = openWith(m.body, m.nonce, [m.peerKey, x.creator.publicKey], k.secret) ?? LOST;
     return { id: m.id, mine: m.senderId === x.buyer.id, system: false, text, at: m.createdAt };
   });
   return { ...x, msgs };
@@ -105,7 +110,7 @@ export async function teamOfferSend(staffId: string, offerId: string, text: stri
   const nonce = nacl.randomBytes(nacl.box.nonceLength);
   const body = nacl.box(decodeUTF8(t), nonce, decodeBase64(x.creator.publicKey), k.secret);
   await db.transaction(async (tx) => {
-    await tx.insert(S.offerMessages).values({ offerId, senderId: x.buyer.id, nonce: encodeBase64(nonce), body: encodeBase64(body) });
+    await tx.insert(S.offerMessages).values({ offerId, senderId: x.buyer.id, nonce: encodeBase64(nonce), body: encodeBase64(body), peerKey: x.creator.publicKey });
     await notify(tx, x.creator.id, "A question about your application", "The buyer sent you a message.", `/requests/${x.r.id}#talk`);
     await log(tx, `staff:${staffId}`, "house.offer_message", x.creator.id, { offerId });
   });
@@ -118,6 +123,7 @@ export async function offerThreadFor(userId: string, offerId: string) {
   const other = x.buyer.id === userId ? x.creator : x.buyer;
   if (other.house) await teamKeys(other.id);
   const fresh = other.house ? await db.query.users.findFirst({ where: eq(S.users.id, other.id) }) : other;
+  if (other.house && x.creator.publicKey) { const k = await teamKeys(other.id); await reseal(await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)), x.creator.publicKey, k.secret, "offer"); }
   const rows = await db.select().from(S.offerMessages).where(eq(S.offerMessages.offerId, offerId)).orderBy(asc(S.offerMessages.createdAt));
   await db.update(S.offerMessages).set({ readAt: new Date() }).where(and(eq(S.offerMessages.offerId, offerId), eq(S.offerMessages.senderId, other.id), isNull(S.offerMessages.readAt)));
   return { other: { id: other.id, handle: other.handle, publicKey: fresh?.publicKey ?? null }, msgs: rows.map((m) => ({ id: m.id, mine: m.senderId === userId, nonce: m.nonce, body: m.body, at: m.createdAt.toISOString() })) };
@@ -130,7 +136,7 @@ export async function offerSendFrom(userId: string, offerId: string, sealed: { n
   if (sealed.body.length > 6000) throw new RuleError("That message is too long.");
   const toBuyer = x.creator.id === userId;
   await db.transaction(async (tx) => {
-    await tx.insert(S.offerMessages).values({ offerId, senderId: userId, nonce: sealed.nonce, body: sealed.body });
+    await tx.insert(S.offerMessages).values({ offerId, senderId: userId, nonce: sealed.nonce, body: sealed.body, peerKey: x.creator.id === userId ? x.creator.publicKey : null });
     if (toBuyer && x.buyer.house) {
       // Team requests: the staff hear about it, with a link straight to the conversation.
       for (const st of await tx.select({ userId: S.staff.userId }).from(S.staff)) await notify(tx, st.userId, `${x.creator.handle} replied`, `About "${x.r.title}" (${x.buyer.handle}).`, `/admin/offer-chat/${offerId}`);
@@ -142,4 +148,26 @@ export async function offerUnread(offerIds: string[], from: string) {
   if (!offerIds.length) return {} as Record<string, number>;
   const rows = await db.select({ id: S.offerMessages.offerId, n: sql<number>`count(*)::int` }).from(S.offerMessages).where(and(inArray(S.offerMessages.offerId, offerIds), isNull(S.offerMessages.readAt), eq(S.offerMessages.senderId, from))).groupBy(S.offerMessages.offerId);
   return Object.fromEntries(rows.map((r) => [r.id, r.n])) as Record<string, number>;
+}
+
+/* A creator who switches phone or browser gets a new key. Messages between them and a team profile
+   are sealed again for the new key, so both sides keep the whole conversation. (Between two real
+   people this cannot be done: nobody but them holds the keys.) */
+async function reseal(rows: { id: string; nonce: string | null; body: string; peerKey: string | null }[], creatorPub: string, secret: Uint8Array, table: "messages" | "offer") {
+  for (const m of rows) {
+    if (!m.nonce || !m.peerKey || m.peerKey === creatorPub) continue;
+    const text = openWith(m.body, m.nonce, [m.peerKey], secret);
+    if (text === null) continue;
+    const nonce = nacl.randomBytes(nacl.box.nonceLength);
+    const set = { nonce: encodeBase64(nonce), body: encodeBase64(nacl.box(decodeUTF8(text), nonce, decodeBase64(creatorPub), secret)), peerKey: creatorPub };
+    if (table === "messages") await db.update(S.messages).set(set).where(eq(S.messages.id, m.id));
+    else await db.update(S.offerMessages).set(set).where(eq(S.offerMessages.id, m.id));
+  }
+}
+export async function resealTeamDeal(dealId: string) {
+  const d = await db.query.deals.findFirst({ where: eq(S.deals.id, dealId) });
+  const [buyer, creator] = d ? await Promise.all([db.query.users.findFirst({ where: eq(S.users.id, d.buyerId) }), db.query.users.findFirst({ where: eq(S.users.id, d.creatorId) })]) : [];
+  if (!buyer?.house || !creator?.publicKey) return;
+  const k = await teamKeys(buyer.id);
+  await reseal(await db.select().from(S.messages).where(and(eq(S.messages.dealId, dealId), eq(S.messages.kind, "e2e"))), creator.publicKey, k.secret, "messages");
 }

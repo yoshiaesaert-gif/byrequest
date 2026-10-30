@@ -220,6 +220,7 @@ export const messages = pgTable("messages", {
   kind: text("kind").$type<"e2e" | "system">().notNull(),
   nonce: text("nonce"),
   body: text("body").notNull(),
+  peerKey: text("peer_key"),              // the person's public key this message was sealed with, so a team profile can still open it after they change device
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("messages_deal").on(t.dealId, t.createdAt)]);
 
@@ -416,6 +417,7 @@ export const offerMessages = pgTable("offer_messages", {
   senderId: uuid("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   nonce: text("nonce").notNull(),
   body: text("body").notNull(),
+  peerKey: text("peer_key"),              // the creator's public key this message was sealed with
   readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("offer_messages_offer").on(t.offerId, t.createdAt)]);

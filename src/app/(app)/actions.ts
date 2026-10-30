@@ -180,7 +180,7 @@ export async function sendMessage(dealId: string, nonce: string, body: string): 
     if (!d || (d.buyerId !== u.id && d.creatorId !== u.id)) return { ok: false, error: "Not your deal." };
     if (!/^[A-Za-z0-9+/=]{20,64}$/.test(nonce) || body.length > 8000) return { ok: false, error: "Invalid message." };
     if (await blockedEither(d.buyerId, d.creatorId)) return { ok: false, error: "This chat is closed." };
-    await db.insert(schema.messages).values({ dealId, senderId: u.id, kind: "e2e", nonce, body });
+    await db.insert(schema.messages).values({ dealId, senderId: u.id, kind: "e2e", nonce, body, peerKey: u.publicKey });
     const other = d.buyerId === u.id ? d.creatorId : d.buyerId;
     await db.insert(schema.notifications).values({ userId: other, title: "New message", body: "You have a new message.", href: `/deals/${dealId}` });
   });
