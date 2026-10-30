@@ -1,5 +1,5 @@
 import {
-  pgTable, pgEnum, text, integer, boolean, timestamp, jsonb, uuid, uniqueIndex, index,
+  pgTable, pgEnum, text, integer, boolean, timestamp, jsonb, uuid, uniqueIndex, index, primaryKey,
 } from "drizzle-orm/pg-core";
 
 /* Money is always stored in euro cents. "Deal value" is the creator price the buyer agreed to.
@@ -130,7 +130,17 @@ export const requests = pgTable("requests", {
   paidAt: timestamp("paid_at", { withTimezone: true }),
   refundedAt: timestamp("refunded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  forCreatorId: uuid("for_creator_id").references(() => users.id),     // a personal request: only this creator sees it
+  circleFirst: boolean("circle_first").notNull().default(false),       // the buyer's Inner Circle gets a head start once it is live
+  circleUntil: timestamp("circle_until", { withTimezone: true }),       // until then only the Inner Circle sees it
 }, (t) => [index("requests_status").on(t.status, t.closesAt)]);
+
+/* Inner Circle: creators a buyer was happy with. They get personal requests and a head start. */
+export const circle = pgTable("circle", {
+  buyerId: uuid("buyer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  creatorId: uuid("creator_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.buyerId, t.creatorId] }), index("circle_creator").on(t.creatorId)]);
 
 export const offers = pgTable("offers", {
   id: uuid("id").primaryKey().defaultRandom(),

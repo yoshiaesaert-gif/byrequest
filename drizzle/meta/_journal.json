@@ -176,6 +176,13 @@
       "when": 1793400000000,
       "tag": "0024_true_e2e",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793410000000,
+      "tag": "0025_inner_circle",
+      "breakpoints": true
     }
   ]
 }

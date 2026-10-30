@@ -1,4 +1,5 @@
 import "server-only";
+import { onLive } from "./circle";
 import { and, count, desc, eq, gte, ilike, inArray, ne, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
@@ -55,6 +56,7 @@ export async function approve(staffId: string | null, id: string, note = "") {
     await tx.update(S.requests).set({ status: "open", closesAt: new Date(Date.now() + window), reviewedBy: staffId, reviewedAt: new Date(), reviewNote: note.slice(0, 300) || null }).where(eq(S.requests.id, id));
     await log(tx, staffId ? `staff:${staffId}` : "system:auto_review", "staff.request_approved", r.buyerId, { request: id, note: note.slice(0, 300) });
     await notify(tx, r.buyerId, "Your request is live", "Creators can now make offers.", `/requests/${id}/offers`);
+    await onLive(tx, r);
   });
 }
 

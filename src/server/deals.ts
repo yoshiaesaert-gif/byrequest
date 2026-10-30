@@ -1,4 +1,5 @@
 import "server-only";
+import { mayView, inCircle } from "./circle";
 import { profileMissing } from "@/domain/looks-detail";
 import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
@@ -33,6 +34,7 @@ export async function makeOffer(creatorId: string, input: { requestId: string; s
   // Buyers choose on looks: an incomplete profile cannot apply.
   if (profileMissing(await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, creatorId) })).length) throw new RuleError("Complete your public profile first, so buyers can picture you.");
   if (await blockedEither(creatorId, r.buyerId)) throw new RuleError("This request is no longer open.");   // silent: never reveals a block
+  if (!mayView(r, creatorId, await inCircle(r.buyerId, creatorId))) throw new RuleError("This request is no longer open.");
   if (!vaultAtLeast(input.vault, r.minVault)) throw new RuleError("The buyer asked for a longer vault period.");
   if (r.face === "required" && !input.showsFace) throw new RuleError("The buyer asked for the face to be shown.");
   if (input.etaHours > r.dueHours) throw new RuleError(`The buyer needs it within ${r.dueHours} hours.`);

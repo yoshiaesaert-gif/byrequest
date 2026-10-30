@@ -2,6 +2,7 @@ import "server-only";
 import { asked, PREVIEW_LIMIT } from "./albums";
 import { blockedEither, iBlocked } from "./blocks";
 import { DEMO_MODE } from "@/config/compliance";
+import { seenBy } from "./circle";
 import { and, asc, desc, eq, gt, inArray, or, sql, count } from "drizzle-orm";
 import { db, schema } from "@/db";
 
@@ -11,7 +12,7 @@ export type FeedItem = Awaited<ReturnType<typeof feed>>[number];
 
 export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | "ending"; limit?: number; category?: string } = {}) {
   const now = new Date();
-  const conds = [eq(requests.status, "open"), gt(requests.closesAt, now)];
+  const conds = [eq(requests.status, "open"), gt(requests.closesAt, now), seenBy(opts.viewerId)];
   // Two people where one blocked the other never see each other's requests.
   if (opts.viewerId) conds.push(sql`not exists (select 1 from blocks b where (b.blocker_id = ${opts.viewerId} and b.blocked_id = "requests"."buyer_id") or (b.blocked_id = ${opts.viewerId} and b.blocker_id = "requests"."buyer_id"))`);
   if (opts.category) conds.push(eq(requests.category, opts.category as "video"));
@@ -225,14 +226,14 @@ export async function themeCounts() {
 /* The best paid open requests right now: real budgets, highest first. */
 export async function topBudgets(limit = 6, viewerId?: string) {
   return db.select({ id: requests.id, title: requests.title, category: requests.category, amount: requests.amount, dealCents: requests.dealCents })
-    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()),
+    .from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()), seenBy(viewerId),
       viewerId ? sql`not exists (select 1 from blocks b where (b.blocker_id = ${viewerId} and b.blocked_id = ${requests.buyerId}) or (b.blocked_id = ${viewerId} and b.blocker_id = ${requests.buyerId}))` : undefined))
     .orderBy(desc(requests.dealCents)).limit(limit);
 }
 
 /* Live totals of the board: open requests and the budget waiting in them. */
 export async function boardTotals() {
-  const [r] = await db.select({ n: count(), cents: sql<number>`coalesce(sum(${requests.dealCents}),0)::int` }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date())));
+  const [r] = await db.select({ n: count(), cents: sql<number>`coalesce(sum(${requests.dealCents}),0)::int` }).from(requests).where(and(eq(requests.status, "open"), gt(requests.closesAt, new Date()), seenBy()));
   return { open: r.n, cents: r.cents };
 }
 
