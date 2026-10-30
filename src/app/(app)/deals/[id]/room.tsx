@@ -163,7 +163,7 @@ function thread(p: Props, plain: Record<string, string | null>, pend: { id: stri
     const last = !next || next.kind === "system" || next.senderId !== m.senderId || new Date(next.at).getTime() - at.getTime() > 5 * 60_000 || day(new Date(next.at)) !== day(at);
     const big = !!m.text && EMOJI_ONLY.test(m.text) && !/\d/.test(m.text);
     const tick = !mine ? null : m.pending ? <Ico n="clock" c="tick" /> : readAt >= at.getTime()
-      ? <span className="tick read" aria-label={tr("Read")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L17 7M9.5 16l1 1 10.5-10.5" /></svg></span>
+      ? <span className="tick read" aria-label={tr("Read")}><svg viewBox="0 0 30 16" aria-hidden="true"><path d="M2 8.5l3.6 3.6L11.5 4.5M15.5 8.5l3.6 3.6L25 4.5" /></svg></span>
       : <span className="tick" aria-label={tr("Sent")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19.5 7" /></svg></span>;
     out.push(<div key={m.id} className={"bub " + (mine ? "me" : "them") + (m.text ? "" : " locked") + (last ? " tail" : " grp") + (big ? " big" : "") + (m.pending ? " sending" : "")}>
       <span className="bub-t">{m.text ?? (kp ? tr("Encrypted on another device") : client ? <button type="button" className="bub-open" onClick={() => window.dispatchEvent(new Event("brq:unlock"))}>{tr("Locked on this device. Tap to open")}</button> : tr("Decrypting…"))}</span>

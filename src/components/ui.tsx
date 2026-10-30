@@ -97,6 +97,6 @@ export function Empty({ icon, title, text, action }: { icon: string; title: stri
 /* Under your own messages: one grey tick when delivered, two green ticks once the other side read it. */
 export function Ticks({ read, t = same }: { read: boolean; t?: Tr }) {
   return read
-    ? <span className="tick read" aria-label={t("Read")} title={t("Read")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12.5l4.5 4.5L17 7M9.5 16l1 1 10.5-10.5" /></svg></span>
+    ? <span className="tick read" aria-label={t("Read")} title={t("Read")}><svg viewBox="0 0 30 16" aria-hidden="true"><path d="M2 8.5l3.6 3.6L11.5 4.5M15.5 8.5l3.6 3.6L25 4.5" /></svg></span>
     : <span className="tick" aria-label={t("Delivered")} title={t("Delivered")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19.5 7" /></svg></span>;
 }
