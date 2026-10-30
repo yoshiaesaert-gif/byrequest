@@ -2563,5 +2563,8 @@ const nl: Record<string, string> = {
   "A preview video can be at most 2 minutes.": "Een preview video mag maximaal 2 minuten duren.",
   "Your album is full. Remove something first.": "Je album is vol. Verwijder eerst iets.",
   "Add at least one photo or video.": "Voeg minstens één foto of video toe.",
+  "This video is larger than 300 MB. Shorten or compress it first.": "Deze video is groter dan 300 MB. Maak hem eerst korter of kleiner.",
+  "This photo is larger than 25 MB.": "Deze foto is groter dan 25 MB.",
+  "Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.": "Foto's tot 25 MB, elk 10 seconden zichtbaar. Eén video tot 2 minuten en 300 MB, één keer afgespeeld van begin tot eind.",
 };
 export default nl;

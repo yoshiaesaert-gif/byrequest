@@ -24,6 +24,9 @@ export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max:
   const live = photos.filter((p) => p.status !== "rejected");
   const send = (files: File[]) => {
     if (!files.length) return;
+    // Checked before anything is sent, so nobody waits for an upload that would be refused.
+    const big = files.find((f) => (f.type.startsWith("video/") ? f.size > 300 * 1024 * 1024 : f.size > 25 * 1024 * 1024));
+    if (big) { toast(t(big.type.startsWith("video/") ? "This video is larger than 300 MB. Shorten or compress it first." : "This photo is larger than 25 MB."), "err"); return; }
     const f = new FormData(); files.forEach((x) => f.append("files", x)); f.set("kind", kind);
     const x = new XMLHttpRequest();
     x.open("POST", "/api/album/upload");
@@ -44,7 +47,7 @@ export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max:
         : <Link href="/onboarding" className="alb-add"><span>{t("Finish setup to add photos")}</span></Link>) : null}
     </div>
     <div className="optrow alb-kind"><span className="t-sm muted">{t("New items are")}</span>{KINDS.map(([k, l]) => <button key={k} type="button" className={"chip" + (kind === k ? " is-on" : "")} onClick={() => setKind(k)}>{t(l)}</button>)}</div>
-    <p className="t-xs muted" style={{ margin: 0 }}>{t("Photos show 10 seconds each. A video plays once, from start to end, at most 2 minutes.")}</p>
+    <p className="t-xs muted" style={{ margin: 0 }}>{t("Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.")}</p>
   </div>);
 }
 

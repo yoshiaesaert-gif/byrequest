@@ -38,6 +38,7 @@ export async function addPhotos(creatorId: string, files: File[], kind: "looks" 
   const imgs = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/")).slice(0, Math.max(0, ALBUM_MAX - have));
   if (!imgs.length) throw new RuleError(have >= ALBUM_MAX ? "Your album is full. Remove something first." : "Add at least one photo or video.");
   if (imgs.some((f) => f.type.startsWith("video/") && f.size > VIDEO_MAX_BYTES)) throw new RuleError("A preview video can be at most 300 MB.");
+  if (imgs.some((f) => f.type.startsWith("image/") && f.size > 25 * 1024 * 1024)) throw new RuleError("This photo is larger than 25 MB.");
   const stored: Awaited<ReturnType<typeof ingest>>[] = []; for (const f of imgs) stored.push(await ingest(f));
   const long = stored.find((s) => s.mime.startsWith("video/") && (s.durationSec ?? 0) > VIDEO_MAX_SECONDS);
   if (long) { for (const s of stored) await remove(s.key); throw new RuleError("A preview video can be at most 2 minutes."); }

@@ -2563,5 +2563,8 @@ const fr: Record<string, string> = {
   "A preview video can be at most 2 minutes.": "Une vidéo d'aperçu peut durer 2 minutes au maximum.",
   "Your album is full. Remove something first.": "Ton album est plein. Supprime d'abord quelque chose.",
   "Add at least one photo or video.": "Ajoute au moins une photo ou une vidéo.",
+  "This video is larger than 300 MB. Shorten or compress it first.": "Cette vidéo dépasse 300 Mo. Raccourcis-la ou compresse-la d'abord.",
+  "This photo is larger than 25 MB.": "Cette photo dépasse 25 Mo.",
+  "Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.": "Photos jusqu'à 25 Mo, visibles 10 secondes chacune. Une vidéo jusqu'à 2 minutes et 300 Mo, lue une fois du début à la fin.",
 };
 export default fr;
