@@ -2288,5 +2288,7 @@ const nl: Record<string, string> = {
   "This passkey is not known here.": "Deze passkey is hier niet bekend.",
   "Browser": "Browser",
   "End to end encrypted. Only your own devices can read them; ByRequest cannot.": "End to end versleuteld. Enkel je eigen toestellen kunnen ze lezen, ByRequest niet.",
+  "The team behind ByRequest": "Het team achter ByRequest",
+  "Questions? Mail support@byrequest.me, we answer within a day.": "Vragen? Mail support@byrequest.me, we antwoorden binnen de dag.",
 };
 export default nl;

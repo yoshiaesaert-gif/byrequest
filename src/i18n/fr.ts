@@ -2288,5 +2288,7 @@ const fr: Record<string, string> = {
   "This passkey is not known here.": "Cette passkey n'est pas connue ici.",
   "Browser": "Navigateur",
   "End to end encrypted. Only your own devices can read them; ByRequest cannot.": "Chiffrés de bout en bout. Seuls tes propres appareils peuvent les lire, pas ByRequest.",
+  "The team behind ByRequest": "L'équipe derrière ByRequest",
+  "Questions? Mail support@byrequest.me, we answer within a day.": "Des questions ? Écris à support@byrequest.me, nous répondons dans la journée.",
 };
 export default fr;

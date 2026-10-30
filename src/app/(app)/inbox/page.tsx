@@ -1,7 +1,7 @@
 import { getT } from "@/i18n/server";
 import { textsIn } from "@/server/translate";
 import { requireUser } from "@/server/auth";
-import { conversations, inbox } from "@/server/queries";
+import { conversations, inbox, TEAM_HREF } from "@/server/queries";
 import { markAllRead } from "../actions";
 import { Av, Empty } from "@/components/ui";
 import { ChatList, NoteList } from "./lists";
@@ -19,15 +19,17 @@ export default async function Inbox() {
     lastAt: new Date(c.last_at).toISOString(), encrypted: c.last_kind === "e2e", mineLast: c.last_kind === "e2e" && c.last_sender === u.id,
     preview: c.last_kind === "e2e" ? t("Encrypted message") : c.last_body ? sys(c.last_body) : t("No messages yet"),
   }));
-  const unreadChats = chats.filter((c) => c.unread).length;
+  const team = notes.filter((n) => n.href === TEAM_HREF), other = notes.filter((n) => n.href !== TEAM_HREF);
+  const teamRow = team.length ? { preview: t(team[0].title), at: team[0].createdAt.toISOString(), unread: team.filter((n) => !n.readAt).length } : null;
+  const unreadChats = chats.filter((c) => c.unread).length + (teamRow?.unread ? 1 : 0);
   return (<div className="wrap inbox">
     <div className="page-h"><div><h1 className="t-h1">{t("Inbox")}</h1><p className="muted" style={{ marginTop: 6 }}>{t("Every chat belongs to a deal and is end to end encrypted. Payments outside ByRequest are never protected.")}</p></div>
-      {notes.some((n) => !n.readAt) ? <form action={markAllRead}><button className="btn btn-secondary btn-sm">{t("Mark all as read")}</button></form> : null}</div>
+      {other.some((n) => !n.readAt) ? <form action={markAllRead}><button className="btn btn-secondary btn-sm">{t("Mark all as read")}</button></form> : null}</div>
     <div className="ib-grid">
       <section className="card ib-col"><div className="ib-h"><h2 className="t-h3">{t("Chats")}</h2>{unreadChats ? <span className="ib-badge num">{unreadChats}</span> : null}</div>
-        {chats.length ? <ChatList chats={chats} /> : <Empty icon="inbox" title={t("No chats yet")} text={t("A chat opens as soon as a deal starts.")} />}</section>
+        {chats.length || teamRow ? <ChatList chats={chats} team={teamRow} /> : <Empty icon="inbox" title={t("No chats yet")} text={t("A chat opens as soon as a deal starts.")} />}</section>
       <section className="card ib-col"><div className="ib-h"><h2 className="t-h3">{t("Notifications")}</h2></div>
-        {notes.length ? <NoteList notes={notes.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, at: n.createdAt.toISOString(), unread: !n.readAt }))} />
+        {other.length ? <NoteList notes={other.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, at: n.createdAt.toISOString(), unread: !n.readAt }))} />
           : <Empty icon="inbox" title={t("All quiet")} text={t("Offers, deliveries and messages show up here, always with neutral wording.")} />}</section>
     </div>
   </div>);

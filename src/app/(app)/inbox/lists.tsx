@@ -21,9 +21,14 @@ function useClock() {
   return { client, short, group };
 }
 
-export function ChatList({ chats }: { chats: Chat[] }) {
+export function ChatList({ chats, team }: { chats: Chat[]; team?: { preview: string; at: string; unread: number } | null }) {
   const t = useT(); const { short } = useClock();
-  return <div className="cl">{chats.map((c) => (
+  return <div className="cl">{team ? <Link href="/inbox/byrequest" className={"cl-row cl-team" + (team.unread ? " unread" : "")}>
+      <span className="cl-av"><img src="/apple-icon.png" alt="" width={48} height={48} /></span>
+      <span className="cl-main"><span className="cl-top"><b>ByRequest</b><time>{short(team.at)}</time></span>
+        <span className="cl-sub">{t("The team behind ByRequest")}</span>
+        <span className="cl-prev">{team.preview}{team.unread ? <i className="cl-n num">{team.unread}</i> : null}</span></span>
+    </Link> : null}{chats.map((c) => (
     <Link key={c.id} href={`/deals/${c.id}?from=inbox`} className={"cl-row" + (c.unread ? " unread" : "")}>
       <span className="cl-av">{c.avatar}</span>
       <span className="cl-main"><span className="cl-top"><b>{c.other}</b><time>{short(c.lastAt)}</time></span>
@@ -40,10 +45,16 @@ export function NoteList({ notes }: { notes: Note[] }) {
     const h = client ? group(n.at) : "";
     if (h !== g) { g = h; if (h) out.push(<div key={"g" + n.id} className="nl-h">{h}</div>); }
     out.push(<Link key={n.id} href={n.href} onClick={() => { if (n.unread) markNoteRead(n.id); }} className={"nl-row" + (n.unread ? " unread" : "")}>
-      <span className="nl-ic"><Ico n={ICON.find(([r]) => r.test(n.title + " " + n.body))?.[1] ?? "spark"} /></span>
+      <span className="nl-ic"><Ico n={ICON.find(([r]) => r.test(n.title + " " + n.body))?.[1] ?? "inbox"} /></span>
       <span className="nl-main"><b>{t(n.title)}</b><span>{withAmount(n.body)}</span></span>
       <span className="nl-r"><time>{short(n.at)}</time>{n.unread ? <i aria-label={t("Unread")} /> : null}</span>
     </Link>);
   }
   return <div className="nl">{out}</div>;
+}
+
+/* The team's messages as chat bubbles; times in the viewer's own time zone. */
+export function TeamTimes({ msgs }: { msgs: { id: string; title: string; body: string; at: string }[] }) {
+  const { short } = useClock();
+  return <>{msgs.map((m) => <div key={m.id} className="tc-m"><b>{m.title}</b><p>{m.body}</p><time>{short(m.at)}</time></div>)}</>;
 }
