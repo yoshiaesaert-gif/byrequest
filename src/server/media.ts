@@ -34,8 +34,12 @@ export function open(buf: Buffer) {
 }
 async function upload(key: string) {
   if (!s3) return;
-  const r = await s3.fetch(objectUrl(key), { method: "PUT", body: new Uint8Array(seal(await readFile(filePath(key)))), headers: { "content-type": "application/octet-stream" } });
-  if (!r.ok) throw new Error(`storage upload ${r.status}`);
+  // Sign first, then send the bytes as a plain buffer: handing the signed Request to fetch streams the body without a
+  // length, and R2 answers 411 Length Required.
+  const body = seal(await readFile(filePath(key)));
+  const signed = await s3.sign(objectUrl(key), { method: "PUT", body, headers: { "content-type": "application/octet-stream", "content-length": String(body.length) } });
+  const r = await fetch(signed.url, { method: "PUT", headers: signed.headers, body: new Uint8Array(body) });
+  if (!r.ok) throw new Error(`storage upload ${r.status} ${(await r.text().catch(() => "")).slice(0, 160)}`);
 }
 /* The local path of a stored file, restored from the bucket when this server does not have it. */
 export async function localFile(key: string) {
