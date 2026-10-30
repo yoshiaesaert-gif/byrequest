@@ -37,7 +37,8 @@ export default async function Overview({ searchParams }: { searchParams: Promise
       </div>
     </section>
 
-    <h2 className="bo-sh" style={{ marginTop: 8 }}>Platform</h2>
+    <h2 className="bo-sh" style={{ marginTop: 8 }}>Money <small className="bo-sh-n">real payments only</small></h2>
+    {o.simulated.deals ? <p className="bo-sim">Payments are simulated until the payment partner is live, so no real money has moved yet. Left out of every figure below: {o.simulated.deals} test deals worth {euros(o.simulated.cents)} in simulated payments.</p> : null}
     <dl className="bo-kpis">
       <div><dt>Open requests</dt><dd className="num">{o.requests.open}</dd><span>{o.requests.week} new this week</span></div>
       <div><dt>Active deals</dt><dd className="num">{o.deals.active}</dd><span>{o.deals.week} started this week</span></div>

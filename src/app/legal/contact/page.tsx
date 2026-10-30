@@ -1,5 +1,6 @@
 import { getT } from "@/i18n/server";
 import Link from "next/link";
+import { COMPANY } from "@/config/company";
 
 /* Single point of contact for authorities and users (DSA art. 11 and 12). */
 export default async function Contact() {
@@ -11,6 +12,6 @@ export default async function Contact() {
     <p className="t-sm">{t("For users and anyone else:")} <b>{t("support@byrequest.me")}</b>{t(", or the inbox in the app.")}</p>
     <p className="t-sm">{t("To report illegal content or abuse, with or without an account:")} <Link href="/report">{t("/report")}</Link>{t(". To have content with you in it removed:")} <Link href="/removal">{t("/removal")}</Link>.</p>
     <p className="t-sm">{t("Privacy and data protection:")} <b>{t("privacy@byrequest.me")}</b>.</p>
-    <p className="t-xs muted">{t("Company details, registered address and enterprise number are published here once the company is registered. Draft pending legal review.")}</p>
+    <p className="t-sm">{t("Operator:")} <b>{COMPANY.name}</b>, {t("a limited liability company under the laws of Delaware, United States, file number {n}.", { n: COMPANY.file })} {t("Registered office:")} {COMPANY.address}.</p>
   </div></div>);
 }

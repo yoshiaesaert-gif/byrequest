@@ -32,7 +32,7 @@ function codeMail(c: (typeof COPY)[keyof typeof COPY], code: string) {
 <tr><td style="padding:14px 40px 0;font:600 13px/1.5 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#4434E6">${c.valid}</td></tr>
 <tr><td style="padding:28px 40px 36px"><div style="border-top:1px solid #ECECE6;padding-top:20px;font:400 13px/1.55 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6B7079">${c.ignore}</div></td></tr>
 </table>
-<p style="margin:20px 0 0;font:400 12px/1.5 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#9A9EA6">© ${year} ByRequest LLC · ${c.rights}</p>
+<p style="margin:20px 0 0;font:400 12px/1.5 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#9A9EA6">© ${year} That&#39;s Amore IP, LLC · ${c.rights}</p>
 </td></tr></table></body></html>`;
 }
 

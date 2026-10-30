@@ -57,7 +57,7 @@ ${m.code ? `<tr><td style="padding:20px 36px 0"><table role="presentation" cellp
 ${m.after ? `<tr><td style="padding:18px 36px 0;font:400 14px/1.6 ${FONT};color:#6B7079">${esc(m.after)}</td></tr>` : ""}
 <tr><td style="padding:30px 36px 32px"><div style="border-top:1px solid #EEEDF3;padding-top:18px;font:400 12px/1.6 ${FONT};color:#9A9EA6">${esc(m.footer.why)} <a href="${m.footer.unsubUrl}" style="color:#6B7079;text-decoration:underline">${esc(m.footer.unsub)}</a></div></td></tr>
 </table>
-<p style="margin:18px 0 0;font:400 12px/1.5 ${FONT};color:#9A9EA6">© ${year} ByRequest LLC · ${esc(m.footer.rights)}</p>
+<p style="margin:18px 0 0;font:400 12px/1.5 ${FONT};color:#9A9EA6">© ${year} That&#39;s Amore IP, LLC · ${esc(m.footer.rights)}</p>
 </td></tr></table></body></html>`;
 }
 

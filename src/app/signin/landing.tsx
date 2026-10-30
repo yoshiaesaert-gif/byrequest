@@ -1,5 +1,6 @@
 "use client";
 import Reassure, { UspPills } from "@/components/reassure";
+import { COMPANY } from "@/config/company";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n/client";
 import LangSwitch from "@/components/lang-switch";
@@ -13,7 +14,7 @@ const CARDS = [
   { k: "fc2", cover: "c05", badge: "Video · 10 min", title: "Shower video, slow and steamy", pay: 80, earn: 64 },
   { k: "fc3", cover: "c17", badge: "Voice note", title: "Moan my name", pay: 20, earn: 16 },
 ] as const;
-const LEGAL: [string, string][] = [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/creator_agreement", "Creator agreement"], ["/legal/participant_consent", "Consent to appear"], ["/legal/contact", "Point of contact"], ["/report", "Report a problem"], ["/removal", "Request removal"]];
+const LEGAL: [string, string][] = [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/creator_agreement", "Creator agreement"], ["/legal/participant_consent", "Consent to appear"], ["/legal/contact", "Point of contact"], ["/legal/refunds", "Refunds and cancellation"], ["/legal/complaints", "Complaints and content removal"], ["/legal/2257", "18 U.S.C. 2257 Statement"], ["/report", "Report a problem"], ["/removal", "Request removal"]];
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 
 export default function Landing({ initial, year, invite }: { initial?: "buy" | "earn"; year: number; invite?: { code: string; welcomePct: number; buyerGift: boolean } }) {
@@ -72,8 +73,8 @@ export default function Landing({ initial, year, invite }: { initial?: "buy" | "
         </div>
         <footer className="lp-legal">
           <nav aria-label={t("Legal")}>{LEGAL.map(([h, l]) => <a key={h} href={h}>{t(l)}</a>)}</nav>
-          <p>{t("Only for adults of 18 and older. Every creator is verified on age and identity. ByRequest is operated by ByRequest LLC, Delaware, United States. Payments show as BRQ DIGITAL.")}</p>
-          <p>© {year} ByRequest LLC. {t("All rights reserved.")}</p>
+          <p>{t("Only for adults of 18 and older. Every creator is verified on age and identity. ByRequest is operated by {company}, {address}.", { company: COMPANY.name, address: COMPANY.address })}</p>
+          <p>© {year} {COMPANY.name}. {t("All rights reserved.")}</p>
         </footer>
       </section>
     </div>

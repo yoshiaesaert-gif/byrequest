@@ -1231,3 +1231,4 @@ i.td{background:#4434E6}i.yd{background:#A7ABB3}i.lw{background:#D9A21B}
 .ax-fic .ico{width:16px;height:16px;display:block}
 .talk-m.mine{display:flex;flex-direction:column;align-items:flex-end}.talk-meta{display:inline-flex;margin-top:3px;color:var(--muted)}
 .tc-m time{display:inline-flex;align-items:center;gap:4px}.tc-m.mine time{justify-content:flex-end}.tc-m .tick{color:var(--muted)}.tc-m .tick.read{color:#16A34A}
+.bo-sh-n{font-size:.72rem;font-weight:600;color:var(--muted);margin-left:8px;text-transform:none;letter-spacing:0}.bo-sim{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FFF8E6;box-shadow:inset 0 0 0 1px #F5E1A8;color:#7A5300;font-size:.84rem}

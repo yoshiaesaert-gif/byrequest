@@ -323,6 +323,11 @@ export const DRAFT_NOTE = { nl: NL_DRAFT, fr: FR_DRAFT } as const;
 /* Versions whose wording only changed in English details (such as a contact address already updated
    in the translations above) reuse the translation of the version before. */
 const SAME_AS: Record<string, string> = { "privacy|2026-11-draft-4": "2026-11-draft-3" };
+/* Version .1 of these texts only names the operating company, That's Amore IP, LLC; the rest is unchanged. */
+const RENAMED: Record<string, string> = { "terms|2026-11-draft-3.1": "2026-11-draft-3", "privacy|2026-11-draft-4.1": "2026-11-draft-4", "creator_agreement|2026-11-draft-6.1": "2026-11-draft-6" };
+const renamed = (t: Tr): Tr => JSON.parse(JSON.stringify(t).replaceAll("ByRequest LLC", "That's Amore IP, LLC"));
 export function legalIn(locale: string, kind: Kind, version: string): Tr | null {
+  const base = RENAMED[`${kind}|${version}`];
+  if (base) { const t = legalIn(locale, kind, base); return t && renamed(t); }
   return LEGAL_TR[`${locale}|${SAME_AS[`${kind}|${version}`] ?? version}`]?.[kind] ?? null;
 }

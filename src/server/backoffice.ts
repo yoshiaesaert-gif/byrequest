@@ -13,13 +13,18 @@ const OPEN_DEAL = ["held", "reviewing", "delivered", "disputed"] as const;
 const days = (n: number) => new Date(Date.now() - n * 86_400_000);
 const sum = (c: SQL | typeof S.ledger.cents) => sql<number>`coalesce(sum(${c}), 0)::int`;
 
+/* Real money only: payments the payment partner actually made. Simulated test payments (mock_) never count. */
+const REAL_DEAL = sql`(${S.deals.paymentRef} is not null and ${S.deals.paymentRef} not like 'mock\_%')`;
+const REAL_LEDGER = sql`coalesce((select d.payment_ref from deals d where d.id = ${S.ledger.dealId}), (select r.pay_ref from requests r where r.id = ${S.ledger.requestId})) not like 'mock\_%'`;
+
 export async function overview() {
   const d30 = days(30), d7 = days(7);
-  const [[req], [dl], [held], money, [rev], [disp], [rem], [app], creators, recent, oldestReview] = await Promise.all([
+  const [[req], [dl], [held], money, [sim], [rev], [disp], [rem], [app], creators, recent, oldestReview] = await Promise.all([
     db.select({ open: sql<number>`count(*) filter (where ${S.requests.status} = 'open')::int`, week: sql<number>`count(*) filter (where ${S.requests.createdAt} >= ${d7})::int` }).from(S.requests),
-    db.select({ active: sql<number>`count(*) filter (where ${S.deals.status} in ('held','reviewing','delivered','disputed'))::int`, week: sql<number>`count(*) filter (where ${S.deals.createdAt} >= ${d7})::int`, done30: sql<number>`count(*) filter (where ${S.deals.status} = 'released' and ${S.deals.settledAt} >= ${d30})::int` }).from(S.deals),
-    db.select({ cents: sum(sql`${S.deals.dealCents} + ${S.deals.feeCents}`) }).from(S.deals).where(inArray(S.deals.status, [...OPEN_DEAL])),
-    db.select({ entry: S.ledger.entry, cents: sum(S.ledger.cents) }).from(S.ledger).where(gte(S.ledger.createdAt, d30)).groupBy(S.ledger.entry),
+    db.select({ active: sql<number>`count(*) filter (where ${S.deals.status} in ('held','reviewing','delivered','disputed'))::int`, week: sql<number>`count(*) filter (where ${S.deals.createdAt} >= ${d7})::int`, done30: sql<number>`count(*) filter (where ${S.deals.status} = 'released' and ${S.deals.settledAt} >= ${d30})::int` }).from(S.deals).where(REAL_DEAL),
+    db.select({ cents: sum(sql`${S.deals.dealCents} + ${S.deals.feeCents}`) }).from(S.deals).where(and(REAL_DEAL, inArray(S.deals.status, [...OPEN_DEAL]))),
+    db.select({ entry: S.ledger.entry, cents: sum(S.ledger.cents) }).from(S.ledger).where(and(REAL_LEDGER, gte(S.ledger.createdAt, d30))).groupBy(S.ledger.entry),
+    db.select({ n: count(), cents: sum(sql`${S.deals.dealCents} + ${S.deals.feeCents}`) }).from(S.deals).where(sql`not (${REAL_DEAL})`),
     db.select({ n: count() }).from(S.deliveries).where(inArray(S.deliveries.review, ["pending_review", "blocked_participants"])),
     db.select({ n: count() }).from(S.disputes).where(eq(S.disputes.outcome, "open")),
     db.select({ n: count() }).from(S.removalRequests).where(eq(S.removalRequests.status, "received")),
@@ -30,7 +35,7 @@ export async function overview() {
   ]);
   const m = Object.fromEntries(money.map((x) => [x.entry, x.cents])) as Record<string, number>;
   return {
-    requests: req, deals: dl, heldCents: held.cents,
+    requests: req, deals: dl, heldCents: Number(held.cents ?? 0), simulated: { deals: sim.n, cents: Number(sim.cents ?? 0) },
     money30: { charged: m.buyer_charge ?? 0, revenue: m.platform_revenue ?? 0, payouts: m.creator_payout ?? 0, refunds: m.buyer_refund ?? 0, onHold: m.payout_on_hold ?? 0 },
     queues: {
       review: rev.n, disputes: disp.n, removals: rem.n, appeals: app.n,

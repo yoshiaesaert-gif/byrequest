@@ -3,6 +3,7 @@ import { getT } from "@/i18n/server";
 import LangSwitch from "./lang-switch";
 import { CookieSettingsLink } from "./consent-banner";
 import { DEMO_MODE } from "@/config/compliance";
+import { COMPANY } from "@/config/company";
 
 /* Site footer. Neutral wording, no imagery, nothing that reveals what ByRequest is on a shared screen. */
 export default async function Footer() {
@@ -22,11 +23,11 @@ export default async function Footer() {
         </div>
         {col("Explore", [["/for-you", "The board"], ["/post", "Post a request"], ["/vault", "Your vault"], ["/deals", "Deals"]])}
         {col("Create", [["/settings#creator", "Become a creator"], ["/studio", "Studio"], ["/legal/creator_agreement", "Creator agreement"], ["/onboarding", "Creator setup"]])}
-        {col("Trust", [["/legal/privacy", "Privacy statement"], ["/legal/terms", "Terms of use"], ["/report", "Report a problem"], ["/removal", "Request removal"], ["/legal/participant_consent", "Consent to appear"]])}
+        {col("Trust", [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/refunds", "Refunds and cancellation"], ["/legal/complaints", "Complaints and content removal"], ["/report", "Report a problem"], ["/removal", "Request removal"], ["/legal/participant_consent", "Consent to appear"], ["/legal/2257", "18 U.S.C. 2257 Statement"]])}
         {col("Help", [["/help", "Help centre"], ["/inbox", "Support inbox"], ["/settings", "Privacy settings"], ["/legal/contact", "Point of contact"], ["mailto:support@byrequest.me", "support@byrequest.me"]])}
       </div>
       <div className="ft-bottom">
-        <span>© {year} ByRequest</span>
+        <span>© {year} {COMPANY.name} · {COMPANY.address}</span>
         <span>{t("Payments appear as BRQ DIGITAL")}</span>
         <span>{t("Press Esc twice to quick hide")}</span>
       </div>
