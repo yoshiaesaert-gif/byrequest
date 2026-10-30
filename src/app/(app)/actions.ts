@@ -1,5 +1,6 @@
 "use server";
 import * as TCH from "@/server/teamchat";
+import { openKey, publicFor, sealKey } from "@/server/chatkey";
 import { cleanDetail } from "@/domain/looks-detail";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
@@ -184,6 +185,16 @@ export async function sendMessage(dealId: string, nonce: string, body: string): 
     const other = d.buyerId === u.id ? d.creatorId : d.buyerId;
     await db.insert(schema.notifications).values({ userId: other, title: "New message", body: "You have a new message.", href: `/deals/${dealId}` });
   });
+}
+
+/* The device sends the key it has; the account keeps the first one it ever got, and every device gets that one. */
+export async function syncChatKey(secretB64: string): Promise<{ secret: string }> {
+  const u = await requireUser();
+  const kept = openKey(u.id, u.keyBox);
+  if (kept) { if (u.publicKey !== publicFor(kept)) await db.update(schema.users).set({ publicKey: publicFor(kept) }).where(eq(schema.users.id, u.id)); return { secret: kept }; }
+  if (!/^[A-Za-z0-9+/=]{43,44}$/.test(secretB64)) throw new Error("bad key");
+  await db.update(schema.users).set({ keyBox: sealKey(u.id, secretB64), publicKey: publicFor(secretB64) }).where(eq(schema.users.id, u.id));
+  return { secret: secretB64 };
 }
 
 export async function setPublicKey(pk: string) {

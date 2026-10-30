@@ -14,7 +14,7 @@ const ACTIONS: [href: string, icon: string, title: string, text: string][] = [
 const PROMISES = [
   ["Verified adults only", "Every creator is checked on age and identity before they can deliver."],
   ["Money held until it matches", "The payment partner holds the money. Not what was agreed? You get it back."],
-  ["Chats nobody else can read", "End to end encrypted. Contact details and paying outside ByRequest are not allowed."],
+  ["Chats nobody else can read", "Encrypted. Contact details and paying outside ByRequest are not allowed."],
   ["Every delivery checked", "Automatic checks and a person, before anything reaches a vault."],
 ];
 

@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm";
 import { profileMissing } from "@/domain/looks-detail";
 import * as q from "@/server/queries";
 import { access } from "@/server/onboarding";
-import { Av, BuyerLine, Cover, I, RequestCard, Stars, leftLabel, svgSrc } from "@/components/ui";
+import { Av, BuyerLine, Cover, I, RequestCard, Stars, leftLabel, svgSrc, type CardReq } from "@/components/ui";
 import HeroLive from "@/components/hero-live";
 import { getT } from "@/i18n/server";
 import { localize, textsIn } from "@/server/translate";
@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ w
 const lookOf = (u: { avatar: unknown }) => ((u.avatar as { look?: string } | null)?.look ?? "");
 const PROMISES = [
   { i: "held", t: "Money held until it matches", d: "Our payment partner holds it. You pay only for what was agreed, checked and reviewed." },
-  { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted on your device. Not even ByRequest can open them." },
+  { i: "e2e", t: "Chats nobody else can read", d: "Encrypted, and nobody at ByRequest reads them." },
   { i: "vault", t: "A vault that stays yours", d: "No download, no forwarding, your name on every view." },
   { i: "adults", t: "Verified adults only", d: "Every creator verifies ID and age once. Their legal name stays private." },
   { i: "billing", t: "Discreet everywhere", d: "BRQ DIGITAL on your statement, neutral alerts, quick hide on every screen." },
@@ -44,11 +44,21 @@ const PROMISES_CREATOR = [
   { i: "held", t: "The money is there before you start", d: "The buyer pays when choosing you. The payment partner holds it and pays you after the check." },
   { i: "billing", t: "Your name stays yours", d: "Buyers only see your username and avatar. Your legal name and ID are never shown." },
   { i: "adults", t: "Verified buyers", d: "Every buyer confirms their age. You see their stars and deals, never who they are." },
-  { i: "e2e", t: "Chats nobody else can read", d: "End to end encrypted. Contact details never need to be shared." },
+  { i: "e2e", t: "Chats nobody else can read", d: "Encrypted. Contact details never need to be shared." },
   { i: "vault", t: "Your work is protected", d: "No download, no forwarding, the buyer's name as watermark on every view." },
   { i: "fair", t: "Fair when it goes wrong", d: "A person decides on objections. If your delivery matches the offer, you are paid." },
 ] as const;
 const EXAMPLES = ["10 min shower video", "Good night voice note", "Post workout photo set", "Fit check, 5 photos"];
+
+/* What came in since yesterday, so the board always feels alive. */
+function NewRail({ items, t, now }: { items: (CardReq & { createdAt: Date })[]; t: Awaited<ReturnType<typeof getT>>["t"]; now: number }) {
+  const fresh = items.filter((r) => now - new Date(r.createdAt).getTime() < 36 * 3600_000);
+  if (fresh.length < 3) return null;
+  return (<section className="h-sec h-new">
+    <div className="h-head"><div><span className="h-kick dark"><i className="new-dot" />{t("New today")}</span><h2>{t("{n} new requests since yesterday", { n: fresh.length })}</h2></div><Link href="/for-you?tab=new" className="h-link">{t("See all")} <I n="right" c="sm" /></Link></div>
+    <ScrollRow className="rail">{fresh.slice(0, 12).map((r) => <RequestCard key={r.id} r={r} t={t} isNew />)}</ScrollRow>
+  </section>);
+}
 
 async function BuyerHome({ userId, handle, welcome, creator }: { userId: string; handle: string; welcome: boolean; creator: boolean }) {
   const hideHow = (await cookies()).get("brq_hwb")?.value === "hide";
@@ -58,6 +68,7 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
   ]);
   const { t, locale } = await getT();
   const [top, boardItems] = await Promise.all([localize(rawTop, locale), localize(rawBoard, locale)]);
+  const now = Date.now();
   const openMine = mine.find((m) => m.r.status === "open");
   const L = await textsIn([...mine.map((m) => m.r.title), ...myDeals.map((d) => d.r.title)], locale);
   const live = myDeals.find((d) => d.d.buyerId === userId && ["held", "reviewing", "delivered", "disputed"].includes(d.d.status));
@@ -108,6 +119,8 @@ async function BuyerHome({ userId, handle, welcome, creator }: { userId: string;
       </div>) : null}
 
     <HowItWorks hidden={hideHow && !welcome} variant="buy" autoOpen={welcome} />
+
+    <NewRail items={boardItems} t={t} now={now} />
 
     <section className="h-sec">
       <div className="h-head"><div><span className="h-kick dark">{t("Inspiration")}</span><h2>{t("What others are asking for")}</h2></div><span className="t-sm muted">{t("Open one and post a similar request in one tap.")}</span></div>
@@ -170,6 +183,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
   const missing = profileMissing(await db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, userId) }));
   const { t, locale } = await getT();
   const [boardItems, ending] = await Promise.all([localize(rawBoard, locale), localize(rawEnding, locale)]);
+  const now = Date.now();
   // Every request shows once: board first, then closing soon without repeats.
   const items = boardItems.filter((r) => !r.mine).slice(0, 7);
   const shown = new Set(items.map((r) => r.id));
@@ -209,6 +223,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
           const body = <><span className="c-path-n">{done ? <I n="check" c="sm" /> : i + 1}</span><span className="c-path-tx"><b>{title}</b><span>{sub}</span></span>{href && !done ? <I n="right" c="sm" /> : null}</>;
           return <li key={i} className={(done ? "done" : "") + (i === next ? " now" : "")}>{href && !done ? <Link href={href}>{body}</Link> : <div>{body}</div>}</li>; })}</ol>
       </section>); })()}
+    <NewRail items={boardItems} t={t} now={now} />
     <Reassure variant="band" />
 
     <div className="earn-hero">

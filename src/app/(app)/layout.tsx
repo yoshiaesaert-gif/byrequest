@@ -13,6 +13,7 @@ import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
 import { PasskeyPrompt } from "@/components/passkey";
 import { listPasskeys } from "@/server/passkeys";
+import { openKey } from "@/server/chatkey";
 import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     !u.lastSeenAt || Date.now() - u.lastSeenAt.getTime() > 3 * 3600_000 ? db.update(schema.users).set({ lastSeenAt: new Date() }).where(eq(schema.users.id, u.id)) : null,
   ]);
   const hasKey = keys.length > 0;
+  const acctKey = openKey(u.id, u.keyBox);
   const active = acc ? acc.status === "active" : false;
   const buy = mode === "buy";
   const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Applications")], ["/studio", t("Studio")]];
@@ -52,6 +54,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {inboxBtn}
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
       </header>
+      {/* The account's chat key reaches this device before anything opens a chat. */}
+      {acctKey ? <script dangerouslySetInnerHTML={{ __html: `try{localStorage.setItem(${JSON.stringify("brq_sk_" + u.id)},${JSON.stringify(acctKey)})}catch(e){}` }} /> : null}
       <main className="main" id="main">{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
       {hasKey ? null : <PasskeyPrompt />}
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>

@@ -118,9 +118,9 @@ export default function Room(p: Props) {
       : (!p.deal.ratedBuyer ? <CreatorReview dealId={p.deal.id} name={p.other.handle} /> : null)) : null}
     <ReviewDone stars={p.deal.stars} tipCents={buyer ? p.deal.tipCents : p.deal.tipCreatorCents} name={p.other.handle} buyer={buyer} />
     <div className="card chatbox">
-      <div className="chat-bar"><span className="chat-lock"><Ico n="lock" c="sm" />{tr("End to end encrypted")}</span><span className="chat-acts"><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
+      <div className="chat-bar"><span className="chat-lock"><Ico n="lock" c="sm" />{tr("Encrypted")}</span><span className="chat-acts"><Link href={`/report?type=deal&ref=${p.deal.id}`}>{tr("Report")}</Link>{p.blocked !== "me" ? <BlockButton handle={p.other.handle} /> : null}</span></div>
       <div className="msgs" ref={box} aria-live="polite">
-        <p className="chat-e2e">{tr("Only you and {name} can read this chat. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}</p>
+        <p className="chat-e2e">{tr("This chat is between you and {name}. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.", { name: p.other.handle })}</p>
         {thread(p, plain, pendingMsgs, kp, client, locale, tr)}
         {!chat && !pendingMsgs.length && s === "held" ? <p className="chat-empty">{tr("No messages yet. Agree on the details with {name} here.", { name: p.other.handle })}</p> : null}
       </div>

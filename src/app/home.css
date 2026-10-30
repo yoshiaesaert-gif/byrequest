@@ -376,3 +376,7 @@
 .srow{margin-bottom:8px}
 .srow-bar{margin-top:18px}
 @media (max-width:720px){.srow-btn{display:none}.srow::after{width:28px}}
+/* New today */
+.new-dot{display:inline-block;width:8px;height:8px;border-radius:9px;background:#16A34A;margin-right:8px;vertical-align:1px;box-shadow:0 0 0 4px rgba(22,163,74,.16);animation:wpulse 2s infinite}
+.new-chip{position:absolute;top:10px;right:10px;z-index:3;padding:4px 10px;border-radius:999px;background:#16A34A;color:#fff;font-size:.6875rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.h-new .rail{gap:14px}
