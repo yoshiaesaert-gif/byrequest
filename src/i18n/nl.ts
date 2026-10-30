@@ -2416,5 +2416,6 @@ const nl: Record<string, string> = {
   "Help and support": "Hulp en support",
   "Help centre and FAQ": "Helpcentrum en FAQ",
   "Browse every question and answer": "Bekijk alle vragen en antwoorden",
+  "AI assistant, 24/7": "AI assistent, 24/7",
 };
 export default nl;

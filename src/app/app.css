@@ -1499,3 +1499,4 @@ html.cx-lock .hb-launch{display:none}
 .hb-rep{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#FFF4EF;color:#8A3A18;font-size:.78rem;line-height:1.35;flex:0 0 auto}
 .hb-rep span{flex:1}.hb-rep button{border:0;background:none;color:#8A3A18;font:inherit;font-weight:700;cursor:pointer}
 .hb-gm a{display:grid;gap:1px;padding:10px 12px;border-radius:10px;color:#0E1013;text-decoration:none}.hb-gm a:hover{background:#F1F2F5}
+.hb header small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

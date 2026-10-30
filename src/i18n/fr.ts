@@ -2416,5 +2416,6 @@ const fr: Record<string, string> = {
   "Help and support": "Aide et support",
   "Help centre and FAQ": "Centre d'aide et FAQ",
   "Browse every question and answer": "Parcourez toutes les questions et réponses",
+  "AI assistant, 24/7": "Assistant IA, 24h/24",
 };
 export default fr;
