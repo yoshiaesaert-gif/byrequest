@@ -2396,5 +2396,6 @@ const nl: Record<string, string> = {
   "Write your question or problem": "Schrijf je vraag of probleem",
   "AI assistant, here 24/7. Technical problems go straight to the team.": "AI assistent, 24/7 aanwezig. Technische problemen gaan direct naar het team.",
   "Pass this to the team": "Geef dit door aan het team",
+  "I am not sure about that one. I can pass it to the team, they will answer you.": "Daar ben ik niet zeker van. Ik kan het doorgeven aan het team, zij antwoorden je.",
 };
 export default nl;

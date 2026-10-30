@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     if (n > 40) { await file(turns[turns.length - 1].content); return Response.json({ reply: null, filed: true }); }
     const out = await ask(turns);
     if (out.file) { await file(out.file); return Response.json({ reply: out.text || null, filed: true }); }
-    return Response.json({ reply: out.text || null, filed: false });
+    return Response.json({ reply: out.text || null, filed: false, empty: !out.text });
   } catch (e) {
     if (e instanceof RuleError) return Response.json({ error: e.message }, { status: 400 });
     // The assistant is down: never lose the message, give it to the team.

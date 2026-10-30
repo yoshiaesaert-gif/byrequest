@@ -2396,5 +2396,6 @@ const fr: Record<string, string> = {
   "Write your question or problem": "Écrivez votre question ou problème",
   "AI assistant, here 24/7. Technical problems go straight to the team.": "Assistant IA, disponible 24h/24, 7j/7. Les problèmes techniques vont directement à l'équipe.",
   "Pass this to the team": "Transmettre à l'équipe",
+  "I am not sure about that one. I can pass it to the team, they will answer you.": "Je ne suis pas sûr pour celle-ci. Je peux la transmettre à l'équipe, elle vous répondra.",
 };
 export default fr;

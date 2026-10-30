@@ -72,6 +72,7 @@ export default function ProblemSheet() {
       if (!r.ok) { setErr(t(j.error ?? "That did not work. Please try again.")); return; }
       const add: Turn[] = [];
       if (j.reply) add.push({ role: "assistant", content: j.reply, fresh: true });
+      else if (j.empty) add.push({ role: "assistant", content: t("I am not sure about that one. I can pass it to the team, they will answer you."), fresh: true });
       if (j.filed) add.push({ role: "assistant", content: t("I passed this to the team. They see it right away and answer in your ByRequest messages if they need more."), filed: true, fresh: true });
       setTurns([...next, ...add]);
     } catch { setErr(t("That did not work. Please try again.")); } finally { setBusy(false); }

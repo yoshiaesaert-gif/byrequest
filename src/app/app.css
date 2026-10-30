@@ -1472,3 +1472,16 @@ html.cx-lock .hb-launch{display:none}
 .hb-list{scroll-behavior:smooth;padding-bottom:10px}
 .hb textarea:focus{background:#fff;box-shadow:inset 0 0 0 2px #4434E6}
 @media (prefers-reduced-motion:reduce){.hb,.hb-r{animation:none}}
+
+/* Back office top bar: a single line, with the rarely used pages under "More" */
+.bo-top-in{flex-wrap:nowrap!important;align-items:flex-end;gap:16px}
+.bo-brand{flex:0 0 auto}
+.bo-nav{flex:1 1 auto;min-width:0}
+.bo-more{position:relative;flex:0 0 auto;align-self:flex-end}
+.bo-more>button{display:inline-flex;align-items:center;gap:6px;padding:10px 12px 14px;border:0;background:none;font:inherit;font-size:.88rem;font-weight:600;color:#A9A8B6;cursor:pointer;white-space:nowrap}
+.bo-more>button:hover,.bo-more>button.on,.bo-more>button[aria-expanded="true"]{color:#fff}
+.bo-more>button.on{box-shadow:inset 0 -3px 0 #B8F5D9}
+.bo-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;width:250px;display:grid;padding:6px;border-radius:16px;background:#fff;color:#0E1013;box-shadow:0 18px 50px -12px rgba(14,16,19,.45),0 0 0 1px rgba(14,16,19,.06)}
+.bo-menu a{display:grid;gap:1px;padding:10px 12px;border-radius:10px;color:#0E1013}.bo-menu a:hover{background:#F1F2F5}.bo-menu a.on{background:#ECEAFF}
+.bo-menu b{font-size:.9rem}.bo-menu span{font-size:.76rem;color:#6B7079}
+@media (max-width:900px){.bo-brand{display:none}.bo-top-in{gap:8px}}
