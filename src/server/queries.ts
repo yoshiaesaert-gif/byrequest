@@ -23,7 +23,7 @@ export async function feed(opts: { viewerId?: string; tab?: "for-you" | "new" | 
     buyer: sql<{ sum: number; count: number; deals: number }>`(select json_build_object('sum', u.buyer_rating_sum, 'count', u.buyer_rating_count, 'deals', (select count(*) from deals d where d.buyer_id = u.id and d.status = 'released')) from users u where u.id = "requests"."buyer_id")`,
   }).from(requests).where(and(...conds)).orderBy(...order).limit(opts.limit ?? 40);
   // In the demo the team profiles play ordinary buyers, so their label is left out.
-  return rows.map(({ r, offers, house, buyer }) => ({ ...r, offers, buyer, house: house && !DEMO_MODE, mine: r.buyerId === opts.viewerId }));
+  return rows.map(({ r, offers, house, buyer }) => ({ ...r, offers, buyer, house: false, mine: r.buyerId === opts.viewerId }));
 }
 
 export async function request(id: string) {
@@ -31,7 +31,7 @@ export async function request(id: string) {
   if (!r) return r;
   const b = await db.query.users.findFirst({ where: eq(users.id, r.buyerId), columns: { house: true, buyerRatingSum: true, buyerRatingCount: true } });
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(deals).where(and(eq(deals.buyerId, r.buyerId), eq(deals.status, "released")));
-  return { ...r, house: !!b?.house && !DEMO_MODE, buyer: { sum: b?.buyerRatingSum ?? 0, count: b?.buyerRatingCount ?? 0, deals: n } };
+  return { ...r, house: false, buyer: { sum: b?.buyerRatingSum ?? 0, count: b?.buyerRatingCount ?? 0, deals: n } };
 }
 
 export async function offersFor(requestId: string) {
