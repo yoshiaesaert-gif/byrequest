@@ -8,6 +8,8 @@ const deploymentId = existsSync(".build-id") ? readFileSync(".build-id", "utf8")
    Security headers apply to all routes. */
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  /* PDF and Excel exports read their own font and data files at runtime: keep them out of the bundle. */
+  serverExternalPackages: ["pdfkit", "exceljs"],
   deploymentId,
   /* Pages you just visited reopen from the browser for a short while; chats poll on their own. */
   experimental: { serverActions: { bodySizeLimit: "600mb" }, staleTimes: { dynamic: 15, static: 300 } },

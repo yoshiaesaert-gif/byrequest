@@ -29,10 +29,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const hasKey = keys.length > 0;
   const active = acc ? acc.status === "active" : false;
   const buy = mode === "buy";
-  const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Applications")], ["/studio", t("Studio")]];
+  const nav = buy ? [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Deals")], ["/vault", t("Vault")]] : [["/", t("Home")], ["/for-you", t("For you")], ["/deals", t("Applications")], ["/studio", t("Studio")], ["/earnings", t("Earnings")]];
   const tabs = buy
     ? [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/post", "plus", ""], ["/deals", "deals", t("Deals")], ["/vault", "vault", t("Vault")]]
-    : [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/deals", "deals", t("Applications")], ["/inbox", "inbox", t("Inbox")], ["/studio", "wallet", t("Studio")]];
+    : [["/", "home", t("Home")], ["/for-you", "foryou", t("For you")], ["/deals", "deals", t("Applications")], ["/studio", "spark", t("Studio")], ["/earnings", "wallet", t("Earnings")]];
   const inboxBtn = <Link href="/inbox" className="icon-btn" aria-label={`Inbox${n ? `, ${n} new` : ""}`}><I n="inbox" />{n ? <span className="dot">{n > 9 ? "9+" : n}</span> : null}</Link>;
   return (
     <div className="app" data-frost={u.prefs.frost ? "on" : "off"}>
