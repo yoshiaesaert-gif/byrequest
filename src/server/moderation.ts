@@ -74,7 +74,7 @@ export async function reject(staffId: string, id: string, reason: string) {
 
 /* ---------- lists ---------- */
 const reqCols = {
-  r: S.requests, buyer: S.users.handle, house: S.users.house,
+  r: S.requests, buyer: S.users.handle, house: S.users.house, internal: sql<boolean>`(${S.users.house} or ${S.users.internal})`,
   offers: sql<number>`(select count(*)::int from offers o where o.request_id = "requests"."id" and o.status <> 'withdrawn')`,
 };
 
@@ -90,7 +90,7 @@ export async function listRequests(f: { q?: string; status?: string; category?: 
     t ? or(ilike(S.requests.title, `%${t}%`), ilike(S.requests.details, `%${t}%`), ilike(S.users.handle, `%${t}%`)) : undefined,
     f.status && (STATUSES as readonly string[]).includes(f.status) ? eq(S.requests.status, f.status as "open") : undefined,
     f.category ? eq(S.requests.category, f.category as "video") : undefined,
-    f.source === "team" ? eq(S.users.house, true) : f.source === "users" ? eq(S.users.house, false) : undefined,
+    f.source === "team" ? eq(S.users.house, true) : f.source === "internal" ? sql`(${S.users.house} or ${S.users.internal})` : f.source === "external" ? sql`not (${S.users.house} or ${S.users.internal})` : undefined,
   ];
   const page = Math.max(0, f.page ?? 0);
   const [rows, [total], byStatus] = await Promise.all([

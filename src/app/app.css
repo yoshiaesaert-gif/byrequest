@@ -1162,3 +1162,11 @@ i.td{background:#4434E6}i.yd{background:#A7ABB3}i.lw{background:#D9A21B}
 .look img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
 .join .looks{max-height:none;overflow:visible;padding:4px;margin:-4px}
 .join .looks{max-height:272px;overflow-y:auto;overscroll-behavior:contain;padding:6px;margin:-6px;scrollbar-width:thin}
+/* Board autopilot summary on the requests page */
+.rq-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.rq-board>a,.rq-board>div{display:flex;flex-direction:column;gap:2px;padding:16px 18px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);color:inherit;text-decoration:none}
+.rq-board>a:hover{box-shadow:inset 0 0 0 1px var(--line-2)}
+.rq-board b{font-size:1.6rem;letter-spacing:-.03em;line-height:1.1}
+.rq-board span{font-size:.75rem;color:var(--muted)}
+.rq-board p{grid-column:1/-1;margin:0;font-size:.8125rem;color:var(--muted)}
+@media (max-width:700px){.rq-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
