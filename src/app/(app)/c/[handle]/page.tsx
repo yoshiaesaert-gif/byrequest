@@ -11,6 +11,8 @@ import { BlockButton, UnblockButton } from "@/components/block-button";
 import { contactCreator } from "@/server/reports";
 import { redirect } from "next/navigation";
 import { cached } from "@/server/translate";
+import { canSendPersonal, inCircle, workedWith, circleFans, HEAD_START } from "@/server/circle";
+import { CircleButton } from "./circle-button";
 
 const ago = (d: Date, t: (s: string, v?: Record<string, string | number>) => string) => {
   const days = Math.max(0, Math.round((Date.now() - d.getTime()) / 86_400_000));
@@ -40,6 +42,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
   // Same count as the home row and the offers list, so a creator never reads as "4.9 stars, 0 deals".
   const deals = Math.max(dealsDone, u.ratingCount);
   const replies = p.replyMinutes < 60 ? t("Replies in {n} min", { n: p.replyMinutes }) : t("Replies in {n}h", { n: Math.round(p.replyMinutes / 60) });
+  const [canP, inC, worked, fans] = reason === "self" ? [false, false, false, await circleFans(u.id)] : await Promise.all([canSendPersonal(me.id, u.id), inCircle(me.id, u.id), workedWith(me.id, u.id), circleFans(u.id)]);
   return (<div className="wrap">
     <Link href={offerId ? "/deals" : "/"} className="back"><I n="left" c="sm" />{t("Back")}</Link>
     <div className="cp">
@@ -47,7 +50,12 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
         <div className="cp-av"><Av a={u.avatar} name={u.handle} size={200} square /></div>
         <h1 className="t-h1">{u.handle}</h1>
         <div className="t-sm muted"><Stars sum={u.ratingSum} count={u.ratingCount} t={t} /> · {t("{n} deals", { n: deals })} · {replies}</div>
-        <div className="optrow" style={{ justifyContent: "center" }}><span className="badge ok"><I n="shield" c="sm" />{t("Verified creator")}</span><span className="badge brand">{p.showsFace ? t("Face shown") : t("No face")}</span></div>
+        <div className="optrow" style={{ justifyContent: "center" }}><span className="badge ok"><I n="shield" c="sm" />{t("Verified creator")}</span><span className="badge brand">{p.showsFace ? t("Face shown") : t("No face")}</span>{fans ? <span className="badge ic-badge">{t(fans === 1 ? "In 1 Inner Circle" : "In {n} Inner Circles", { n: fans })}</span> : null}</div>
+        {reason !== "self" ? <div className="ic-box">
+          {canP ? <Link href={`/post?to=${encodeURIComponent(u.handle)}`} className="btn btn-primary btn-block"><I n="send" c="sm" />{t("Send a personal request")}</Link> : null}
+          {inC || worked ? <CircleButton handle={u.handle} on={inC} /> : null}
+          <p className="t-xs muted">{inC ? t("{name} sees your new requests {h} hours before everyone else.", { name: u.handle, h: HEAD_START }) : worked ? t("Happy with {name}? Add them to your Inner Circle: they see your new requests {h} hours before everyone else.", { name: u.handle, h: HEAD_START }) : canP ? t("Only {name} sees a personal request. Nobody else.", { name: u.handle }) : t("After a first deal you can add {name} to your Inner Circle.", { name: u.handle })}</p>
+        </div> : null}
         {reason !== "self" ? <div className="safe-row" style={{ justifyContent: "center" }}><Link href={`/report?type=profile&ref=${encodeURIComponent(u.handle)}`} className="report-link"><I n="alert" c="sm" />{t("Report this profile")}</Link><BlockButton handle={u.handle} after="/" /></div> : null}
         <div className="cp-vis"><I n={reason === "public" ? "users" : "lock"} c="sm" />{reason === "public" ? t("Public creator profile") : reason === "self" ? t("This is how buyers see your profile.") : t(reason === "deal" ? "Private profile. You see it because {name} has a deal with you." : "Private profile. You see it because {name} made you an offer.", { name: u.handle })}</div>
       </div></div>

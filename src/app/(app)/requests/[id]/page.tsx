@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { mayView, inCircle } from "@/server/circle";
 import { notFound, redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -35,6 +36,9 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
     db.select({ id: schema.offers.id }).from(schema.offers).where(eq(schema.offers.requestId, id)),
   ]);
   const staff = await db.query.staff.findFirst({ where: eq(schema.staff.userId, u.id) });
+  // Personal requests only for their creator; a head start only for the buyer's Inner Circle.
+  const early = !!raw.circleUntil && raw.circleUntil > new Date();
+  if (!staff && !mayView(raw, u.id, early ? await inCircle(raw.buyerId, u.id) : false)) notFound();
   // Requests in review or rejected are only visible to their buyer and to the team.
   const unpublished = r.status === "in_review" || r.status === "rejected";
   if (unpublished && !staff) notFound();
@@ -46,6 +50,8 @@ export default async function RequestPage({ params, searchParams }: { params: Pr
   return (<div className="wrap">
     <Link href="/for-you" className="back"><I n="left" c="sm" />{t("Requests")}</Link>
     {unpublished ? <div className="banner warn"><I n="alert" /><div className="grow"><b>{r.status === "in_review" ? t("Not published: waiting for review") : t("Not published: rejected")}</b><div className="t-sm">{t("Only the team and the buyer see this page.")}</div></div><Link href={`/admin/requests/${id}`} className="btn btn-primary btn-sm">{t("Review in back office")}</Link></div> : null}
+    {raw.forCreatorId ? <div className="ic-for"><b>{t("A personal request for you")}</b><span>{t("This buyer sent it to you only. Nobody else sees it.")}</span></div>
+      : early ? <div className="ic-for"><b>{t("Inner Circle first")}</b><span>{t("This buyer added you to their Inner Circle. Until {time} only their favourites see this request.", { time: raw.circleUntil!.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" }) })}</span></div> : null}
     {mine && mine.status === "pending" ? <a href="#offer" className="applied-flag"><I n="check" />{t("You applied for this request")}<span className="applied-go">{t("View")}</span></a> : null}
     <div className="two">
       <div>

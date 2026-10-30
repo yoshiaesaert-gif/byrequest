@@ -51,7 +51,7 @@ export function ageLabel(a: number, b: number, t: Tr = same) { return t("{a} to 
 const UNIT: Record<Category, string> = { video: "MIN VIDEO", photos: "PHOTOS", voice: "MIN VOICE", custom: "MIN CUSTOM", worn: "ITEM" };
 
 /* translated: the title shown is a machine translation, marked above it (see server/translate.ts). */
-export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number; house?: boolean; translated?: boolean; buyer?: BuyerStat };
+export type CardReq = { id: string; title: string; category: Category; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; closesAt: Date; cover: string | null; offers: number; house?: boolean; translated?: boolean; buyer?: BuyerStat; forCreatorId?: string | null; circleUntil?: Date | null };
 export type BuyerStat = { sum: number; count: number; deals: number };
 
 /* What a creator sees about the person behind a request: stars from earlier creators and completed deals. */
@@ -81,7 +81,7 @@ export function RequestCard({ r, frost = true, t = same, budget, isNew }: { r: C
         <Cover cover={r.cover} frost={frost} />
         <div className="ov"><div><Chips r={r} t={t} /><BigNum r={r} t={t} /></div><Earn cents={r.dealCents} t={t} budget={budget} /></div>
       </div>
-      <div>{isNew ? <span className="new-chip">{t("New")}</span> : null}<div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)}{budget ? ` · ${t("{n} offers", { n: r.offers })}` : ""}</div><BuyerLine b={r.buyer} t={t} />{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
+      <div>{r.forCreatorId ? <span className="new-chip ic">{t("For you only")}</span> : r.circleUntil && r.circleUntil > new Date() ? <span className="new-chip ic">{t("Inner Circle first")}</span> : isNew ? <span className="new-chip">{t("New")}</span> : null}<div className="t">{r.title}</div><div className="m">{t(CAT_LABEL[r.category])} · {t(r.who)} · {ageLabel(r.ageMin, r.ageMax, t)}{budget ? ` · ${t("{n} offers", { n: r.offers })}` : ""}</div><BuyerLine b={r.buyer} t={t} />{r.house ? <div className="by-brq">{t("by ByRequest")}</div> : null}</div>
     </Link>
   );
 }

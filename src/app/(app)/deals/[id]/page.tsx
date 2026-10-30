@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { inCircle } from "@/server/circle";
+import { CircleButton } from "../../c/[handle]/circle-button";
 import { resealTeamDeal } from "@/server/teamchat";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
@@ -34,9 +36,12 @@ export default async function DealPage({ params, searchParams }: { params: Promi
     buyer ? null : db.query.ledger.findFirst({ where: eq(schema.ledger.dealId, id), columns: { entry: true }, orderBy: desc(schema.ledger.createdAt) }),
   ]);
   const accepted = (await searchParams).accepted;
+  const done = buyer && (x.d.status === "delivered" || x.d.status === "released");
+  const circled = done ? await inCircle(u.id, x.d.creatorId) : false;
   return (<div className="wrap">
     {(await searchParams).from === "inbox" ? <Link href="/inbox" className="back"><I n="left" c="sm" />{t("Inbox")}</Link> : <Link href="/deals" className="back"><I n="left" c="sm" />{buyer ? t("Deals") : t("Applications")}</Link>}
     {accepted ? <div className="banner ok"><I n="check" /><div className="grow"><b>{t("Payment secured.")}</b><div className="t-sm">{t("{amount} is held by the payment partner until delivery. It shows as BRQ DIGITAL.", { amount: euros(x.d.dealCents + x.d.feeCents + x.d.vatCents) })}</div></div></div> : null}
+    {done ? <div className="ic-for ic-deal"><div><b>{circled ? t("{name} is in your Inner Circle", { name: other.handle }) : t("Happy with {name}?", { name: other.handle })}</b><span>{t("Your Inner Circle sees your new requests 3 hours before everyone else, and you can send them personal requests.")}</span></div><CircleButton handle={other.handle} on={circled} /></div> : null}
     <div className="page-h"><div style={{ display: "flex", gap: 14, alignItems: "center" }}><Av a={other.avatar} name={other.handle} size={52} /><div><span className="eyebrow">{t("Deal with {name}", { name: other.handle })}</span><h1 className="t-h1" style={{ marginTop: 4 }}>{L(x.r.title)}</h1></div></div></div>
     <div className="two">
       <Room

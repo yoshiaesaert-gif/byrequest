@@ -66,5 +66,5 @@ export async function onLive(tx: Tx, r: { id: string; buyerId: string; forCreato
   const fans = await tx.select({ id: S.circle.creatorId }).from(S.circle).where(eq(S.circle.buyerId, r.buyerId));
   if (!fans.length) return;
   await tx.update(S.requests).set({ circleUntil: new Date(Date.now() + HEAD_START * 3_600_000) }).where(eq(S.requests.id, r.id));
-  await tx.insert(S.notifications).values(fans.map((f) => ({ userId: f.id, title: "First pick for you", body: `A buyer from your Inner Circle posted a new request. For ${HEAD_START} hours only you and their other favourites see it.`, href: `/requests/${r.id}` })));
+  await tx.insert(S.notifications).values(fans.map((f) => ({ userId: f.id, title: "First pick for you", body: "A buyer from your Inner Circle posted a new request. For 3 hours only you and their other favourites see it.", href: `/requests/${r.id}` })));
 }

@@ -36,8 +36,9 @@ const DRAFT = "brq_post_draft";
 
 type Draft = { category: Cat; amount: number; title: string; details: string; callMe: string; who: "Man" | "Woman" | "Anyone"; ages: number[]; face: Face; dueHours: number; minVault: VaultPeriod; openHours: number; price: number | null; neutral: boolean; tint: (typeof TINTS)[number] };
 
-export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false, balance = 0 }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean; balance?: number }) {
+export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false, balance = 0, to = null, circle = 0 }: { initial: { category: Cat; amount: number; title: string; details?: string; budget: number }; vatBp: number; ageOk: boolean; waiver: string; freeFee?: boolean; balance?: number; to?: string | null; circle?: number }) {
   const t = useT();
+  const [circleFirst, setCircleFirst] = useState(true);
   const [waived, setWaived] = useState(false);
   const [useBal, setUseBal] = useState(balance > 0);
   const [i, setI] = useState(initial.title ? 1 : 0);
@@ -80,7 +81,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false,
   const opt = <K extends keyof Draft>(k: K, v: Draft[K], l: string) => <button key={String(v)} type="button" className={"chip" + (w[k] === v ? " is-on" : "")} onClick={() => set({ [k]: v } as Partial<Draft>)}>{t(l)}</button>;
   const submit = () => start(async () => {
     try {
-      const r = await postRequest({ category: w.category, useCredit: useBal && balance > 0, amount: w.amount, title: w.title, details: w.details, callMe: w.callMe, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived });
+      const r = await postRequest({ category: w.category, useCredit: useBal && balance > 0, amount: w.amount, title: w.title, details: w.details, callMe: w.callMe, who: w.who, ageMin, ageMax, face: w.face, minVault: w.minVault, dueHours: w.dueHours, budget: price, neutral: w.neutral, tint: w.tint, openHours: w.openHours, waiver: waived, to: to ?? "", circleFirst: circle > 0 && circleFirst });
       if (r && !r.ok) toast(t(r.error), "err"); else sessionStorage.removeItem(DRAFT);
     } catch (e) {
       if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) { sessionStorage.removeItem(DRAFT); throw e; }
@@ -110,6 +111,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false,
       <div className="wz-top"><Link href="/" className="icon-btn" aria-label={t("Close")}><Ico n="x" /></Link><div className="wz-prog"><i style={{ width: `${((i + 1) / STEPS.length) * 100}%` }} /></div><span className="t-sm muted">{t("Step {n} of {m}", { n: i + 1, m: STEPS.length })}</span></div>
       <div className="wz-grid">
         <div className="wz-body" key={step}>
+          {to ? <div className="ic-for"><b>{t("Personal request for {name}", { name: to })}</b><span>{t("Only {name} sees it. Not on the board, nobody else.", { name: to })}</span></div> : null}
           {step === "type" && (<><h2>{t("What would you like?")}</h2><p className="lead">{t("Choose a type. You add the details next.")}</p>
             <div className="choices">{CATS.map((c) => <button key={c.k} className={"choice" + (w.category === c.k ? " is-on" : "")} onClick={() => { set({ category: c.k, amount: RANGE[c.k].def, price: null }); setI(1); }}><span className="ci media"><img className="cimg" src={`/img/${c.img}.webp`} alt="" /><span className="cscrim" /><Ico n={c.ic} /></span><div><b>{t(CAT_LABEL[c.k])}</b><span className="s">{t(c.sub)}</span></div></button>)}
               <button className="choice" disabled><span className="ci media"><img className="cimg" src="/img/c12.webp" alt="" /><span className="cscrim" /><Ico n="shirt" /></span><div><b>{t("Worn items")}</b><span className="s">{t("Coming soon")}</span></div></button></div></>)}
@@ -168,6 +170,7 @@ export default function Wizard({ initial, vatBp, ageOk, waiver, freeFee = false,
             <div className="card wz-sum"><div className="list">
               {[["Type", `${t(CAT_LABEL[w.category])} · ${amountLabel(w.category, w.amount, t)}`, 1], ["Title", w.title, 1], ["Description", w.details, 1], ...(w.callMe.trim() ? [["Call me", w.callMe.trim(), 1]] : []), ["Looking for", `${t(w.who)}, ${ageLabel}`, 2], ["Face", t(w.face === "not_needed" ? "Not needed" : w.face === "optional" ? "Optional" : "Required"), 2], ["Deliver within", w.dueHours < 72 ? t("{n} hours", { n: w.dueHours }) : t("{n} days", { n: w.dueHours / 24 }), 3], ["Vault at least", t({ "7d": "7 days", "30d": "30 days", "1y": "1 year", forever: "Forever" }[w.minVault]), 3]].map(([k, v, s]) => (
                 <div key={k as string} className="lrow"><span className="muted">{t(k as string)}</span><b className={k === "Description" ? "wz-desc" : ""}>{v}</b><button type="button" className="wz-edit" onClick={() => setI(s as number)}>{t("Edit")}</button></div>))}</div></div>
+            {circle > 0 && !to ? <label className="ic-first"><input type="checkbox" checked={circleFirst} onChange={(e) => setCircleFirst(e.target.checked)} /><span><b>{t("First to your Inner Circle")}</b><span className="t-sm muted">{t(circle === 1 ? "Your 1 favourite creator sees it 3 hours before everyone else." : "Your {n} favourite creators see it 3 hours before everyone else.", { n: circle })}</span></span></label> : null}
             <div className="field"><label>{t("Your card on the board")}</label>
               <div className="cardpick">
                 <button type="button" className={!w.neutral ? "on" : ""} onClick={() => set({ neutral: false })}><span className="cp-prev media"><img className="cimg" src={`/img/${preview}.webp`} alt="" /><span className="cscrim" /><span className="frost" /></span><b>{t("Mood photo")}</b><span className="t-sm muted">{t("We pick one that keeps the board varied. Covered by frosted glass.")}</span></button>

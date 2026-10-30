@@ -4,10 +4,17 @@ import { BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
 import { WAIVER_TEXT } from "@/server/deals";
 import Wizard from "./wizard";
 import { balance } from "@/server/referrals";
+import { db, schema } from "@/db";
+import { eq } from "drizzle-orm";
+import { canSendPersonal, circleSize } from "@/server/circle";
 
 export default async function Post({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const u = await requireUser();
   const sp = await searchParams;
+  // ?to=handle: a personal request, only when this creator accepts them.
+  const target = sp.to ? await db.query.users.findFirst({ where: eq(schema.users.handle, sp.to.toLowerCase()), columns: { id: true, handle: true } }) : null;
+  const to = target && (await canSendPersonal(u.id, target.id)) ? target.handle : null;
+  const circle = to ? 0 : await circleSize(u.id);
   const c = ["video", "photos", "voice", "custom"].includes(sp.c ?? "") ? sp.c! : "video";
-  return <Wizard initial={{ category: c as "video", amount: Number(sp.amount) || 0, title: sp.title ?? "", details: sp.d ?? "", budget: Number(sp.budget) || 0 }} vatBp={vatRate(u.country ?? "BE")} freeFee={u.freeFees > 0} balance={await balance(u.id)} ageOk={!BUYER_AGE_CHECK || (await isAgeVerified(u.id))} waiver={WAIVER_TEXT} />;
+  return <Wizard initial={{ category: c as "video", amount: Number(sp.amount) || 0, title: sp.title ?? "", details: sp.d ?? "", budget: Number(sp.budget) || 0 }} vatBp={vatRate(u.country ?? "BE")} freeFee={u.freeFees > 0} balance={await balance(u.id)} ageOk={!BUYER_AGE_CHECK || (await isAgeVerified(u.id))} waiver={WAIVER_TEXT} to={to} circle={circle} />;
 }

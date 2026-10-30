@@ -1,6 +1,7 @@
 "use server";
 import * as TCH from "@/server/teamchat";
 import { cleanDetail } from "@/domain/looks-detail";
+import * as circle from "@/server/circle";
 import { blockedEither } from "@/server/blocks";
 import * as blocks from "@/server/blocks";
 import { withdraw } from "@/server/referrals";
@@ -67,6 +68,8 @@ const Post = z.object({
   openHours: z.coerce.number().int().refine((h) => [24, 72, 96].includes(h)).default(24),
   waiver: z.boolean().default(false),
   useCredit: z.boolean().default(false),
+  to: z.string().trim().max(20).default(""),
+  circleFirst: z.boolean().default(false),
 });
 
 export async function postRequest(input: z.input<typeof Post>): Promise<Result> {
@@ -75,10 +78,17 @@ export async function postRequest(input: z.input<typeof Post>): Promise<Result> 
     const p = Post.safeParse(input);
     if (!p.success) return { ok: false, error: p.error.issues[0].message };
     if (p.data.ageMin > p.data.ageMax) return { ok: false, error: "Check the age range." };
-    const { neutral, tint, waiver, budget, openHours, callMe, useCredit, ...data } = p.data;
+    const { neutral, tint, waiver, budget, openHours, callMe, useCredit, to, circleFirst, ...data } = p.data;
+    // A personal request goes to one creator only; otherwise the Inner Circle may get a head start.
+    let forCreatorId: string | null = null;
+    if (to) {
+      const c = await db.query.users.findFirst({ where: eq(schema.users.handle, to.toLowerCase()), columns: { id: true } });
+      if (!c || !(await circle.canSendPersonal(u.id, c.id))) return { ok: false, error: "You cannot send a personal request to this creator." };
+      forCreatorId = c.id;
+    }
     const cover = neutral ? `g-${tint}` : await chooseCover(data.category, data.title);   // a colour the buyer picked, or a mood photo picked for variety
     // Paid when posted: the payment partner holds it during review and while the request is open.
-    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, callMe: callMe || null, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours) }, { withdrawalWaiver: waiver, useCredit });
+    const r = await deals.postPaid(u.id, { ...data, dealCents: budget * 100, callMe: callMe || null, cover, lang: await getLocale(), closesAt: addHours(new Date(), openHours), forCreatorId, circleFirst: !forCreatorId && circleFirst }, { withdrawalWaiver: waiver, useCredit });
     await queueNew(r.id);   // automatic check, then a person approves it (or it goes live by itself when staff allow that)
     redirect(`/requests/${r.id}/offers?posted=1`);
   });
@@ -187,6 +197,17 @@ export async function sendMessage(dealId: string, nonce: string, body: string): 
 }
 
 /* The device sends the key it has; the account keeps the first one it ever got, and every device gets that one. */
+/* Inner Circle: add or remove a creator you worked with. */
+export async function setCircle(handle: string, on: boolean): Promise<Result> {
+  return guard(async () => {
+    const u = await requireUser();
+    const c = await db.query.users.findFirst({ where: eq(schema.users.handle, handle), columns: { id: true } });
+    if (!c) throw new RuleError("This profile does not exist.");
+    await circle.setCircle(u.id, c.id, on);
+    revalidatePath(`/c/${handle}`);
+  });
+}
+
 /* Username: free to change, checked live while typing. Old links to the profile stop working. */
 const HANDLE = /^[a-z0-9._]{3,20}$/;
 const RESERVED = /^(admin|administrator|byrequest|support|help|team|staff|official|moderator|mod|system|root|null|undefined|settings|me)$/;
