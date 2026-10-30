@@ -457,6 +457,9 @@ export const techIssues = pgTable("tech_issues", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
   message: text("message").notNull(),
+  kind: text("kind").$type<"problem" | "message">().notNull().default("problem"),   // a technical problem from the app, or a message from the contact form
+  topic: text("topic"),
+  contact: text("contact"),                                        // optional way to reach someone who is not signed in
   page: text("page").notNull().default(""),
   context: jsonb("context").$type<Record<string, unknown>>().notNull().default({}),
   status: text("status").$type<"open" | "handling" | "done">().notNull().default("open"),

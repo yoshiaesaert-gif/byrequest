@@ -29,6 +29,8 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
   if (BOT.test(h.ua) || !b.v || b.v.length > 64 || b.p.startsWith("/admin") || b.p.startsWith("/api")) return null;
   const now = new Date();
   let v = b.s ? await db.query.visits.findFirst({ where: and(eq(visits.id, b.s), eq(visits.visitorId, b.v)) }) : null;
+  // No cookie and no stored id: the visit is found again by its anonymous daily id, as long as it was active in the last 30 minutes.
+  if (!v && b.v.startsWith("a_")) v = await db.query.visits.findFirst({ where: and(eq(visits.visitorId, b.v), gt(visits.lastAt, new Date(now.getTime() - IDLE_MS))), orderBy: desc(visits.lastAt) });
   if (v && now.getTime() - v.lastAt.getTime() > IDLE_MS) v = null;
   if (!v) {
     if (b.k === "ping") return null;

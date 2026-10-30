@@ -1547,3 +1547,15 @@ html.cx-lock .hb-launch{display:none}
 .hb-gm b{font-size:.86rem;font-weight:500;letter-spacing:-.005em;color:#0E1013}
 .hb-gm span{font-size:.72rem;font-weight:400;color:#8A8E96}
 .hb-chips button{font-weight:500}
+
+/* Contact form */
+.ct{max-width:560px;margin:24px auto 80px;padding:0 16px;display:grid;gap:16px}
+.ct h1{margin:0;font-size:clamp(1.7rem,4vw,2.2rem);letter-spacing:-.03em}.ct p{margin:0;line-height:1.5}
+.ct-topics{display:flex;flex-wrap:wrap;gap:8px}.ct-topics button{border:0;border-radius:999px;padding:9px 16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font:inherit;font-size:.88rem;font-weight:500;color:var(--ink);cursor:pointer}
+.ct-topics button.on{background:#14151A;color:#fff;box-shadow:none}
+.ct-f{display:grid;gap:6px}.ct-f span{font-size:.82rem;font-weight:600;color:var(--ink-2)}
+.ct textarea,.ct input:not(.ct-hp){width:100%;padding:13px 16px;border:0;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);font:inherit;font-size:16px;color:var(--ink);outline:0;resize:vertical}
+.ct textarea:focus,.ct input:focus{box-shadow:inset 0 0 0 2px #4434E6}
+.ct-hp{position:absolute;left:-9999px;opacity:0;height:0;width:0}
+.ct-done{text-align:center;justify-items:center;margin-top:60px}
+.pl-kind{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:999px;background:#ECEAFF;color:#3F2BA8;font-size:.7rem;font-weight:700}

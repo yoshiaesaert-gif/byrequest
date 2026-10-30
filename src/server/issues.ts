@@ -38,3 +38,17 @@ export async function setIssues(ids: string[], status: "open" | "handling" | "do
   if (!ids.length) return;
   await db.update(techIssues).set({ status, handledBy: by, handledAt: status === "done" ? new Date() : null }).where(inArray(techIssues.id, ids.slice(0, 200)));
 }
+
+/* The contact form: open to everyone, lands in the back office. Nothing is sent by mail. */
+const TOPICS = ["question", "problem", "payment", "account", "partnership", "other"] as const;
+const hits = new Map<string, number[]>();
+export async function sendContact(input: { message: string; topic: string; contact: string }, who: { userId: string | null; ip: string }) {
+  const message = input.message.trim().slice(0, 3000);
+  if (message.length < 10) throw new RuleError("Tell us a little more, so we can help.");
+  const now = Date.now(); const key = who.userId ?? who.ip ?? "x";
+  const recent = (hits.get(key) ?? []).filter((t) => now - t < 3600_000);
+  if (recent.length >= 5) throw new RuleError("You already sent a few messages. We will get back to you.");
+  hits.set(key, [...recent, now]); if (hits.size > 5000) hits.clear();
+  const topic = (TOPICS as readonly string[]).includes(input.topic) ? input.topic : "other";
+  await db.insert(techIssues).values({ userId: who.userId, message, kind: "message", topic, contact: input.contact.trim().slice(0, 200) || null, page: "/contact", context: {} });
+}

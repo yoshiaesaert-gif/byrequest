@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { currentUser } from "@/server/auth";
 import { beat, type Beat } from "@/server/analytics";
@@ -10,6 +11,8 @@ export async function POST(req: Request) {
     if (!b || typeof b.p !== "string" || !["page", "click", "ping"].includes(b.k)) return new Response(null, { status: 204 });
     const h = await headers();
     const ip = (h.get("cf-connecting-ip") || h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "").trim();
+    // Without consent the browser sends no id. The server then makes an anonymous one that changes every day, so nothing is stored on the device.
+    if (!b.v) b.v = "a_" + createHash("sha256").update(`${ip}|${h.get("user-agent") ?? ""}|${new Date().toISOString().slice(0, 10)}|${process.env.SESSION_SECRET ?? ""}`).digest("hex").slice(0, 24);
     const u = await currentUser().catch(() => null);
     // Team devices are never counted: once an internal account used this browser it stays out, also signed out.
     const jar = await cookies();

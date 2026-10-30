@@ -22,8 +22,8 @@ export default async function FromByRequest() {
     chat={<ChatPane name="ByRequest" meId={u.id} avatar={logo} initial={{ v: "static", status: null, typing: false, otherKey: null, closed: false, msgs }} e2e={false} readOnly fromInbox empty={t("No messages yet")} lock={t("Official messages")} />}
     side={<>
       <SideCard title={t("Need help?")}>
-        <p className="t-sm" style={{ margin: 0 }}>{t("Questions? Mail support@byrequest.me, we answer within a day.")}</p>
-        <div className="sh-btns"><Link href="/help" className="btn btn-secondary">{t("Help centre")}</Link><a href="mailto:support@byrequest.me" className="btn btn-secondary">support@byrequest.me</a></div>
+        <p className="t-sm" style={{ margin: 0 }}>{t("Questions? Send us a message, our team reads every one.")}</p>
+        <div className="sh-btns"><Link href="/help" className="btn btn-secondary">{t("Help centre")}</Link><Link href="/contact" className="btn btn-secondary">{t("Send us a message")}</Link></div>
       </SideCard>
       <SideCard><div className="sh-links"><Link href="/report">{t("Report a problem")}</Link><Link href="/settings">{t("Privacy settings")}</Link><Link href="/legal/contact">{t("Point of contact")}</Link></div></SideCard>
     </>} />);

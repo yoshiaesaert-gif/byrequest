@@ -9,7 +9,7 @@ export default async function Problems() {
   await requireStaff();
   const rows = await openIssues();
   return (<div className="wrap bo-page">
-    <div className="bo-h"><h1>Problems</h1><p>Reported from the app by signed in people. The page, device and last browser errors come along. An answer lands in their ByRequest messages.</p></div>
-    <IssueList rows={rows.map((r) => ({ id: r.i.id, handle: r.handle, userId: r.i.userId, status: r.i.status, at: r.i.createdAt.toISOString(), message: r.i.message, page: r.i.page, ctx: r.i.context }))} />
+    <div className="bo-h"><h1>Support</h1><p>Technical problems reported from the app (page, device and browser errors come along) and messages from the contact form. Nothing here arrives by mail. An answer to a signed in person lands in their ByRequest messages.</p></div>
+    <IssueList rows={rows.map((r) => ({ id: r.i.id, handle: r.handle, userId: r.i.userId, status: r.i.status, at: r.i.createdAt.toISOString(), message: r.i.message, page: r.i.page, ctx: r.i.context, kind: r.i.kind, topic: r.i.topic, contact: r.i.contact }))} />
   </div>);
 }

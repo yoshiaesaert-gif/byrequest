@@ -25,7 +25,7 @@ export default async function Footer() {
         {col("Explore", [["/for-you", "The board"], ["/post", "Post a request"], ["/vault", "Your vault"], ["/deals", "Deals"]])}
         {col("Create", [["/settings#creator", "Become a creator"], ["/studio", "Studio"], ["/legal/creator_agreement", "Creator agreement"], ["/onboarding", "Creator setup"]])}
         {col("Trust", [["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/refunds", "Refunds and cancellation"], ["/legal/complaints", "Complaints and content removal"], ["/report", "Report a problem"], ["/removal", "Request removal"], ["/legal/participant_consent", "Consent to appear"], ["/legal/2257", "18 U.S.C. 2257 Statement"]])}
-        {col("Help", [["/help", "Help centre"], ["/inbox", "Support inbox"], ["/settings", "Privacy settings"], ["/legal/contact", "Point of contact"], ["mailto:support@byrequest.me", "support@byrequest.me"]])}
+        {col("Help", [["/help", "Help centre"], ["/settings", "Privacy settings"], ["/legal/contact", "Point of contact"], ["/contact", "Send us a message"]])}
       </div>
       <div className="ft-bottom">
         <span>© {year} {COMPANY.name} · {COMPANY.address}</span>

@@ -51,7 +51,7 @@ export default function HelpCenter({ cats, labels }: { cats: Cat[]; labels: Reco
 
     <section className="hc-still">
       <div><h2>{labels.still}</h2><p>{labels.mail}</p></div>
-      <div className="hc-still-btns"><a className="btn btn-primary btn-lg" href="mailto:support@byrequest.me">support@byrequest.me</a><Link className="btn btn-secondary btn-lg" href="/report">{labels.report}</Link></div>
+      <div className="hc-still-btns"><Link className="btn btn-primary btn-lg" href="/contact">{labels.mail}</Link><Link className="btn btn-secondary btn-lg" href="/report">{labels.report}</Link></div>
     </section>
   </>);
 }

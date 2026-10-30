@@ -15,7 +15,7 @@ const TXT: Record<string, { title: string; paras: string[] }> = {
     "## Tips",
     "Tips are a voluntary gift after a delivery and are not refunded.",
     "## Questions",
-    "Write to support@byrequest.me or use the inbox in the app. Refunds go back to the original payment method, usually within 5 to 10 business days.",
+    "Send us a message at byrequest.me/contact or use the inbox in the app. Refunds go back to the original payment method, usually within 5 to 10 business days.",
   ] },
   nl: { title: "Terugbetaling en annulering", paras: [
     "ByRequest werkt enkel met eenmalige betalingen. Er zijn geen abonnementen en niets verlengt automatisch.",
@@ -30,7 +30,7 @@ const TXT: Record<string, { title: string; paras: string[] }> = {
     "## Fooien",
     "Fooien zijn een vrijwillig geschenk na een levering en worden niet terugbetaald.",
     "## Vragen",
-    "Mail support@byrequest.me of gebruik de inbox in de app. Terugbetalingen gaan naar het oorspronkelijke betaalmiddel, meestal binnen 5 tot 10 werkdagen.",
+    "Stuur ons een bericht via byrequest.me/contact of gebruik de inbox in de app. Terugbetalingen gaan naar het oorspronkelijke betaalmiddel, meestal binnen 5 tot 10 werkdagen.",
   ] },
   fr: { title: "Remboursement et annulation", paras: [
     "ByRequest ne fonctionne qu'avec des paiements uniques. Il n'y a pas d'abonnement et rien ne se renouvelle.",
@@ -45,7 +45,7 @@ const TXT: Record<string, { title: string; paras: string[] }> = {
     "## Pourboires",
     "Les pourboires sont un cadeau volontaire après une livraison et ne sont pas remboursés.",
     "## Questions",
-    "Écris à support@byrequest.me ou utilise la boîte de réception de l'app. Les remboursements reviennent sur le moyen de paiement d'origine, en général sous 5 à 10 jours ouvrables.",
+    "Envoie-nous un message via byrequest.me/contact ou utilise la boîte de réception de l'app. Les remboursements reviennent sur le moyen de paiement d'origine, en général sous 5 à 10 jours ouvrables.",
   ] },
 };
 
