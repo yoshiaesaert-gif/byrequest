@@ -22,8 +22,8 @@ export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max:
   const [gone, setGone] = useState<string[]>([]);
   const [view, setView] = useState<number | null>(null);
   const [note, setNote] = useState("");
-  const up = useUploads<Photo | undefined>({ endpoint: "/api/album/upload", field: "files", target: "album", shrink: { side: 2400, quality: 0.88, over: 1.5 * 1048576 }, parse: (j) => (j.items as Photo[] | undefined)?.[0],
-    onDone: (p, u) => { if (p) setAdded((a) => [...a, p]); window.setTimeout(() => up.remove(u.key), 450); } });
+  const up = useUploads<Photo | undefined>({ channel: "album", href: "/studio", dropDone: true, endpoint: "/api/album/upload", field: "files", target: "album", shrink: { side: 2400, quality: 0.88, over: 1.5 * 1048576 }, parse: (j) => (j.items as Photo[] | undefined)?.[0],
+    onDone: (p) => { if (p) setAdded((a) => [...a, p]); router.refresh(); } });
   const items = [...photos, ...added.filter((a) => !photos.some((p) => p.id === a.id))].filter((p) => p.status !== "rejected" && !gone.includes(p.id));
   const room = max - items.length - up.list.filter((u) => u.state !== "done").length;
   const pick = (files: File[]) => {

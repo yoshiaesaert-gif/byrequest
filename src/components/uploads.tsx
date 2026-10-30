@@ -1,5 +1,7 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useT } from "@/i18n/client";
 
@@ -10,6 +12,7 @@ type Opts<R> = {
   endpoint: string; field?: string; extra?: () => Record<string, string>; parse: (j: Record<string, unknown>) => R; onDone?: (r: R, u: Up<R>) => void;
   target?: string;                        // enables resumable pieces for big files: "album" or "delivery:<id>"
   shrink?: { side: number; quality: number; over: number };   // photos bigger than `over` bytes are resized on the device first
+  dropDone?: boolean;                     // remove a tile shortly after it finished (the page shows the stored item instead)
 };
 const PIECE = 8 * 1024 * 1024, BIG = 20 * 1024 * 1024;
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -39,62 +42,91 @@ function send(method: string, url: string, body: XMLHttpRequestBodyInit | null, 
   });
 }
 
-export function useUploads<R>(opts: Opts<R>) {
-  const [list, setList] = useState<Up<R>[]>([]);
-  const xhrs = useRef(new Map<string, XMLHttpRequest>());
-  const dead = useRef(new Set<string>());
-  const o = useRef(opts);
-  useEffect(() => { o.current = opts; });
-  const patch = (key: string, p: Partial<Up<R>>) => setList((l) => l.map((u) => (u.key === key ? { ...u, ...p } : u)));
-  const start = useCallback(async (u0: Up<R>) => {
-    const key = u0.key, track = (x: XMLHttpRequest) => xhrs.current.set(key, x);
-    try {
-      const file = o.current.shrink ? await shrinkImage(u0.file, o.current.shrink) : u0.file;
-      let j: Record<string, unknown>, status: number;
-      if (o.current.target && file.size > BIG) {
-        // Big file: 8 MB pieces; after a dropped connection ask how far we got and continue from there.
-        const init = await send("POST", "/api/uploads", JSON.stringify({ name: file.name, type: file.type, size: file.size, target: o.current.target, extra: o.current.extra?.() ?? {} }), () => {}, track);
-        if (!init.json.ok) throw new Error(String(init.json.error ?? "Upload failed. Try again."));
-        const id = String(init.json.id); let off = 0, tries = 0;
-        while (off < file.size) {
-          if (dead.current.has(key)) throw new Error("abort");
-          try {
-            const r = await send("PUT", `/api/uploads/${id}?offset=${off}`, file.slice(off, off + PIECE), (l) => patch(key, { pct: Math.min(99, Math.round(((off + l) / file.size) * 100)) }), track);
-            if (!r.json.ok) throw new Error(String(r.json.error ?? "Upload failed. Try again."));
-            off = Number(r.json.received); tries = 0;
-          } catch (e) {
-            if ((e as Error).message === "abort" || ++tries > 10) throw e;
-            await wait(Math.min(15000, 1000 * 2 ** (tries - 1)));
-            const g = await send("GET", `/api/uploads/${id}`, null, () => {}, track).catch(() => null);
-            if (g?.json.ok) off = Number(g.json.received);
-          }
+/* Uploads live outside the page in a small shared store, so they keep going when you move to another page inside
+   ByRequest. A page asks for its own channel ("album", "delivery:<id>") and sees that channel's uploads again when it comes back. */
+type Chan = { list: Up<unknown>[]; subs: Set<() => void>; opts: Opts<unknown>; href: string; xhrs: Map<string, XMLHttpRequest>; dead: Set<string> };
+const chans = new Map<string, Chan>();
+const anySubs = new Set<() => void>();
+const NONE: Up<unknown>[] = [];
+function emit(c: Chan) { c.subs.forEach((f) => f()); anySubs.forEach((f) => f()); }
+function chanOf(id: string, opts: Opts<unknown>, href: string) {
+  let c = chans.get(id);
+  if (!c) { c = { list: [], subs: new Set(), opts, href, xhrs: new Map(), dead: new Set() }; chans.set(id, c); }
+  return c;
+}
+const patchIn = (c: Chan, key: string, p: Partial<Up<unknown>>) => { c.list = c.list.map((u) => (u.key === key ? { ...u, ...p } : u)); emit(c); };
+
+async function run(c: Chan, u0: Up<unknown>) {
+  const key = u0.key, track = (x: XMLHttpRequest) => c.xhrs.set(key, x), patch = (p: Partial<Up<unknown>>) => patchIn(c, key, p);
+  try {
+    const o = c.opts;
+    const file = o.shrink ? await shrinkImage(u0.file, o.shrink) : u0.file;
+    let j: Record<string, unknown>, status: number;
+    if (o.target && file.size > BIG) {
+      // Big file: 8 MB pieces; after a dropped connection ask how far we got and continue from there.
+      const init = await send("POST", "/api/uploads", JSON.stringify({ name: file.name, type: file.type, size: file.size, target: o.target, extra: o.extra?.() ?? {} }), () => {}, track);
+      if (!init.json.ok) throw new Error(String(init.json.error ?? "Upload failed. Try again."));
+      const id = String(init.json.id); let off = 0, tries = 0;
+      while (off < file.size) {
+        if (c.dead.has(key)) throw new Error("abort");
+        try {
+          const r = await send("PUT", `/api/uploads/${id}?offset=${off}`, file.slice(off, off + PIECE), (l) => patch({ pct: Math.min(99, Math.round(((off + l) / file.size) * 100)) }), track);
+          if (!r.json.ok) throw new Error(String(r.json.error ?? "Upload failed. Try again."));
+          off = Number(r.json.received); tries = 0;
+        } catch (e) {
+          if ((e as Error).message === "abort" || ++tries > 10) throw e;
+          await wait(Math.min(15000, 1000 * 2 ** (tries - 1)));
+          const g = await send("GET", `/api/uploads/${id}`, null, () => {}, track).catch(() => null);
+          if (g?.json.ok) off = Number(g.json.received);
         }
-        patch(key, { pct: 100, state: "proc" });
-        ({ status, json: j } = await send("POST", `/api/uploads/${id}`, null, () => {}, track));
-      } else {
-        const f = new FormData(); f.append(o.current.field ?? "file", file);
-        for (const [k, v] of Object.entries(o.current.extra?.() ?? {})) f.set(k, v);
-        ({ status, json: j } = await send("POST", o.current.endpoint, f, (l) => { const pct = Math.round((l / file.size) * 100); patch(key, pct >= 100 ? { pct: 100, state: "proc" } : { pct }); }, track));
       }
-      xhrs.current.delete(key);
-      if (status < 300 && j.ok) { const r = o.current.parse(j); patch(key, { pct: 100, state: "done", result: r }); o.current.onDone?.(r, u0); }
-      else patch(key, { state: "err", error: String(j.error ?? "Upload failed. Try again.") });
-    } catch (e) {
-      xhrs.current.delete(key);
-      if ((e as Error).message !== "abort") patch(key, { state: "err", error: (e as Error).message === "network" ? "No connection. Try again." : (e as Error).message });
+      patch({ pct: 100, state: "proc" });
+      ({ status, json: j } = await send("POST", `/api/uploads/${id}`, null, () => {}, track));
+    } else {
+      const f = new FormData(); f.append(o.field ?? "file", file);
+      for (const [k, v] of Object.entries(o.extra?.() ?? {})) f.set(k, v);
+      ({ status, json: j } = await send("POST", o.endpoint, f, (l) => { const pct = Math.round((l / file.size) * 100); patch(pct >= 100 ? { pct: 100, state: "proc" } : { pct }); }, track));
     }
-  }, []);
-  const add = useCallback((files: File[]) => {
-    const ups = files.map((file) => ({ key: Math.random().toString(36).slice(2), file, url: URL.createObjectURL(file), pct: 0, state: "up" as const }));
-    setList((l) => [...l, ...ups]); ups.forEach((u) => void start(u));
-  }, [start]);
-  const remove = useCallback((key: string) => { dead.current.add(key); xhrs.current.get(key)?.abort(); xhrs.current.delete(key); setList((l) => { const u = l.find((x) => x.key === key); if (u) URL.revokeObjectURL(u.url); return l.filter((x) => x.key !== key); }); }, []);
-  const retry = useCallback((key: string) => setList((l) => l.map((u) => { if (u.key !== key) return u; const n = { ...u, pct: 0, state: "up" as const, error: undefined }; void start(n); return n; })), [start]);
-  useEffect(() => { const x = xhrs.current; return () => { x.forEach((r) => r.abort()); }; }, []);
-  const busy = list.some((u) => u.state === "up" || u.state === "proc");
-  // Closing or reloading the tab would stop the upload: the browser asks first.
-  useEffect(() => { if (!busy) return; const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; }; window.addEventListener("beforeunload", h); return () => window.removeEventListener("beforeunload", h); }, [busy]);
-  return { list, add, remove, retry, busy };
+    c.xhrs.delete(key);
+    if (status < 300 && j.ok) {
+      const r = c.opts.parse(j); patch({ pct: 100, state: "done", result: r }); c.opts.onDone?.(r, u0);
+      if (c.opts.dropDone) window.setTimeout(() => dropIn(c, key), 450);
+    } else patch({ state: "err", error: String(j.error ?? "Upload failed. Try again.") });
+  } catch (e) {
+    c.xhrs.delete(key);
+    if ((e as Error).message !== "abort") patch({ state: "err", error: (e as Error).message === "network" ? "No connection. Try again." : (e as Error).message });
+  }
+}
+function dropIn(c: Chan, key: string) { c.dead.add(key); c.xhrs.get(key)?.abort(); c.xhrs.delete(key); const u = c.list.find((x) => x.key === key); if (u) URL.revokeObjectURL(u.url); c.list = c.list.filter((x) => x.key !== key); emit(c); }
+function addIn(c: Chan, files: File[]) {
+  const ups = files.map((file) => ({ key: Math.random().toString(36).slice(2), file, url: URL.createObjectURL(file), pct: 0, state: "up" as const }));
+  c.list = [...c.list, ...ups]; emit(c); ups.forEach((u) => void run(c, u));
+}
+function retryIn(c: Chan, key: string) { const u = c.list.find((x) => x.key === key); if (!u) return; c.dead.delete(key); const n = { ...u, pct: 0, state: "up" as const, error: undefined }; c.list = c.list.map((x) => (x.key === key ? n : x)); emit(c); void run(c, n); }
+function setOpts(c: Chan, opts: Opts<unknown>, href?: string) { c.opts = opts; if (href) c.href = href; }
+const busyIn = (l: Up<unknown>[]) => l.some((u) => u.state === "up" || u.state === "proc");
+if (typeof window !== "undefined") window.addEventListener("beforeunload", (e) => { if ([...chans.values()].some((c) => busyIn(c.list))) { e.preventDefault(); e.returnValue = ""; } });
+
+export function useUploads<R>(opts: Opts<R> & { channel: string; href?: string }) {
+  const c = chanOf(opts.channel, opts as Opts<unknown>, opts.href ?? "/");
+  useEffect(() => { setOpts(c, opts as Opts<unknown>, opts.href); });
+  const list = useSyncExternalStore((f) => { c.subs.add(f); return () => { c.subs.delete(f); }; }, () => c.list, () => NONE) as Up<R>[];
+  const add = useCallback((files: File[]) => addIn(c, files), [c]);
+  const remove = useCallback((key: string) => dropIn(c, key), [c]);
+  const retry = useCallback((key: string) => retryIn(c, key), [c]);
+  return { list, add, remove, retry, busy: busyIn(list) };
+}
+
+/* A small pill while files upload in the background on another page; a tap brings you back. */
+export function UploadDock() {
+  const t = useT();
+  const path = usePathname();
+  const snap = useSyncExternalStore((f) => { anySubs.add(f); return () => { anySubs.delete(f); }; }, () => [...chans.values()].map((c) => c.list.map((u) => `${u.state}${u.pct}`).join()).join("|"), () => "");
+  const active = [...chans.values()].filter((c) => busyIn(c.list) && !path.startsWith(c.href));
+  if (!snap || !active.length) return null;
+  const ups = active.flatMap((c) => c.list.filter((u) => u.state === "up" || u.state === "proc"));
+  const pct = Math.round(ups.reduce((a, u) => a + u.pct, 0) / Math.max(1, ups.length));
+  return (<Link href={active[0].href} className="up-dock"><span className="up-dock-r" style={{ ["--p" as string]: pct }} /><span><b>{t(ups.length === 1 ? "Uploading 1 file" : "Uploading {n} files", { n: ups.length })}</b><small>{pct}% · {t("keeps going while you browse")}</small></span></Link>);
 }
 
 /* A tile while it uploads: the local preview straight away, a progress ring, and cancel or retry. */

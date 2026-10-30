@@ -2579,5 +2579,8 @@ const fr: Record<string, string> = {
   "This file type is not supported.": "Ce type de fichier n'est pas pris en charge.",
   "A file is missing. Upload it again.": "Un fichier manque. Envoie-le à nouveau.",
   "Photos show 10 seconds each. Videos up to 2 minutes and 300 MB play once, start to end.": "Les photos s'affichent 10 secondes chacune. Les vidéos jusqu'à 2 minutes et 300 Mo se lisent une fois, du début à la fin.",
+  "Uploading 1 file": "1 fichier en cours d'envoi",
+  "Uploading {n} files": "{n} fichiers en cours d'envoi",
+  "keeps going while you browse": "continue pendant que tu navigues",
 };
 export default fr;

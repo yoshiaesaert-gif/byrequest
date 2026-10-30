@@ -2579,5 +2579,8 @@ const nl: Record<string, string> = {
   "This file type is not supported.": "Dit bestandstype wordt niet ondersteund.",
   "A file is missing. Upload it again.": "Er ontbreekt een bestand. Upload het opnieuw.",
   "Photos show 10 seconds each. Videos up to 2 minutes and 300 MB play once, start to end.": "Foto's tonen elk 10 seconden. Video's tot 2 minuten en 300 MB spelen één keer, van begin tot eind.",
+  "Uploading 1 file": "1 bestand wordt geüpload",
+  "Uploading {n} files": "{n} bestanden worden geüpload",
+  "keeps going while you browse": "gaat door terwijl je verder surft",
 };
 export default nl;

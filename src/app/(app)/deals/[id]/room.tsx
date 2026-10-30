@@ -97,7 +97,7 @@ function UploadSheet({ p, onClose }: { p: Props; onClose: () => void }) {
   const accept = cat === "photos" || cat === "worn" ? "image/*" : cat === "voice" ? "audio/*" : "video/*";
   const many = cat === "photos" || cat === "worn";
   // Every file uploads on its own, in parallel; the delivery is sent once they are all in.
-  const up = useUploads<{ id: string }>({ endpoint: `/api/deliveries/${p.deal.id}/files`, target: `delivery:${p.deal.id}`, shrink: { side: 4096, quality: 0.92, over: 12 * 1048576 }, parse: (j) => j.item as { id: string } });
+  const up = useUploads<{ id: string }>({ channel: `delivery:${p.deal.id}`, href: `/deals/${p.deal.id}`, endpoint: `/api/deliveries/${p.deal.id}/files`, target: `delivery:${p.deal.id}`, shrink: { side: 4096, quality: 0.92, over: 12 * 1048576 }, parse: (j) => j.item as { id: string } });
   const drop = (key: string) => { const u = up.list.find((x) => x.key === key); if (u?.result) fetch(`/api/deliveries/${p.deal.id}/files?id=${u.result.id}`, { method: "DELETE" }).catch(() => null); up.remove(key); setLines(null); };
   const ready = up.list.length > 0 && up.list.every((u) => u.state === "done");
   const go = async () => {

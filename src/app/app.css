@@ -1742,3 +1742,9 @@ html.cx-lock .hb-launch{display:none}
 .up-proc{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:8px;color:#fff;font-size:.74rem;font-weight:700;white-space:nowrap}
 .up-proc i{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:upspin .8s linear infinite}
 @keyframes upspin{to{transform:rotate(360deg)}}
+
+/* Background uploads, visible on every page */
+.up-dock{position:fixed;left:20px;bottom:20px;z-index:70;display:flex;align-items:center;gap:12px;padding:10px 16px 10px 10px;border-radius:999px;background:#14151A;color:#fff;box-shadow:0 12px 30px rgba(14,16,19,.3);animation:upin .25s ease-out}
+.up-dock span{display:grid}.up-dock b{font-size:.84rem}.up-dock small{font-size:.72rem;opacity:.7}
+.up-dock-r{width:34px;height:34px;border-radius:50%;background:conic-gradient(#F59A3E,#E0559A calc(var(--p)*.5%),#7A3FE8 calc(var(--p)*1%),rgba(255,255,255,.18) 0);-webkit-mask:radial-gradient(circle,transparent 11px,#000 12px);mask:radial-gradient(circle,transparent 11px,#000 12px)}
+@media (max-width:760px){.up-dock{left:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
