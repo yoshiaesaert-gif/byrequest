@@ -32,7 +32,7 @@ export async function decideReview(id: string, status: "approved" | "hidden") {
 export async function publicReviews() {
   const [quotes, [avg]] = await Promise.all([
     db.select({ handle: users.handle, stars: R.stars, quote: R.quote }).from(R).innerJoin(users, eq(users.id, R.userId))
-      .where(and(eq(R.status, "approved"), eq(R.mayPublish, true), sql`length(${R.quote}) >= 10`)).orderBy(desc(R.stars), desc(R.decidedAt)).limit(30),
+      .where(and(sql`${R.status} <> 'hidden'`, eq(R.mayPublish, true), sql`length(${R.quote}) >= 10`)).orderBy(desc(R.stars), desc(R.decidedAt)).limit(30),
     db.select({ avg: sql<number>`coalesce(avg(${R.stars}),0)::float`, n: sql<number>`count(*)::int` }).from(R).where(sql`${R.status} <> 'hidden'`),
   ]);
   return { quotes, avg: avg.avg, n: avg.n };

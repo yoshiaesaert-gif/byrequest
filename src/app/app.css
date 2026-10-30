@@ -1877,3 +1877,68 @@ html:has(.cr),html:has(.cr) body{background:#0B0A14}
 .cv-act{display:flex;gap:6px}
 @media (max-width:760px){.cv-row{grid-template-columns:1fr}}
 .cr-avg{font-size:1.6rem;font-weight:900;letter-spacing:-.02em}
+
+/* ---------- Creator page, editorial (/creators) ---------- */
+html:has(.cz),html:has(.cz) body{background:#0B0A12}
+.cz{--g1:#FFD66B;--g2:#F59A3E;--g3:#E0559A;--g4:#8B4DF2;--serif:"Instrument Serif",Georgia,serif;min-height:100dvh;color:#F4F1EA;overflow-x:hidden;padding-bottom:100px;
+  background:radial-gradient(60% 40% at 85% 0%,rgba(139,77,242,.28),transparent 70%),radial-gradient(50% 35% at 0% 10%,rgba(245,154,62,.18),transparent 70%),#0B0A12}
+.cz-top{display:flex;justify-content:space-between;align-items:center;max-width:1240px;margin:0 auto;padding:22px clamp(18px,4vw,40px)}
+.cz-logo img{height:28px;display:block}
+.cz-mini{font-weight:700;font-size:.9rem;border-bottom:1.5px solid var(--g2);padding-bottom:2px}
+.cz-hero{max-width:1240px;margin:0 auto;padding:clamp(40px,8vw,96px) clamp(18px,4vw,40px) 60px;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.9fr);gap:56px;align-items:end}
+.cz-tag{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--g1)}
+.cz-hero h1{margin:18px 0 0;font-size:clamp(64px,10.5vw,152px);line-height:.88;letter-spacing:-.055em;font-weight:900}
+.cz-hero h1 i,.cz-end h2 i{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.02em;background:linear-gradient(95deg,var(--g1),var(--g2) 35%,var(--g3) 70%,var(--g4));-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.cz-copy p{max-width:520px;margin:28px 0 0;font-size:1.15rem;line-height:1.55;color:rgba(244,241,234,.75)}
+.cz-ctas{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:32px}
+.cz-btn{display:inline-flex;align-items:center;gap:14px;height:60px;padding:0 30px;border-radius:14px;background:#F4F1EA;color:#0B0A12;font-weight:800;font-size:1.05rem;transition:transform .15s,background .15s}
+.cz-btn span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--g1),var(--g3));color:#1A0B2E;font-size:.95rem;transition:transform .15s}
+.cz-btn:hover{transform:translateY(-2px)}.cz-btn:hover span{transform:translateX(3px)}
+.cz-btn.wide{height:68px;padding:0 40px;font-size:1.15rem}
+.cz-link{font-weight:700;color:rgba(244,241,234,.85);border-bottom:1px solid rgba(244,241,234,.35);padding-bottom:3px}
+.cz-receipt{position:relative;padding:22px 22px 18px;border-radius:6px;background:#F4F1EA;color:#15131C;transform:rotate(1.2deg);box-shadow:0 30px 70px -20px rgba(0,0,0,.7);font-variant-numeric:tabular-nums}
+.cz-receipt::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;background:radial-gradient(circle at 5px 0,transparent 5px,#F4F1EA 5.5px) 0 0/10px 10px repeat-x}
+.cz-rh{display:flex;align-items:center;gap:8px;font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding-bottom:12px;border-bottom:1.5px dashed #C9C4B8}
+.cz-live{width:8px;height:8px;border-radius:50%;background:#18B26B;box-shadow:0 0 0 3px rgba(24,178,107,.2)}
+.cz-rl{display:flex;justify-content:space-between;gap:14px;align-items:baseline;padding:11px 0;border-bottom:1px solid #E2DDD1}
+.cz-rl span{display:grid;min-width:0}.cz-rl b{font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cz-rl small{font-size:.72rem;color:#7C7768}
+.cz-rl em{font-style:normal;font-weight:800;font-size:1.1rem}
+.cz-rt{display:flex;justify-content:space-between;align-items:baseline;padding-top:14px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.cz-rt b{font-size:1.6rem;letter-spacing:-.02em;text-transform:none}
+.cz-ticker{overflow:hidden;border-top:1px solid rgba(244,241,234,.12);border-bottom:1px solid rgba(244,241,234,.12);padding:16px 0;margin-top:20px}
+.cz-tt{display:flex;gap:42px;width:max-content;animation:czt 45s linear infinite}
+.cz-tt span{white-space:nowrap;font-size:1rem;color:rgba(244,241,234,.6);letter-spacing:.06em;text-transform:uppercase}.cz-tt b{color:#F4F1EA;font-size:1.25rem;margin-left:6px;letter-spacing:-.01em}
+.cz-tt span::after{content:"✦";margin-left:42px;color:var(--g2)}
+@keyframes czt{to{transform:translateX(-50%)}}
+.cz-lines{max-width:1240px;margin:100px auto 0;padding:0 clamp(18px,4vw,40px)}
+.cz-lines p{margin:0;display:flex;gap:22px;align-items:baseline;padding:30px 0;border-top:1px solid rgba(244,241,234,.14);font-size:clamp(32px,5.6vw,76px);font-weight:900;letter-spacing:-.045em;line-height:1}
+.cz-lines p span{font-family:var(--serif);font-style:italic;font-weight:400;font-size:.42em;color:var(--g2);letter-spacing:0;min-width:1.6em}
+.cz-lines p.r{justify-content:flex-end;text-align:right}
+.cz-lines p:nth-child(2) {color:transparent;background:linear-gradient(95deg,var(--g1),var(--g3));-webkit-background-clip:text;background-clip:text}
+.cz-lines p:nth-child(2) span{color:var(--g1)}
+.cz-mid{padding-top:36px;border-top:1px solid rgba(244,241,234,.14)}
+.cz-money{max-width:1240px;margin:120px auto 0;padding:0 clamp(18px,4vw,40px)}
+.cz-money h2,.cz-reviews h2{margin:0 0 34px;font-size:clamp(40px,6vw,84px);letter-spacing:-.05em;line-height:.95;font-weight:900}
+.cz-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(244,241,234,.14)}
+.cz-m{display:grid;gap:8px;padding:26px 22px 28px 0;border-right:1px solid rgba(244,241,234,.1)}.cz-m+.cz-m{padding-left:22px}.cz-m:last-child{border-right:0}
+.cz-m small{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--g1)}
+.cz-m b{font-size:clamp(44px,5vw,68px);letter-spacing:-.05em;line-height:1}
+.cz-m span{color:rgba(244,241,234,.65);font-size:.95rem}
+.cz-note{margin:18px 0 0;color:rgba(244,241,234,.5);font-size:.86rem}
+.cz-why{max-width:1240px;margin:120px auto 0;padding:0 clamp(18px,4vw,40px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.cz-why div{border-top:2px solid var(--g2);padding-top:22px}.cz-why div:nth-child(2){border-color:var(--g3)}.cz-why div:nth-child(3){border-color:var(--g4)}
+.cz-why span{font-family:var(--serif);font-style:italic;font-size:2.4rem;color:rgba(244,241,234,.5)}
+.cz-why b{display:block;margin:8px 0 10px;font-size:1.7rem;letter-spacing:-.03em}.cz-why p{margin:0;color:rgba(244,241,234,.7);line-height:1.55;font-size:1.02rem}
+.cz-reviews{max-width:1240px;margin:120px auto 0;padding:0 clamp(18px,4vw,40px)}
+.cz-avg{margin-left:18px;font-size:.45em;vertical-align:middle;color:var(--g1);letter-spacing:0}
+.cz-rv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid rgba(244,241,234,.14)}
+.cz-rv figure{margin:0;padding:26px 24px 26px 0;border-bottom:1px solid rgba(244,241,234,.1)}
+.cz-stars{color:var(--g1);letter-spacing:3px}.cz-rv blockquote{margin:12px 0;font-family:var(--serif);font-size:1.7rem;line-height:1.2}.cz-rv figcaption{font-size:.84rem;color:rgba(244,241,234,.55)}
+.cz-end{max-width:1240px;margin:130px auto 0;padding:80px clamp(18px,4vw,40px) 30px;border-top:1px solid rgba(244,241,234,.14)}
+.cz-end h2{margin:0 0 36px;font-size:clamp(56px,9vw,128px);line-height:.9;letter-spacing:-.055em;font-weight:900}
+.cz-end p{margin:22px 0 0;color:rgba(244,241,234,.5)}
+.cz-sticky{display:none}
+@media (max-width:900px){.cz-hero{grid-template-columns:1fr;gap:40px}.cz-receipt{transform:none;max-width:460px}.cz-grid{grid-template-columns:1fr 1fr}.cz-m:nth-child(2){border-right:0}.cz-m:nth-child(3){padding-left:0}.cz-why{grid-template-columns:1fr}.cz-rv{grid-template-columns:1fr}}
+@media (max-width:560px){.cz-ctas .cz-btn,.cz-mid{display:none}.cz-lines p.r{justify-content:flex-start;text-align:left}.cz-lines p{gap:14px}.cz-grid{grid-template-columns:1fr}.cz-m,.cz-m+.cz-m{padding:22px 0;border-right:0;border-bottom:1px solid rgba(244,241,234,.1)}
+  .cz-sticky{display:flex;position:fixed;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:30;height:58px;border-radius:14px;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;color:#0B0A12;background:#F4F1EA;box-shadow:0 18px 40px -10px rgba(0,0,0,.8)}}
+@media (prefers-reduced-motion:reduce){.cz-tt{animation:none}}
+.cz-hero h1{font-size:clamp(56px,8.4vw,124px)}
