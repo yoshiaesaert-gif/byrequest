@@ -13,6 +13,7 @@ import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
 import { PasskeyPrompt } from "@/components/passkey";
 import { listPasskeys } from "@/server/passkeys";
+import ProblemSheet from "@/components/problem";
 import { KeySync } from "@/components/keysync";
 import { getT } from "@/i18n/server";
 
@@ -57,6 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {hasKey ? null : <PasskeyPrompt />}
       <KeySync uid={u.id} accountPub={u.publicKey} passkeys={keys.length} locked={keys.some((k) => !!k.locked)} />
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
+      <ProblemSheet />
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} />
     </div>
   );

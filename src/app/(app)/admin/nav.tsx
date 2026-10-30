@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const ITEMS: [string, string][] = [["/admin", "Overview"], ["/admin/requests", "Requests"], ["/admin/offers", "Offers"], ["/admin/review", "Review queue"], ["/admin/users", "Accounts"], ["/admin/visitors", "Visitors"], ["/admin/house", "Internal"], ["/admin/money", "Money"], ["/admin/referrals", "Referrals"], ["/admin/emails", "Emails"], ["/admin/team", "Team"], ["/admin/audit", "Audit log"]];
+const ITEMS: [string, string][] = [["/admin", "Overview"], ["/admin/requests", "Requests"], ["/admin/offers", "Offers"], ["/admin/problems", "Problems"], ["/admin/review", "Review queue"], ["/admin/users", "Accounts"], ["/admin/visitors", "Visitors"], ["/admin/house", "Internal"], ["/admin/money", "Money"], ["/admin/referrals", "Referrals"], ["/admin/emails", "Emails"], ["/admin/team", "Team"], ["/admin/audit", "Audit log"]];
 
 export default function AdminNav({ counts }: { counts: Record<string, number> }) {
   const path = usePathname();

@@ -451,3 +451,16 @@ export const chatLive = pgTable("chat_live", {
   seenAt: timestamp("seen_at", { withTimezone: true }),
   typingAt: timestamp("typing_at", { withTimezone: true }),
 }, (t) => [primaryKey({ columns: [t.scope, t.userId] })]);
+
+/* A technical problem reported from inside the app: what the person wrote plus where they were and the last errors the browser saw. */
+export const techIssues = pgTable("tech_issues", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  message: text("message").notNull(),
+  page: text("page").notNull().default(""),
+  context: jsonb("context").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").$type<"open" | "handling" | "done">().notNull().default("open"),
+  handledBy: text("handled_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  handledAt: timestamp("handled_at", { withTimezone: true }),
+}, (t) => [index("tech_issues_status_idx").on(t.status, t.createdAt)]);

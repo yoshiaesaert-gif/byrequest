@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getT } from "@/i18n/server";
+import { ProblemLink } from "./problem";
 import LangSwitch from "./lang-switch";
 import { CookieSettingsLink } from "./consent-banner";
 import { DEMO_MODE } from "@/config/compliance";
@@ -10,7 +11,7 @@ export default async function Footer() {
   const { t } = await getT();
   const year = new Date().getFullYear();
   const col = (h: string, links: [string, string][]) => (
-    <div className="ft-col"><b>{t(h)}</b>{links.map(([href, l]) => <Link key={href + l} href={href}>{l.includes("@") ? l : t(l)}</Link>)}</div>);
+    <div className="ft-col"><b>{t(h)}</b>{h === "Help" ? <ProblemLink className="ft-help">{t("Something not working? Tell us")}</ProblemLink> : null}{links.map(([href, l]) => <Link key={href + l} href={href}>{l.includes("@") ? l : t(l)}</Link>)}</div>);
   return (
     <footer className="ft">
       <div className="ft-in">

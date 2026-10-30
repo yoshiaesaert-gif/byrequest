@@ -10,6 +10,7 @@ import * as H from "@/server/house";
 import * as TC from "@/server/teamchat";
 import * as M from "@/server/moderation";
 import * as Ref from "@/server/referrals";
+import * as I from "@/server/issues";
 import type { RefConfig } from "@/domain/referral";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
 import { reviewPhoto } from "@/server/albums";
@@ -59,3 +60,14 @@ export const mailTest = async (kind: string, lang: string) => run(async (staffId
   await L.sendTest(kind as (typeof L.KINDS)[number], (["nl", "en", "fr"].includes(lang) ? lang : "nl") as "nl", { id: u.user.id, email: u.user.email, handle: u.user.handle });
   void staffId;
 }, "admin");
+
+export async function issueStatus(id: string, status: "open" | "handling" | "done") {
+  const { user } = await requireStaff();
+  await I.setIssue(id, status, user.handle);
+  revalidatePath("/admin/problems");
+}
+export async function issueAnswer(id: string, text: string): Promise<{ error?: string }> {
+  const { user } = await requireStaff();
+  try { await I.answerIssue(id, text, user.handle); } catch (e) { if (e instanceof RuleError) return { error: e.message }; throw e; }
+  revalidatePath("/admin/problems"); return {};
+}
