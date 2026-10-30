@@ -1393,3 +1393,15 @@ html.cx-lock,html.cx-lock body{overflow:hidden}
 @keyframes cpw{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
 @media (prefers-reduced-motion:reduce){.cp-wait i{animation:none}}
 .cx-sys time{font-variant-numeric:tabular-nums}
+
+/* Inbox: both lists live in their own fixed container, so the page never grows without end */
+.ib-col{display:flex;flex-direction:column;height:calc(100dvh - 250px);min-height:380px;max-height:760px}
+.ib-h{flex:0 0 auto}
+.ib-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+@media (max-width:900px){.ib-col{height:min(64dvh,560px);min-height:300px}}
+/* Typing: three soft dots that rise one after the other, like iMessage */
+.cx-dots{gap:5px!important;padding:14px 16px!important;min-width:58px;justify-content:center}
+.cx-dots i{width:8px;height:8px;background:#9AA0AB;animation:cxw 1.25s ease-in-out infinite}
+.cx-dots i:nth-child(2){animation-delay:.16s}.cx-dots i:nth-child(3){animation-delay:.32s}
+@keyframes cxw{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-4px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.cx-dots i{animation:none;opacity:.8}}

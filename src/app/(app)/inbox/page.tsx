@@ -27,10 +27,10 @@ export default async function Inbox() {
       {other.some((n) => !n.readAt) ? <form action={markAllRead}><button className="btn btn-secondary btn-sm">{t("Mark all as read")}</button></form> : null}</div>
     <div className="ib-grid">
       <section className="card ib-col"><div className="ib-h"><h2 className="t-h3">{t("Chats")}</h2>{unreadChats ? <span className="ib-badge num">{unreadChats}</span> : null}</div>
-        {chats.length || teamRow ? <ChatList chats={chats} team={teamRow} /> : <Empty icon="inbox" title={t("No chats yet")} text={t("A chat opens as soon as a deal starts.")} />}</section>
+        <div className="ib-scroll">{chats.length || teamRow ? <ChatList chats={chats} team={teamRow} /> : <Empty icon="inbox" title={t("No chats yet")} text={t("A chat opens as soon as a deal starts.")} />}</div></section>
       <section className="card ib-col"><div className="ib-h"><h2 className="t-h3">{t("Notifications")}</h2></div>
-        {other.length ? <NoteList notes={other.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, at: n.createdAt.toISOString(), unread: !n.readAt }))} />
-          : <Empty icon="inbox" title={t("All quiet")} text={t("Offers, deliveries and messages show up here, always with neutral wording.")} />}</section>
+        <div className="ib-scroll">{other.length ? <NoteList notes={other.map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, at: n.createdAt.toISOString(), unread: !n.readAt }))} />
+          : <Empty icon="inbox" title={t("All quiet")} text={t("Offers, deliveries and messages show up here, always with neutral wording.")} />}</div></section>
     </div>
   </div>);
 }
