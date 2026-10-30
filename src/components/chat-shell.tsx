@@ -2,10 +2,10 @@ import Link from "next/link";
 
 /* The one page layout for every conversation: the chat on the left, everything you can do next on the
    right. On a phone the chat is a card that opens full screen, with the same cards below it. */
-export function ChatShell({ back, backLabel, eyebrow, title, avatar, chat, side }: { back: string; backLabel: string; eyebrow?: string; title: string; avatar?: React.ReactNode; chat: React.ReactNode; side: React.ReactNode }) {
+export function ChatShell({ back, backLabel, eyebrow, title, chat, side }: { back: string; backLabel: string; eyebrow?: string; title: string; avatar?: React.ReactNode; chat: React.ReactNode; side: React.ReactNode }) {
   return (<div className="wrap sh">
     <Link href={back} className="back"><svg className="ico sm" aria-hidden="true"><use href="#i-left" /></svg>{backLabel}</Link>
-    <header className="sh-head">{avatar ? <span className="sh-av">{avatar}</span> : null}<div>{eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}<h1 className="t-h1">{title}</h1></div></header>
+    <header className="sh-head"><div>{eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}<h1 className="t-h1">{title}</h1></div></header>
     <div className="sh-grid">
       <div className="sh-main">{chat}</div>
       <aside className="sh-side">{side}</aside>

@@ -1377,3 +1377,12 @@ html.cx-lock,html.cx-lock body{overflow:hidden}
 .sh-side .cp-al .btn{grid-column:1/-1;margin:8px 0 0;width:100%}
 .sh-side .cp-al .btn-primary,.sh-side .cp-al .btn-brand{background:#4434E6;color:#fff}
 .sh-side .cp-al .muted{opacity:1}
+
+/* One avatar per screen (in the chat header); the chat and its action cards always render light, also in dark mode */
+.sh-person .cx-av{display:none}
+.sh-head{margin:2px 0 12px}
+.sh-head h1{font-size:1.35rem}
+.cx,.sh-side .cp-al{--ink:#0E1013;--ink-2:#3B3F46;--muted:#6B7079;--line:#E4E4DE;--sunk:#F1F2F5;--surface:#fff;color:#0E1013;color-scheme:light}
+.sh .cx{height:clamp(480px,calc(100dvh - 232px),820px)}
+.sh-main{top:76px}
+@media (max-width:900px){.sh .cx{height:min(70dvh,640px)}}
