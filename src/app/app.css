@@ -1824,3 +1824,41 @@ html:has(.cr),html:has(.cr) body{background:#0B0A14}
 .cr-top{background:transparent;backdrop-filter:none}.cr-top.cr-solid,.cr:has(.cr-hero) .cr-top{background:linear-gradient(180deg,rgba(11,10,20,.85),rgba(11,10,20,0))}
 @media (max-width:560px){.cr-ctas{display:none}}
 @media (max-width:560px){.cr-cards{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 -16px;padding:0 16px 6px;scrollbar-width:none}.cr-card{flex:0 0 74%;scroll-snap-align:start}.cr-amt{font-size:2.2rem}}
+
+/* Creator landing, second pass: review marquee, kinds, safety, FAQ */
+.cr-marq{position:relative;display:grid;gap:14px;margin:6px 0 30px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.cr-row{overflow:hidden}
+.cr-track{display:flex;gap:14px;width:max-content;animation:crm 70s linear infinite}
+.cr-row.rev .cr-track{animation-direction:reverse;animation-duration:80s}
+.cr-marq:hover .cr-track{animation-play-state:paused}
+@keyframes crm{to{transform:translateX(-50%)}}
+.cr-mq{flex:0 0 auto;width:360px;margin:0;display:grid;gap:10px;align-content:start;padding:22px 24px;border-radius:24px;background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.03));box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.cr-mq blockquote{margin:0;font-size:1.08rem;line-height:1.45;font-weight:600;letter-spacing:-.01em}
+.cr-mq figcaption{font-size:.82rem;color:rgba(255,255,255,.65)}
+.cr-row:first-child .cr-mq:nth-child(4n+1){background:linear-gradient(150deg,#F59A3E,#E0559A 60%,#7A3FE8)}
+.cr-row:first-child .cr-mq:nth-child(4n+1) .cr-stars{color:#fff}
+.cr-sample-top{position:absolute;right:clamp(16px,4vw,48px);top:-34px}
+.cr-kinds{max-width:1200px;margin:90px auto 0;padding:0 clamp(16px,4vw,48px);text-align:center}
+.cr-kinds h2,.cr-safe h2,.cr-faq h2{margin:0 0 10px;font-size:clamp(2rem,5vw,3.4rem);letter-spacing:-.04em;line-height:1.05}
+.cr-sub{margin:0 0 26px;color:rgba(255,255,255,.65)}
+.cr-kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;text-align:left}
+.cr-k{display:grid;gap:6px;padding:24px;border-radius:22px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.cr-k b{font-size:1.1rem}.cr-k small{color:rgba(255,255,255,.6);font-size:.86rem}
+.cr-range{font-size:1.9rem;font-weight:900;letter-spacing:-.03em;background:linear-gradient(90deg,#FFD66B,#F07FA8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cr-safe{margin:100px 0 0;padding:80px clamp(16px,4vw,48px);background:linear-gradient(180deg,#120F22,#0B0A14)}
+.cr-safe-in{max-width:1200px;margin:0 auto;text-align:center}
+.cr-sgrid{margin-top:30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;text-align:left}
+.cr-s{display:grid;gap:8px;align-content:start;padding:24px;border-radius:22px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.cr-s span{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(245,154,62,.25),rgba(122,63,232,.3));color:#FFD9A8}
+.cr-s b{font-size:1.1rem}.cr-s p{margin:0;color:rgba(255,255,255,.68);line-height:1.5;font-size:.94rem}
+.cr-faq{max-width:860px;margin:100px auto 0;padding:0 clamp(16px,4vw,48px)}
+.cr-faq h2{text-align:center;margin-bottom:26px}
+.cr-faq details{border-bottom:1px solid rgba(255,255,255,.12)}
+.cr-faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:16px;padding:22px 4px;font-size:1.15rem;font-weight:700}
+.cr-faq summary::-webkit-details-marker{display:none}
+.cr-faq summary::after{content:"+";font-size:1.5rem;line-height:1;color:#F59A3E;transition:transform .2s}
+.cr-faq details[open] summary::after{transform:rotate(45deg)}
+.cr-faq details p{margin:0 4px 22px;color:rgba(255,255,255,.72);line-height:1.6}
+@media (max-width:860px){.cr-sgrid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.cr-mq{width:280px}.cr-mq blockquote{font-size:.98rem}.cr-sgrid{grid-template-columns:1fr}.cr-sample-top{top:-30px}}
+@media (prefers-reduced-motion:reduce){.cr-track{animation:none}.cr-row{overflow-x:auto}}

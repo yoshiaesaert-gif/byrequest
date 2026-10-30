@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { getT } from "@/i18n/server";
 import { topBudgets } from "@/server/queries";
 import { textsIn } from "@/server/translate";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 import { euros, CAT_LABEL } from "@/domain/rules";
 
 export const metadata: Metadata = { title: "Create on ByRequest" };
@@ -18,12 +20,30 @@ const REVIEWS: [string, string, string][] = [
   ["lena_dt", "Rotterdam", "Nobody knows my real name. That is exactly why I dared to start."],
   ["jasper_r", "Leuven", "I tried the big platforms. Here people ask for something and pay for it. Simple."],
   ["sam_x", "Amsterdam", "Three requests in my first weekend. It feels like getting paid for being yourself."],
+  ["noor.v", "Utrecht", "I never show my face and I still get chosen. The avatar does the talking."],
+  ["kai_b", "Liège", "Finally a place where the buyer says exactly what he wants. No guessing, no wasted work."],
+  ["roos", "Haarlem", "I decide my own price and my own pace. Best side income I ever had."],
+  ["theo_m", "Mechelen", "Voice notes only, from my couch. I did not know people pay this well for that."],
+  ["juul", "Eindhoven", "The chat is private and the payment is safe. I feel protected every step."],
+  ["mara_s", "Namur", "Regular buyers keep coming back with new requests. It grows by itself."],
+  ["bo.k", "Den Haag", "Set up in ten minutes, first deal the same evening. Unreal."],
+  ["lou", "Hasselt", "I say no to what I do not like. Nobody pushes, nobody judges."],
+  ["finn_d", "Groningen", "No algorithm deciding if I get seen. The requests are just there."],
+  ["elise", "Bruges", "It feels premium. Buyers are respectful because they pay up front."],
 ];
+
+const KIND_HINT: Record<string, string> = { video: "Short clips to longer custom videos", photos: "Sets made exactly as asked", voice: "Voice notes, whispers, stories", custom: "Anything special, made to order", worn: "Items you wore, shipped discreetly" };
+
+/* Lowest and highest open budget per kind of content, straight from the board. */
+async function budgetsPerKind() {
+  const r = await db.execute<{ category: string; lo: number; hi: number }>(sql`select category, min(deal_cents)::int lo, max(deal_cents)::int hi from requests where status = 'open' and closes_at > now() group by 1 order by max(deal_cents) desc`);
+  return r.rows;
+}
 
 export default async function Creators({ searchParams }: { searchParams: Promise<{ ref?: string; preview?: string }> }) {
   // Not public yet: only with ?preview=1 until real creator reviews replace the examples (CREATORS_PAGE=on opens it).
   if (process.env.CREATORS_PAGE !== "on" && (await searchParams).preview !== "1") notFound();
-  const [{ t, locale }, sp, top] = await Promise.all([getT(), searchParams, topBudgets(6).catch(() => [])]);
+  const [{ t, locale }, sp, top, cats] = await Promise.all([getT(), searchParams, topBudgets(6).catch(() => []), budgetsPerKind().catch(() => [])]);
   const L = await textsIn(top.map((r) => r.title), locale).catch(() => (s: string) => s);
   const ref = (sp.ref ?? "").replace(/[^A-Z0-9-]/gi, "").slice(0, 12);
   const go = `/signin?as=earn${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`;
@@ -38,6 +58,12 @@ export default async function Creators({ searchParams }: { searchParams: Promise
       <p>{t("Buyers post exactly what they want, with the budget already reserved. You pick what fits you, make it your way and get paid. No followers needed, no real name, no face if you do not want to.")}</p>
       <div className="cr-ctas"><Link href={go} className="cr-btn">{t("Start earning")}</Link><a href="#how" className="cr-ghost">{t("How it works")}</a></div>
       <div className="cr-proof"><span className="cr-stars" aria-label="5 stars">★★★★★</span><span>{t("Loved by creators who value their privacy")}</span></div>
+    </section>
+
+    <section className="cr-marq" aria-label={t("Creators say it best")}>
+      {[REVIEWS.slice(0, 8), REVIEWS.slice(8)].map((row, k) => (<div key={k} className={"cr-row" + (k ? " rev" : "")}><div className="cr-track">{[...row, ...row].map(([h, city, q], i) => (
+        <figure key={i} className="cr-mq" aria-hidden={i >= row.length || undefined}><span className="cr-stars">★★★★★</span><blockquote>“{t(q)}”</blockquote><figcaption><b>{h}</b> · {city}</figcaption></figure>))}</div></div>))}
+      <span className="cr-sample cr-sample-top">{t("Example reviews")}</span>
     </section>
 
     {top.length ? (<section className="cr-live">
@@ -67,10 +93,47 @@ export default async function Creators({ searchParams }: { searchParams: Promise
       </ol>
     </section>
 
+    {cats.length ? (<section className="cr-kinds">
+      <h2>{t("What buyers ask for")}</h2>
+      <p className="cr-sub">{t("Live budgets on the board right now, per kind of content.")}</p>
+      <div className="cr-kgrid">{cats.map((c) => (<div key={c.category} className="cr-k">
+        <b>{t(CAT_LABEL[c.category as keyof typeof CAT_LABEL] ?? c.category)}</b>
+        <span className="cr-range">{c.lo === c.hi ? euros(c.hi) : `${euros(c.lo)} – ${euros(c.hi)}`}</span>
+        <small>{t(KIND_HINT[c.category] ?? "Made to order, your way")}</small>
+      </div>))}</div>
+    </section>) : null}
+
+    <section className="cr-safe">
+      <div className="cr-safe-in">
+        <h2>{t("Private by design. Safe by default.")}</h2>
+        <div className="cr-sgrid">
+          {([["lock", "No real name, ever", "Buyers see your username and avatar. Your identity is checked once by our partner and never shown."],
+            ["eye", "Face optional", "Many creators never show their face. You choose per request what you share."],
+            ["shield", "Money first", "The budget is reserved before you start. If the buyer disappears, you are still protected."],
+            ["inbox", "Private chats", "Talk with buyers inside ByRequest. Sharing contact details or meeting up is not allowed, for your safety."],
+            ["check", "Your content stays yours", "Delivered content is watermarked with the buyer's name and only shown inside their private vault."],
+            ["alert", "Help when you need it", "Report anything in one tap. A real team looks at every report."]] as const).map(([ic, h, p]) => (
+            <div key={h} className="cr-s"><span><svg className="ico" aria-hidden="true"><use href={`#i-${ic}`} /></svg></span><b>{t(h)}</b><p>{t(p)}</p></div>))}
+        </div>
+      </div>
+    </section>
+
     <section className="cr-rev">
       <div className="cr-rh"><h2>{t("Creators say it best")}</h2><span className="cr-sample">{t("Example reviews")}</span></div>
       <div className="cr-wall">{REVIEWS.map(([h, city, q], i) => (<figure key={h} className={"cr-q" + (i === 0 ? " big" : "")}>
         <span className="cr-stars">★★★★★</span><blockquote>“{t(q)}”</blockquote><figcaption><b>{h}</b> · {city}</figcaption></figure>))}</div>
+    </section>
+
+    <section className="cr-faq">
+      <h2>{t("Questions creators ask")}</h2>
+      {([["Do I need followers?", "No. Buyers post requests on the board and you apply. Nobody needs to know you beforehand."],
+        ["Do I have to show my face?", "No. You decide per request. Many creators work with an avatar and never show their face."],
+        ["How and when do I get paid?", "The buyer pays up front. After you deliver and the short check passes, the money is released to your payout account automatically."],
+        ["What kind of content can I make?", "Videos, photos, voice notes and custom work, all between verified adults. You only take requests you are comfortable with."],
+        ["Who sees what I make?", "Only the buyer who ordered it, inside their private vault, with their name as a watermark. Nothing is public."],
+        ["Is it really anonymous?", "Yes. You use a username and an avatar. Your legal details are only used for the age and identity check and for payouts."],
+        ["What does it cost to join?", "Nothing. Creating an account is free and there is no subscription."]] as const).map(([q, a]) => (
+        <details key={q}><summary>{t(q)}</summary><p>{t(a)}</p></details>))}
     </section>
 
     <section className="cr-end">
