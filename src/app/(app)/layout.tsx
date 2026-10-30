@@ -58,7 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {hasKey ? null : <PasskeyPrompt />}
       <KeySync uid={u.id} accountPub={u.publicKey} passkeys={keys.length} locked={keys.some((k) => !!k.locked)} />
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
-      <ProblemSheet />
+      <ProblemSheet role={mode === "sell" ? "creator" : "buyer"} />
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} />
     </div>
   );

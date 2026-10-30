@@ -29,7 +29,7 @@ function Typed({ s, fresh, tick }: { s: string; fresh?: boolean; tick: () => voi
 }
 
 /* The help assistant, always one tap away at the bottom right. It answers, and anything technical goes to the team with the page, the device and the last browser errors attached. */
-export default function ProblemSheet() {
+export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
   const t = useT();
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -37,6 +37,9 @@ export default function ProblemSheet() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [retry, setRetry] = useState("");
+  const [gear, setGear] = useState(false);
+  const [report, setReport] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLDivElement>(null);
 
@@ -52,39 +55,33 @@ export default function ProblemSheet() {
   useEffect(() => { const l = list.current; if (l) l.scrollTop = l.scrollHeight; try { sessionStorage.setItem(CHAT, JSON.stringify(turns.slice(-20).map(({ fresh, ...m }) => m))); } catch { /* private mode */ } }, [turns, busy, open]);
 
   const toEnd = useCallback(() => { const l = list.current; if (l) l.scrollTop = l.scrollHeight; }, []);
-  const tell = async () => {
-    if (busy) return; setBusy(true); setErr("");
-    try {
-      const r = await fetch("/api/problem", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turns: turns.map(({ role, content }) => ({ role, content })), escalate: true, page: location.pathname + location.search, context: { ua: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, lang: navigator.language, online: navigator.onLine, errors: read(), from: path } }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(t(j.error ?? "That did not work. Please try again.")); return; }
-      setTurns([...turns, { role: "assistant", content: t("I passed this to the team. They see it right away and answer in your ByRequest messages if they need more."), filed: true, fresh: true }]);
-    } catch { setErr(t("That did not work. Please try again.")); } finally { setBusy(false); }
-  };
-  const send = async (raw: string) => {
+  const send = async (raw: string, again = false) => {
     const msg = raw.trim(); if (!msg || busy) return;
-    const next: Turn[] = [...turns, { role: "user", content: msg }];
-    setTurns(next); setText(""); setBusy(true); setErr("");
+    const next: Turn[] = again ? turns : [...turns, { role: "user", content: msg }];
+    const direct = report;
+    setTurns(next); setText(""); setBusy(true); setErr(""); setRetry(""); setReport(false);
     const n = navigator as Navigator & { connection?: { effectiveType?: string } };
     try {
-      const r = await fetch("/api/problem", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turns: next.map(({ role, content }) => ({ role, content })), page: location.pathname + location.search, context: { ua: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, lang: navigator.language, net: n.connection?.effectiveType ?? null, online: navigator.onLine, errors: read(), from: path } }) });
+      const r = await fetch("/api/problem", { signal: AbortSignal.timeout(40000), method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role, escalate: direct || undefined, turns: next.map(({ role, content }) => ({ role, content })), page: location.pathname + location.search, context: { ua: navigator.userAgent, viewport: `${innerWidth}x${innerHeight}`, lang: navigator.language, net: n.connection?.effectiveType ?? null, online: navigator.onLine, errors: read(), from: path } }) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setErr(t(j.error ?? "That did not work. Please try again.")); return; }
+      if (!r.ok) { setErr(t(j.error ?? "That did not work. Please try again.")); setRetry(msg); return; }
       const add: Turn[] = [];
       if (j.reply) add.push({ role: "assistant", content: j.reply, fresh: true });
-      else if (j.empty) add.push({ role: "assistant", content: t("I am not sure about that one. I can pass it to the team, they will answer you."), fresh: true });
+      else if (j.soft) { setRetry(msg); add.push({ role: "assistant", content: t("I hit a snag on my side. Give it one more go."), fresh: true }); }
+      else if (j.empty) add.push({ role: "assistant", content: t("I am not sure about that one. Could you ask it a little differently?"), fresh: true });
       if (j.filed) add.push({ role: "assistant", content: t("I passed this to the team. They see it right away and answer in your ByRequest messages if they need more."), filed: true, fresh: true });
       setTurns([...next, ...add]);
-    } catch { setErr(t("That did not work. Please try again.")); } finally { setBusy(false); }
+    } catch { setErr(t("That did not work. Please try again.")); setRetry(msg); } finally { setBusy(false); }
   };
 
   const chips = [t("My photo upload does not work"), t("Something does not save"), t("I have a question about a deal")];
   return (<>
     {!open ? <button className="hb-launch" onClick={() => setOpen(true)} aria-label={t("Help")}><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg><span>{t("Help")}</span></button> : null}
     {open ? (<div className="hb" role="dialog" aria-label={t("Help assistant")}>
-      <header><span className="hb-logo"><img src="/apple-icon.png" alt="" width={36} height={36} /><i /></span><div><b>{t("ByRequest help")}</b><small>{t("AI assistant, here 24/7. Technical problems go straight to the team.")}</small></div><button onClick={() => setOpen(false)} aria-label={t("Close")}><svg className="ico" aria-hidden="true"><use href="#i-x" /></svg></button></header>
+      <header><span className="hb-logo"><img src="/apple-icon.png" alt="" width={36} height={36} /><i /></span><div><b>{t("ByRequest help")}</b><small>{t("AI assistant, here 24/7. Technical problems go straight to the team.")}</small></div><div className="hb-gear"><button onClick={() => setGear((g) => !g)} aria-label={t("Settings")} aria-expanded={gear}><svg className="ico" aria-hidden="true"><use href="#i-gear" /></svg></button>{gear ? <div className="hb-gm" role="menu"><Link role="menuitem" href="/help" onClick={() => { setGear(false); setOpen(false); }}><b>{t("Help centre and FAQ")}</b><span>{t("Browse every question and answer")}</span></Link><button role="menuitem" onClick={() => { setGear(false); setReport(true); window.setTimeout(() => field.current?.focus(), 50); }}><b>{t("Report a malfunction")}</b><span>{t("Goes straight to the team")}</span></button><button role="menuitem" onClick={() => { setGear(false); setTurns([]); setErr(""); setRetry(""); setReport(false); try { sessionStorage.removeItem(CHAT); } catch { /* private mode */ } }}><b>{t("Clear chat history")}</b><span>{t("Starts a fresh conversation")}</span></button></div> : null}</div><button onClick={() => setOpen(false)} aria-label={t("Close")}><svg className="ico" aria-hidden="true"><use href="#i-x" /></svg></button></header>
+      <div className="hb-role"><span className={role}>{role === "creator" ? t("Helping you as a creator") : t("Helping you as a buyer")}</span><small>{role === "creator" ? t("Switch to buyer in the menu to ask about buying.") : t("Switch to creator in the menu to ask about selling.")}</small></div>
       <div className="hb-list" ref={list}>
-        <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them">{t("Hi! Ask me anything, or tell me what is not working. If I cannot fix it, I pass it to the team.")}</p></div>
+        <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them">{role === "creator" ? t("Hi! You are in creator mode. Ask me about earning, your profile, offers or payouts, or tell me what is not working.") : t("Hi! You are in buyer mode. Ask me about posting requests, choosing creators, paying or your vault, or tell me what is not working.")}</p></div>
         {!turns.length ? <div className="hb-chips">{chips.map((c) => <button key={c} onClick={() => send(c)}>{c}</button>)}</div> : null}
         {turns.map((m, i) => {
           const last = i === turns.length - 1 || turns[i + 1].role !== m.role;
@@ -92,12 +89,13 @@ export default function ProblemSheet() {
             ? <div key={i} className="hb-r me"><p className="hb-b me"><Text s={m.content} /></p></div>
             : <div key={i} className="hb-r them">{last ? <img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /> : <span className="hb-av" />}<p className={"hb-b them" + (m.filed ? " filed" : "")}>{m.filed ? <svg className="ico sm" aria-hidden="true"><use href="#i-check" /></svg> : null}<span><Typed s={m.content} fresh={m.fresh} tick={toEnd} /></span></p></div>;
         })}
-        {turns.length && turns[turns.length - 1].role === "assistant" && !turns[turns.length - 1].filed && !busy ? <div className="hb-chips"><button onClick={tell}>{t("Pass this to the team")}</button></div> : null}
         {busy ? <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them hb-dots"><i /><i /><i /></p></div> : null}
         {err ? <p className="hb-err" role="alert">{err}</p> : null}
+        {retry && !busy ? <div className="hb-chips"><button onClick={() => send(retry, true)}>{t("Try again")}</button></div> : null}
       </div>
+      {report ? <div className="hb-rep"><svg className="ico sm" aria-hidden="true"><use href="#i-alert" /></svg><span>{t("Describe what is not working. Your next message goes straight to the team.")}</span><button onClick={() => setReport(false)}>{t("Cancel")}</button></div> : null}
       <form onSubmit={(e) => { e.preventDefault(); send(text); }}>
-        <textarea ref={field} value={text} rows={1} maxLength={1000} placeholder={t("Write your question or problem")} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }} />
+        <textarea ref={field} value={text} rows={1} maxLength={1000} placeholder={report ? t("What is not working?") : t("Write your question or problem")} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(text); } }} />
         <button className="hb-send" disabled={busy || !text.trim()} aria-label={t("Send")}><svg className="ico" aria-hidden="true"><use href="#i-up" /></svg></button>
       </form>
     </div>) : null}
