@@ -2719,5 +2719,11 @@ const fr: Record<string, string> = {
   "Big words.": "De grands mots.",
   "From creators.": "De créateurs.",
   "is already waiting.": "t'attend déjà.",
+  "up to": "jusqu'à",
+  "€230 for one video. On a Tuesday evening.": "230 € pour une vidéo. Un mardi soir.",
+  "My rent is paid from requests now.": "Mon loyer, je le paie avec les demandes maintenant.",
+  "€600 extra in my first month.": "600 € de plus mon premier mois.",
+  "One custom video paid more than my whole weekend job.": "Une vidéo sur mesure a payé plus que tout mon job du week-end.",
+  "Delivered at nine, paid before ten.": "Livré à neuf heures, payé avant dix.",
 };
 export default fr;

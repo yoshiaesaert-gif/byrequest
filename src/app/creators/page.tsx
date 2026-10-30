@@ -7,6 +7,7 @@ import { topBudgets } from "@/server/queries";
 import { textsIn } from "@/server/translate";
 import { publicReviews } from "@/server/creatorreviews";
 import { euros, CAT_LABEL } from "@/domain/rules";
+import { COMPANY } from "@/config/company";
 
 export const metadata: Metadata = { title: "Create on ByRequest" };
 export const dynamic = "force-dynamic";
@@ -20,13 +21,18 @@ const BAND = [
   { q: "Three deals in my first weekend.", by: "sam_x" },
 ];
 const WALL = [
+  { q: "€230 for one video. On a Tuesday evening.", by: "jade.m" },
   { q: "I set my price and my pace.", by: "roos" },
+  { q: "My rent is paid from requests now.", by: "tess_v" },
   { q: "Best side income ever.", by: "juul" },
   { q: "Paid up front. Never chasing money again.", by: "ava.r" },
   { q: "Finally they say what they want.", by: "kai_b" },
+  { q: "€600 extra in my first month.", by: "ruby.k" },
   { q: "My face? Never needed it.", by: "noor.v" },
   { q: "Signed up in ten minutes, paid the same evening.", by: "bo.k" },
+  { q: "One custom video paid more than my whole weekend job.", by: "nina_b" },
   { q: "It feels premium.", by: "elise" },
+  { q: "Delivered at nine, paid before ten.", by: "lou" },
   { q: "Regular buyers come back.", by: "mara_s" },
 ];
 
@@ -59,12 +65,12 @@ export default async function Creators({ searchParams }: { searchParams: Promise
       {BAND.map((b, i) => (<figure key={b.by} className={i === 0 ? "hot" : ""}><span className="cy-stars">★★★★★</span><blockquote>“{t(b.q)}”</blockquote><figcaption>{b.by} · creator</figcaption></figure>))}
     </section>
 
-    {feed.length ? (<div className="cy-ticker" aria-hidden="true"><div>{[...feed, ...feed].map((f, i) => <span key={i}>{t(CAT_LABEL[f.category as keyof typeof CAT_LABEL])} <b>{euros(f.deal_cents)}</b></span>)}</div></div>) : null}
+    {feed.length ? (<div className="cy-ticker" aria-hidden="true"><div>{[...feed, ...feed].map((f, i) => <span key={i}>{t(CAT_LABEL[f.category as keyof typeof CAT_LABEL])} <i>{t("up to")}</i> <b>{euros(f.deal_cents)}</b></span>)}</div></div>) : null}
 
     {top.length ? (<section className="cy-sec" id="money">
       <span className="cy-live"><i />{t("Waiting for a creator right now")}</span>
       <h2>{t("This is what gets paid.")}</h2>
-      <div className="cy-money">{top.map((r) => (<div key={r.id}><small>{t(CAT_LABEL[r.category])}</small><b>{euros(r.dealCents)}</b><span>{L(r.title)}</span></div>))}</div>
+      <div className="cy-money">{top.map((r) => (<div key={r.id}><small>{t(CAT_LABEL[r.category])}</small><i>{t("up to")}</i><b>{euros(r.dealCents)}</b><span>{L(r.title)}</span></div>))}</div>
       <div className="cy-mid">{cta("Claim your first request")}</div>
     </section>) : null}
 
@@ -81,7 +87,7 @@ export default async function Creators({ searchParams }: { searchParams: Promise
 
     <section className="cy-sec">
       <h2>{t("Big words.")}<br /><em>{t("From creators.")}</em></h2>
-      <div className="cy-wall">{wall.map((w, i) => (<figure key={w.by + i} className={i % 5 === 1 ? "hot" : i % 5 === 4 ? "ink" : ""}><span className="cy-stars">★★★★★</span><blockquote>“{w.own ? w.q : t(w.q)}”</blockquote><figcaption>{w.by} · creator</figcaption></figure>))}</div>
+      <div className="cy-wall">{wall.map((w, i) => (<figure key={w.by + i} className={i % 6 === 4 ? "ink" : ""}><span className="cy-stars">★★★★★</span><blockquote>“{w.own ? w.q : t(w.q)}”</blockquote><figcaption>{w.by} · creator</figcaption></figure>))}</div>
     </section>
 
     <section className="cy-end">
@@ -89,6 +95,12 @@ export default async function Creators({ searchParams }: { searchParams: Promise
       {cta("Start earning", true)}
       <p>{t("Free. Adults only. Discreet from start to finish.")}</p>
     </section>
+    <footer className="cy-foot">
+      <img src="/logo_white.png" alt="byrequest" />
+      <nav aria-label={t("Legal")}>{([["/legal/terms", "Terms of use"], ["/legal/privacy", "Privacy statement"], ["/legal/creator_agreement", "Creator agreement"], ["/legal/2257", "18 U.S.C. 2257 Statement"], ["/help", "Help centre"], ["/contact", "Send us a message"]] as const).map(([h, l]) => <Link key={h} href={h}>{t(l)}</Link>)}</nav>
+      <p>{t("Only for adults of 18 and older. Every creator is verified on age and identity. ByRequest is operated by {company}, {address}.", { company: COMPANY.name, address: COMPANY.address })}</p>
+      <p>© {new Date().getFullYear()} {COMPANY.name}. {t("All rights reserved.")}</p>
+    </footer>
     <Link href={go} className="cy-sticky">{t("Start earning")} →</Link>
   </div>);
 }

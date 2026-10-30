@@ -2719,5 +2719,11 @@ const nl: Record<string, string> = {
   "Big words.": "Grote woorden.",
   "From creators.": "Van creators.",
   "is already waiting.": "wacht al.",
+  "up to": "tot",
+  "€230 for one video. On a Tuesday evening.": "€230 voor één video. Op een dinsdagavond.",
+  "My rent is paid from requests now.": "Mijn huur betaal ik nu met zoekertjes.",
+  "€600 extra in my first month.": "€600 extra in mijn eerste maand.",
+  "One custom video paid more than my whole weekend job.": "Eén video op maat betaalde meer dan mijn hele weekendjob.",
+  "Delivered at nine, paid before ten.": "Om negen uur geleverd, voor tien uur betaald.",
 };
 export default nl;
