@@ -139,14 +139,14 @@ export async function publicCreators(limit = 12, viewerId?: string) {
 }
 
 export async function unread(userId: string) {
-  const [{ n }] = await db.select({ n: count() }).from(notifications).where(and(eq(notifications.userId, userId), sql`${notifications.readAt} is null`));
+  const [{ n }] = await db.select({ n: count() }).from(notifications).where(and(eq(notifications.userId, userId), sql`${notifications.readAt} is null`, sql`${notifications.href} <> '/admin/problems'`));
   return n;
 }
 /* Notifications with this link are messages from the ByRequest team, shown as a conversation. */
 export const TEAM_HREF = "/inbox/byrequest";
 
 export async function inbox(userId: string) {
-  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(40);
+  return db.select().from(notifications).where(and(eq(notifications.userId, userId), sql`${notifications.href} <> '/admin/problems'`)).orderBy(desc(notifications.createdAt)).limit(40);
 }
 
 export async function savedIds(userId: string) {

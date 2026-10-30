@@ -1,3 +1,5 @@
+import { count, inArray } from "drizzle-orm";
+import { db, schema } from "@/db";
 import TestInbox from "./test-inbox";
 import Link from "next/link";
 import { overview } from "@/server/backoffice";
@@ -12,10 +14,11 @@ const HINT: Record<Metric, string> = { signups: "external sign ups", active: "si
 const age = (d: Date | null) => { if (!d) return null; const h = (Date.now() - d.getTime()) / 3600_000; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`; };
 
 export default async function Overview({ searchParams }: { searchParams: Promise<{ need?: string }> }) {
-  const [o, a] = await Promise.all([overview(), activity()]);
+  const [o, a, [prob]] = await Promise.all([overview(), activity(), db.select({ n: count() }).from(schema.techIssues).where(inArray(schema.techIssues.status, ["open", "handling"]))]);
   const order: Metric[] = ["signups", "active", "requests", "offers", "messages", "deals"];
   const need = (await searchParams).need;
   const queues: [string, number, string, string?][] = [
+    ["Technical problems reported", prob.n, "/admin/problems", "from the help chat"],
     ["Content to review", o.queues.review, "/admin/review", o.queues.oldestReview ? `oldest waits ${age(o.queues.oldestReview)}` : undefined],
     ["Open disputes", o.queues.disputes, "/admin/review"],
     ["Removal requests", o.queues.removals, "/admin/review"],

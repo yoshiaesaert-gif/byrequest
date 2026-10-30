@@ -1,20 +1,18 @@
 import "server-only";
-import { and, desc, eq, gt, ne, count } from "drizzle-orm";
+import { and, desc, eq, gt, count } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { RuleError } from "@/domain/rules";
 import { TEAM_HREF } from "./queries";
 
-const { techIssues, staff, notifications, users } = schema;
+const { techIssues, notifications, users } = schema;
 
-/* A technical problem from a signed in person. Five an hour is plenty; the whole team is notified at once. */
+/* A technical problem from a signed in person. Five an hour is plenty; it shows up in the back office (menu badge and overview), never in anyone's notifications. */
 export async function reportIssue(userId: string, handle: string, input: { message: string; page: string; context: Record<string, unknown> }) {
   const message = input.message.trim().slice(0, 2000);
   if (message.length < 5) throw new RuleError("Tell us a little more about what went wrong.");
   const [recent] = await db.select({ n: count() }).from(techIssues).where(and(eq(techIssues.userId, userId), gt(techIssues.createdAt, new Date(Date.now() - 3600_000))));
   if (recent.n >= 5) throw new RuleError("You already sent a few reports. We are on it.");
   const [row] = await db.insert(techIssues).values({ userId, message, page: input.page.slice(0, 300), context: input.context }).returning({ id: techIssues.id });
-  const team = await db.select({ userId: staff.userId }).from(staff).where(ne(staff.role, "none"));
-  if (team.length) await db.insert(notifications).values(team.map((s) => ({ userId: s.userId, title: "Technical problem", body: `${handle}: ${message.slice(0, 110)}`, href: "/admin/problems" })));
   return row.id;
 }
 
