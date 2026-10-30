@@ -10,6 +10,7 @@ import { toast } from "./chrome";
    arrive within a couple of seconds without reloading. On a phone it opens full screen with the
    message bar fixed at the bottom. */
 export type PaneMsg = { id: string; kind: "e2e" | "system"; mine: boolean; text: string | null; nonce: string | null; body: string; at: string; read: boolean; title?: string };
+export type PaneEvent = { id: string; at: string; text: string };
 export type PaneState = { v: string; status: string | null; typing: boolean; otherKey: string | null; closed: boolean; msgs: PaneMsg[] };
 export const EMPTY_PANE: PaneState = { v: "", status: null, typing: false, otherKey: null, closed: false, msgs: [] };
 type Pending = { id: string; text: string; at: string };
@@ -32,7 +33,7 @@ type Props = {
   placeholder?: string;
   disabledReason?: string;
   actions?: React.ReactNode;                               // chips above the message bar
-  readOnly?: boolean;
+  readOnly?: boolean; events?: PaneEvent[];
 };
 const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c ?? "")} aria-hidden="true"><use href={`#i-${n}`} /></svg>;
 const EMOJI = ["😊", "😂", "😍", "🥰", "😘", "😉", "😏", "🔥", "💦", "🍑", "😈", "🙈", "🤭", "😅", "🙏", "👍", "👌", "👏", "💪", "✨", "❤️", "💜", "🖤", "💋", "🎉", "🌙", "☕", "🍷", "🙌", "😴", "🤍", "💭"];
@@ -98,8 +99,10 @@ export default function ChatPane(p: Props) {
       if (hit) { used.add(hit.id); return false; }
       return true;
     });
-    return [...st.msgs.map((m) => ({ ...m, pending: false })), ...wait.map((m) => ({ id: m.id, kind: "e2e" as const, mine: true, text: m.text, nonce: null, body: "", at: m.at, read: false, pending: true, title: undefined }))];
-  }, [st.msgs, pending, plain]);
+    const evs = (p.events ?? []).map((e) => ({ id: e.id, kind: "system" as const, mine: false, text: e.text, nonce: null, body: "", at: e.at, read: true, pending: false, title: undefined }));
+    const all = [...st.msgs.map((m) => ({ ...m, pending: false })), ...evs, ...wait.map((m) => ({ id: m.id, kind: "e2e" as const, mine: true, text: m.text, nonce: null, body: "", at: m.at, read: false, pending: true, title: undefined }))];
+    return evs.length ? all.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()) : all;
+  }, [st.msgs, p.events, pending, plain]);
 
   // Stay at the bottom when you are there; otherwise offer a button instead of jumping.
   useLayoutEffect(() => { const s = scroller.current; if (s) s.scrollTop = s.scrollHeight; }, []);
@@ -110,6 +113,15 @@ export default function ChatPane(p: Props) {
     if (near.current || mineLast) { s.scrollTo({ top: s.scrollHeight, behavior: "smooth" }); window.setTimeout(() => setMore(0), 0); seen.current = items.length; }
     else if (items.length > seen.current) window.setTimeout(() => setMore(items.length - seen.current), 0);
   }, [items.length, st.typing, items]);
+  // Layout settles late (fonts, avatars, skeleton swap, keyboard): while you are at the bottom, stay pinned to it.
+  useEffect(() => {
+    const s = scroller.current; if (!s) return;
+    const pin = () => { if (near.current) s.scrollTop = s.scrollHeight; };
+    const ro = new ResizeObserver(pin); ro.observe(s);
+    const mo = new MutationObserver(pin); mo.observe(s, { childList: true, subtree: true });
+    s.addEventListener("load", pin, true);
+    return () => { ro.disconnect(); mo.disconnect(); s.removeEventListener("load", pin, true); };
+  }, [loaded]);
   const onScroll = () => { const s = scroller.current; if (!s) return; near.current = s.scrollHeight - s.scrollTop - s.clientHeight < 90; if (near.current && more) { seen.current = items.length; setMore(0); } };
   const down = () => { const s = scroller.current; s?.scrollTo({ top: s.scrollHeight, behavior: "smooth" }); };
 
@@ -166,7 +178,7 @@ export default function ChatPane(p: Props) {
   const rows: React.ReactNode[] = [];
   items.forEach((m, i) => {
     if (client && (i === 0 || day(items[i - 1].at) !== day(m.at))) rows.push(<div key={"d" + m.id} className="cx-day"><span>{dayLabel(m.at)}</span></div>);
-    if (m.kind === "system") { rows.push(<p key={m.id} className="cx-sys">{t(m.text ?? m.body)}</p>); return; }
+    if (m.kind === "system") { rows.push(<p key={m.id} className="cx-sys">{t(m.text ?? m.body)}{m.id.startsWith("ev:") && client ? <time> · {new Date(m.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time> : null}</p>); return; }
     const prev = items[i - 1], next = items[i + 1];
     const first = !prev || prev.kind === "system" || prev.mine !== m.mine || day(prev.at) !== day(m.at) || new Date(m.at).getTime() - new Date(prev.at).getTime() > 5 * 60_000;
     const last = !next || next.kind === "system" || next.mine !== m.mine || day(next.at) !== day(m.at) || new Date(next.at).getTime() - new Date(m.at).getTime() > 5 * 60_000;

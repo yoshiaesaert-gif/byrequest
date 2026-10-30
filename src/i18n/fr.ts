@@ -2355,5 +2355,16 @@ const fr: Record<string, string> = {
   "Ask what you want to know before you choose. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.": "Demande ce que tu veux savoir avant de choisir. Payer hors de ByRequest, partager des coordonnées et se rencontrer ne sont pas autorisés.",
   "No messages yet. Say hello to {name}.": "Pas encore de messages. Dis bonjour à {name}.",
   "{name} asked for a preview: share photos": "{name} a demandé un aperçu : partage des photos",
+  "Preview album asked": "Album d'aperçu demandé",
+  "Preview album opened": "Album d'aperçu ouvert",
+  "Candidate": "Candidat",
+  "Their offer": "Son offre",
+  "Your creator": "Votre créateur",
+  "The buyer": "L'acheteur",
+  "Your application": "Votre candidature",
+  "Status": "Statut",
+  "Chosen": "Choisi",
+  "Not chosen": "Non retenu",
+  "Share photos": "Partager des photos",
 };
 export default fr;

@@ -8,7 +8,7 @@ import { getT } from "@/i18n/server";
 import { Av } from "@/components/ui";
 import { ChatShell, SideCard, SideSkeleton } from "@/components/chat-shell";
 import { BlockButton } from "@/components/block-button";
-import { asked, PREVIEW_LIMIT } from "@/server/albums";
+import { albumEvents, asked, PREVIEW_LIMIT } from "@/server/albums";
 import { VAULT_LABEL } from "@/domain/rules";
 import AlbumAsk from "../../../../c/[handle]/album-ask";
 import OfferChat from "./chat";
@@ -23,8 +23,9 @@ export default async function CandidatePage({ params, searchParams }: { params: 
   if (!r || r.buyerId !== u.id || !o) notFound();
   const c = await db.query.users.findFirst({ where: eq(schema.users.id, o.creatorId), columns: { id: true, handle: true, avatar: true, ratingSum: true, ratingCount: true } });
   if (!c) notFound();
+  const events = await albumEvents(offerId);
   return (<ChatShell back={sp.from === "inbox" ? "/inbox" : `/requests/${id}/offers`} backLabel={sp.from === "inbox" ? t("Inbox") : t("Offers")} eyebrow={t("Candidate")} title={c.handle} avatar={<Av a={c.avatar} name={c.handle} size={52} />}
-    chat={<OfferChat offerId={offerId} meId={u.id} name={c.handle} avatar={<Av a={c.avatar} name={c.handle} size={40} />} fromInbox={sp.from === "inbox"} />}
+    chat={<OfferChat offerId={offerId} meId={u.id} name={c.handle} avatar={<Av a={c.avatar} name={c.handle} size={40} />} fromInbox={sp.from === "inbox"} events={events} />}
     side={<Suspense fallback={<><SideSkeleton /><SideSkeleton /></>}><CandidateSide requestId={id} offerId={offerId} userId={u.id} /></Suspense>} />);
 }
 

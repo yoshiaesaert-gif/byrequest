@@ -8,6 +8,7 @@ import { request } from "@/server/queries";
 import { Av } from "@/components/ui";
 import { ChatShell, SideCard } from "@/components/chat-shell";
 import { euros } from "@/domain/rules";
+import { albumEvents } from "@/server/albums";
 import OfferChat from "../offers/[offerId]/chat";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +24,9 @@ export default async function TalkPage({ params, searchParams }: { params: Promi
     db.query.users.findFirst({ where: eq(schema.users.id, r.buyerId), columns: { handle: true } }),
   ]);
   const name = buyer?.handle ?? r.buyerHandle;
+  const events = await albumEvents(mine.id);
   return (<ChatShell back={sp.from === "inbox" ? "/inbox" : `/requests/${id}`} backLabel={sp.from === "inbox" ? t("Inbox") : t("Request")} eyebrow={t("Questions from the buyer")} title={r.title} avatar={<Av a={r.buyerAvatar} name={name} size={52} />}
-    chat={<OfferChat offerId={mine.id} meId={u.id} name={name} avatar={<Av a={r.buyerAvatar} name={name} size={40} />} fromInbox={sp.from === "inbox"} e2e={!r.buyerHouse} />}
+    chat={<OfferChat offerId={mine.id} meId={u.id} name={name} avatar={<Av a={r.buyerAvatar} name={name} size={40} />} fromInbox={sp.from === "inbox"} e2e={!r.buyerHouse} events={events} />}
     side={<>
       {asked ? <SideCard tone="violet" title={t("Preview asked")}><p className="t-sm" style={{ margin: 0 }}>{t("{name} asked for a preview: share photos", { name })}</p><div className="sh-btns"><Link href="/studio#previews" className="btn btn-primary">{t("Share photos")}</Link></div></SideCard> : null}
       <SideCard title={t("Your application")}>

@@ -10,7 +10,7 @@ import { HouseAccept } from "../../parts";
 import StaffChat from "../../staff-chat";
 import AlbumAsk from "../../../c/[handle]/album-ask";
 import { db, schema } from "@/db";
-import { asked, PREVIEW_LIMIT } from "@/server/albums";
+import { albumEvents, asked, PREVIEW_LIMIT } from "@/server/albums";
 import { staffState } from "@/server/chat";
 import { EMPTY_PANE } from "@/components/chat-pane";
 
@@ -22,11 +22,11 @@ export default async function OfferChat({ params }: { params: Promise<{ id: stri
   const id = (await params).id;
   const th = await teamOfferThread(id);
   if (!th) notFound();
-  const [st, album, n] = await Promise.all([staffState(user.id, "offer", id), db.query.previewAlbums.findFirst({ where: eq(schema.previewAlbums.offerId, th.o.id) }), asked(th.buyer.id, th.r.id)]);
+  const [st, album, n, events] = await Promise.all([staffState(user.id, "offer", id), db.query.previewAlbums.findFirst({ where: eq(schema.previewAlbums.offerId, th.o.id) }), asked(th.buyer.id, th.r.id), albumEvents(th.o.id)]);
   const left = Math.max(0, PREVIEW_LIMIT - n);
   const pending = th.o.status === "pending" && th.r.status === "open";
   return (<ChatShell back={`/admin/users/${th.creator.id}`} backLabel={th.creator.handle} eyebrow={`You write as ${th.buyer.handle}`} title={th.r.title} avatar={<Av a={th.creator.avatar} name={th.creator.handle} size={52} />}
-    chat={<StaffChat kind="offer" id={th.o.id} creatorId={th.creator.id} creator={th.creator.handle} as={th.buyer.handle} avatar={<Av a={th.creator.avatar} name={th.creator.handle} size={40} />} initial={st && "msgs" in st ? st : EMPTY_PANE} />}
+    chat={<StaffChat kind="offer" id={th.o.id} creatorId={th.creator.id} creator={th.creator.handle} as={th.buyer.handle} avatar={<Av a={th.creator.avatar} name={th.creator.handle} size={40} />} initial={st && "msgs" in st ? st : EMPTY_PANE} events={events} />}
     side={<>
       <SideCard title="Their offer">
         <div className="sh-person"><span className="cx-av"><Av a={th.creator.avatar} name={th.creator.handle} size={48} /></span><div><b>{th.creator.handle}</b><span>Application {th.o.status} · {euros(th.r.dealCents)}</span></div></div>

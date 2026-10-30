@@ -172,3 +172,12 @@ export async function buyerForOffer(userId: string, offerId: string) {
 export async function closeShare(buyerId: string, albumId: string) {
   await db.update(previewAlbums).set({ status: "gone", mediaIds: [] }).where(and(eq(previewAlbums.id, albumId), eq(previewAlbums.buyerId, buyerId), eq(previewAlbums.status, "opened")));
 }
+
+/* Moments of the preview album that belong in the conversation, with their time. */
+export async function albumEvents(offerId: string): Promise<{ id: string; at: string; text: string }[]> {
+  const a = await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.offerId, offerId), columns: { id: true, createdAt: true, openedAt: true, status: true } });
+  if (!a) return [];
+  const ev = [{ id: "ev:ask:" + a.id, at: a.createdAt.toISOString(), text: "Preview album asked" }];
+  if (a.openedAt) ev.push({ id: "ev:open:" + a.id, at: a.openedAt.toISOString(), text: "Preview album opened" });
+  return ev;
+}

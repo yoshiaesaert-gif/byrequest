@@ -23,7 +23,7 @@ export default function AlbumAsk({ offerId, handle, album, left }: { offerId: st
   const card = !state ? (
     <div className="cp-al"><div className="cp-al-i"><Ico n="eye" /></div><div style={{ minWidth: 0 }}><b>{t("Want to see more first?")}</b><p className="t-sm muted">{left > 0 ? t("Ask {name} for a private preview. Each photo shows once, for 10 seconds. {n} of 5 asks left for this request.", { name: handle, n: left }) : t("You already asked 5 candidates for a preview on this request.")}</p></div>{left > 0 ? <button className="btn btn-primary" onClick={() => setOpen(true)}>{t("Ask for a preview")}</button> : null}</div>
   ) : state === "requested" ? (
-    <div className="cp-al"><div className="cp-al-i"><Ico n="clock" /></div><div style={{ minWidth: 0 }}><b>{t("Preview asked")}</b><p className="t-sm muted">{t("{name} gets a discreet notification and decides whether to share.", { name: handle })}</p></div><span className="badge amber">{t("Waiting")}</span></div>
+    <div className="cp-al"><div className="cp-al-i"><Ico n="clock" /></div><div style={{ minWidth: 0 }}><b>{t("Preview asked")}</b><p className="t-sm muted">{t("{name} gets a discreet notification and decides whether to share.", { name: handle })}</p></div><span className="cp-wait"><i />{t("Waiting")}</span></div>
   ) : state === "ready" || state === "opened" ? (
     <div className="cp-al is-ready"><div className="cp-al-i"><Ico n="gift" /></div><div style={{ minWidth: 0 }}><b>{t("Your preview is ready")}</b><p className="t-sm muted">{t("Each photo shows once, for 10 seconds. Take your time to open it.")}</p></div><Link className="btn btn-brand" href={`/albums/${album!.id}`}>{t("Open")}</Link></div>
   ) : (

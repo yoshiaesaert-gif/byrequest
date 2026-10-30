@@ -2355,5 +2355,16 @@ const nl: Record<string, string> = {
   "Ask what you want to know before you choose. Paying outside ByRequest, sharing contact details and meeting in person are not allowed.": "Vraag wat je wil weten voor je kiest. Betalen buiten ByRequest, contactgegevens delen en afspreken zijn niet toegestaan.",
   "No messages yet. Say hello to {name}.": "Nog geen berichten. Zeg hallo tegen {name}.",
   "{name} asked for a preview: share photos": "{name} vroeg een preview: deel foto's",
+  "Preview album asked": "Preview album gevraagd",
+  "Preview album opened": "Preview album geopend",
+  "Candidate": "Kandidaat",
+  "Their offer": "Hun aanbod",
+  "Your creator": "Jouw creator",
+  "The buyer": "De koper",
+  "Your application": "Jouw aanbod",
+  "Status": "Status",
+  "Chosen": "Gekozen",
+  "Not chosen": "Niet gekozen",
+  "Share photos": "Foto's delen",
 };
 export default nl;
