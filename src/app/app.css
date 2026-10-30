@@ -1322,3 +1322,13 @@ html.cx-lock,html.cx-lock body{overflow:hidden}
 .talk-wrap{margin:16px 0}.talk-h{margin:0 0 8px;font-size:1rem}
 .cx-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 14px;border-radius:999px;background:#ECEAFF;color:#3F2BA8;font-size:.8rem;font-weight:700;text-decoration:none;margin-bottom:8px}
 .cx-sheet .cx-back{display:grid}
+
+/* Inbox rows: time and unread count share one column on the right, aligned with the name and the last line */
+.cl-row{grid-template-columns:48px minmax(0,1fr) auto;align-items:center}
+.cl-top time,.cl-prev .cl-n{display:none}
+.cl-prev{padding-right:0!important}
+.cl-meta{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;align-self:stretch;min-height:58px;padding:1px 0 0}
+.cl-meta time{font-size:.75rem;line-height:1.3;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cl-meta .cl-n{position:static;transform:none;margin:0;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#4434E6;color:#fff;font-size:.72rem;font-weight:800;line-height:1;display:grid;place-items:center;font-style:normal}
+.cl-meta .cl-n.none{background:transparent;height:22px}
+.cl-row.unread .cl-meta time{color:#4434E6;font-weight:700}

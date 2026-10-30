@@ -25,15 +25,17 @@ export function ChatList({ chats, team }: { chats: Chat[]; team?: { preview: str
   const t = useT(); const { short } = useClock();
   return <div className="cl">{team ? <Link href="/inbox/byrequest" className={"cl-row cl-team" + (team.unread ? " unread" : "")}>
       <span className="cl-av"><img src="/apple-icon.png" alt="" width={48} height={48} /></span>
-      <span className="cl-main"><span className="cl-top"><b>ByRequest</b><time>{short(team.at)}</time></span>
+      <span className="cl-main"><span className="cl-top"><b>ByRequest</b></span>
         <span className="cl-sub">{t("The team behind ByRequest")}</span>
-        <span className="cl-prev">{team.preview}{team.unread ? <i className="cl-n num">{team.unread}</i> : null}</span></span>
+        <span className="cl-prev">{team.preview}</span></span>
+      <span className="cl-meta"><time>{short(team.at)}</time>{team.unread ? <i className="cl-n num">{team.unread}</i> : <i className="cl-n none" />}</span>
     </Link> : null}{chats.map((c) => (
     <Link key={c.id} href={`/deals/${c.id}?from=inbox`} className={"cl-row" + (c.unread ? " unread" : "")}>
       <span className="cl-av">{c.avatar}</span>
-      <span className="cl-main"><span className="cl-top"><b>{c.other}</b><time>{short(c.lastAt)}</time></span>
+      <span className="cl-main"><span className="cl-top"><b>{c.other}</b></span>
         <span className="cl-sub">{c.title}</span>
-        <span className="cl-prev">{c.encrypted ? <Ico n="lock" c="sm" /> : null}{c.mineLast ? <em>{t("You")}: </em> : null}{c.preview}{c.unread ? <i className="cl-n num">{c.unread > 99 ? "99+" : c.unread}</i> : null}</span></span>
+        <span className="cl-prev">{c.encrypted ? <Ico n="lock" c="sm" /> : null}{c.mineLast ? <em>{t("You")}: </em> : null}{c.preview}</span></span>
+      <span className="cl-meta"><time>{short(c.lastAt)}</time>{c.unread ? <i className="cl-n num">{c.unread > 99 ? "99+" : c.unread}</i> : <i className="cl-n none" />}</span>
     </Link>))}</div>;
 }
 
