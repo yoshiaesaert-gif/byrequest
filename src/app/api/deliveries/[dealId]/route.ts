@@ -16,7 +16,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/deliveries/[dea
     return Response.json(r.ok ? { ok: true, lines: r.lines } : { ok: false, error: "This upload cannot be sent.", lines: r.lines });
   } catch (e) {
     if (e instanceof RuleError) return Response.json({ ok: false, error: e.message }, { status: 400 });
-    console.error("delivery upload failed", e instanceof Error ? e.name : "error");
+    console.error("delivery upload failed:", e instanceof Error ? e.message : e);
     return Response.json({ ok: false, error: "Upload failed. Try again." }, { status: 500 });
   }
 }

@@ -93,7 +93,7 @@ function UploadSheet({ p, onClose }: { p: Props; onClose: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  const accept = p.deal.category === "photos" ? "image/*" : p.deal.category === "voice" ? "audio/*" : "video/*";
+  const accept = p.deal.category === "photos" ? "image/*" : p.deal.category === "voice" ? "audio/*" : p.deal.category === "video" ? "video/*" : "image/*,video/*,audio/*";
   const go = async () => {
     setBusy(true); setErr(null); setLines(null);
     const f = new FormData(); files.forEach((x) => f.append("files", x)); f.set("onlyCreator", only ? "yes" : "no"); sel.forEach((s) => f.append("participant", s));
