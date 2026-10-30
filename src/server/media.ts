@@ -1,7 +1,12 @@
 import "server-only";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, open as openFile, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { createReadStream, createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
+import http from "node:http";
+import https from "node:https";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { AwsClient } from "aws4fetch";
 import { eq, isNotNull } from "drizzle-orm";
@@ -39,12 +44,27 @@ async function upload(key: string) {
 }
 async function uploadInner(key: string) {
   if (!s3) return;
-  // Sign first, then send the bytes as a plain buffer: handing the signed Request to fetch streams the body without a
-  // length, and R2 answers 411 Length Required.
-  const body = seal(await readFile(filePath(key)));
-  const signed = await s3.sign(objectUrl(key), { method: "PUT", body, headers: { "content-type": "application/octet-stream", "content-length": String(body.length) } });
-  const r = await fetch(signed.url, { method: "PUT", headers: signed.headers, body: new Uint8Array(body) });
-  if (!r.ok) throw new Error(`storage upload ${r.status} ${(await r.text().catch(() => "")).slice(0, 160)}`);
+  // Encrypt from disk to disk and send it as a stream with an exact length: memory stays flat whatever the file
+  // size (a big video once filled the server's memory). Same format as seal(): iv, tag, ciphertext.
+  const src = filePath(key), sealed = `${src}.${randomUUID()}.sealed`;
+  try {
+    const iv = randomBytes(12), c = createCipheriv("aes-256-gcm", cryptKey(), iv);
+    const out = createWriteStream(sealed);
+    out.write(Buffer.concat([iv, Buffer.alloc(16)]));
+    await pipeline(createReadStream(src), c, out);
+    const fh = await openFile(sealed, "r+"); await fh.write(c.getAuthTag(), 0, 16, 12); await fh.close();
+    const size = (await stat(sealed)).size;
+    const signed = await s3.sign(objectUrl(key), { method: "PUT", headers: { "content-type": "application/octet-stream", "x-amz-content-sha256": "UNSIGNED-PAYLOAD" } });
+    const headers: Record<string, string> = {}; signed.headers.forEach((v, k) => { headers[k] = v; }); headers["content-length"] = String(size);
+    await new Promise<void>((res, rej) => {
+      const u = new URL(signed.url);
+      const req = (u.protocol === "http:" ? http : https).request({ method: "PUT", hostname: u.hostname, port: u.port || (u.protocol === "http:" ? 80 : 443), path: u.pathname + u.search, headers }, (r) => {
+        let t = ""; r.on("data", (d) => { if (t.length < 300) t += d; }); r.on("end", () => (r.statusCode && r.statusCode < 300 ? res() : rej(new Error(`storage upload ${r.statusCode} ${t.slice(0, 160)}`))));
+      });
+      req.on("error", rej);
+      createReadStream(sealed).on("error", rej).pipe(req);
+    });
+  } finally { await rm(sealed, { force: true }); }
 }
 /* The local path of a stored file, restored from the bucket when this server does not have it. */
 export async function localFile(key: string) {
@@ -53,9 +73,15 @@ export async function localFile(key: string) {
   const r = await s3.fetch(objectUrl(key));
   if (!r.ok) throw new Error(`storage fetch ${r.status}`);
   await mkdir(path.dirname(p), { recursive: true });
-  const tmp = `${p}.${randomUUID()}.part`;
-  await writeFile(tmp, open(Buffer.from(await r.arrayBuffer())));
-  await rename(tmp, p);
+  // Streamed to disk and decrypted from disk, never held whole in memory.
+  const sealed = `${p}.${randomUUID()}.sealed`, tmp = `${p}.${randomUUID()}.part`;
+  try {
+    await pipeline(Readable.fromWeb(r.body as import("node:stream/web").ReadableStream), createWriteStream(sealed));
+    const fh = await openFile(sealed, "r"); const head = Buffer.alloc(28); await fh.read(head, 0, 28, 0); await fh.close();
+    const d = createDecipheriv("aes-256-gcm", cryptKey(), head.subarray(0, 12)); d.setAuthTag(head.subarray(12, 28));
+    await pipeline(createReadStream(sealed, { start: 28 }), d, createWriteStream(tmp));
+    await rename(tmp, p);
+  } finally { await rm(sealed, { force: true }); await rm(tmp, { force: true }); }
   return p;
 }
 
@@ -83,7 +109,9 @@ export const ACCEPTED = Object.keys(EXT);
 export type Stored = FileFacts & { key: string; bytes: number };
 
 /* Strips location, device and time data, then reads only technical facts. Nobody looks at the content. */
-export async function ingest(file: File): Promise<Stored> {
+/* A big upload that already sits on disk (resumable pieces): it is moved into storage instead of read into memory. */
+export type DiskFile = { path: string; type: string; name: string; size: number };
+export async function ingest(file: File | DiskFile): Promise<Stored> {
   const t0 = Date.now();
   const s = await ingestInner(file);
   // One line per file, so slow steps show up in the logs: size, total time and the storage part of it.
@@ -91,26 +119,37 @@ export async function ingest(file: File): Promise<Stored> {
   return s;
 }
 let lastStoreMs = 0;
-async function ingestInner(file: File): Promise<Stored> {
+async function ingestInner(file: File | DiskFile): Promise<Stored> {
   const ext = EXT[file.type];
   if (!ext) throw new Error(`File type ${file.type || "unknown"} is not supported.`);
-  const raw = Buffer.from(await file.arrayBuffer());
+  if ("path" in file && !file.type.startsWith("image/")) {
+    if (await db.query.blockedHashes.findFirst({ where: eq(schema.blockedHashes.sha256, await shaFile(file.path)) })) throw new RuleError("This file was removed from ByRequest and cannot be uploaded again.");
+    const key = `${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`;
+    await mkdir(path.dirname(filePath(key)), { recursive: true });
+    await rename(file.path, filePath(key));
+    return finishMedia(key, file.type);
+  }
+  const raw = "path" in file ? await readFile(file.path) : Buffer.from(await file.arrayBuffer());
   await refuseBlocked(raw, file.type.startsWith("image/"));
   if (file.type.startsWith("image/")) {
-    const clean = await sharp(raw).rotate().jpeg({ quality: 90, mozjpeg: true }).toBuffer(); // re-encode drops EXIF and GPS
+    const clean = await sharp(raw).rotate().jpeg({ quality: 88 }).toBuffer(); // re-encode drops EXIF and GPS
     const meta = await sharp(clean).metadata();
     const key = await put(clean, "jpg");
     await upload(key);
     return { key, mime: "image/jpeg", bytes: clean.length, width: meta.width ?? 0, height: meta.height ?? 0 };
   }
-  const key = await put(raw, ext);
+  return finishMedia(await put(raw, ext), file.type);
+}
+async function shaFile(p: string) { const h = createHash("sha256"); await pipeline(createReadStream(p), h); return h.digest("hex"); }
+/* Video and audio: strip metadata without re-encoding, store, read the technical facts. */
+async function finishMedia(key: string, mime: string): Promise<Stored> {
   const src = filePath(key), out = src.replace(/\.(\w+)$/, ".clean.$1");
   await run("ffmpeg", ["-y", "-v", "error", "-i", src, "-map_metadata", "-1", "-map_chapters", "-1", "-c", "copy", out]);
   await rename(out, src);
   await upload(key);
   const facts = await probe(src);
-  const meanVolumeDb = file.type.startsWith("audio/") ? await meanVolume(src) : null;
-  return { key, mime: file.type, bytes: (await stat(src)).size, ...facts, meanVolumeDb };
+  const meanVolumeDb = mime.startsWith("audio/") ? await meanVolume(src) : null;
+  return { key, mime, bytes: (await stat(src)).size, ...facts, meanVolumeDb };
 }
 
 async function probe(p: string) {

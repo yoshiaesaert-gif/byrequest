@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { RuleError } from "@/domain/rules";
-import { ingest, remove } from "./media";
+import { ingest, remove, type DiskFile } from "./media";
 import { notify } from "./deals";
 import { requireCap, log } from "./onboarding";
 import { blockedEither } from "./blocks";
@@ -31,7 +31,7 @@ export async function myPhotos(creatorId: string) {
   return db.select({ id: previewPhotos.id, mediaId: previewPhotos.mediaId, kind: previewPhotos.kind, status: previewPhotos.status, mime: media.mime, durationSec: media.durationSec }).from(previewPhotos).innerJoin(media, eq(media.id, previewPhotos.mediaId)).where(eq(previewPhotos.creatorId, creatorId)).orderBy(previewPhotos.createdAt);
 }
 
-export async function addPhotos(creatorId: string, files: File[], kind: "looks" | "body" | "intimate") {
+export async function addPhotos(creatorId: string, files: (File | DiskFile)[], kind: "looks" | "body" | "intimate") {
   await requireCap(creatorId, "upload");
   const have = (await myPhotos(creatorId)).filter((p) => p.status !== "rejected").length;
   const imgs = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/")).slice(0, Math.max(0, ALBUM_MAX - have));

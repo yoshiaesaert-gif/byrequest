@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, stat, writeFile, appendFile, readdir } from "node:fs/promises";
 import { RuleError } from "@/domain/rules";
+import type { DiskFile } from "./media";
 
 /* Resumable uploads for big files: the browser sends 8 MB pieces; if the connection drops it asks how far we got
    and continues from there. Pieces live in a private temp folder until the file is complete. */
@@ -36,9 +37,10 @@ export async function putPiece(userId: string, id: string, offset: number, piece
 }
 export async function finishUpload(userId: string, id: string) {
   const m = await meta(userId, id);
-  const buf = await readFile(safe(id) + ".part");
-  if (buf.length !== m.size) throw new RuleError("The upload is not complete yet.");
-  return { file: new File([new Uint8Array(buf)], m.name, { type: m.type }), target: m.target, extra: m.extra, done: () => Promise.all([rm(safe(id) + ".part", { force: true }), rm(safe(id) + ".json", { force: true })]) };
+  if ((await stat(safe(id) + ".part")).size !== m.size) throw new RuleError("The upload is not complete yet.");
+  // Handed over as a file on disk: big videos are moved into storage, never read into memory.
+  const file: DiskFile = { path: safe(id) + ".part", type: m.type, name: m.name, size: m.size };
+  return { file, target: m.target, extra: m.extra, done: () => Promise.all([rm(safe(id) + ".part", { force: true }), rm(safe(id) + ".json", { force: true })]) };
 }
 /* Pieces of uploads that were never finished are removed after a day. */
 export async function sweepUploads() {

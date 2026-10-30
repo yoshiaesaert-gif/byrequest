@@ -91,7 +91,10 @@ export function useUploads<R>(opts: Opts<R>) {
   const remove = useCallback((key: string) => { dead.current.add(key); xhrs.current.get(key)?.abort(); xhrs.current.delete(key); setList((l) => { const u = l.find((x) => x.key === key); if (u) URL.revokeObjectURL(u.url); return l.filter((x) => x.key !== key); }); }, []);
   const retry = useCallback((key: string) => setList((l) => l.map((u) => { if (u.key !== key) return u; const n = { ...u, pct: 0, state: "up" as const, error: undefined }; void start(n); return n; })), [start]);
   useEffect(() => { const x = xhrs.current; return () => { x.forEach((r) => r.abort()); }; }, []);
-  return { list, add, remove, retry, busy: list.some((u) => u.state === "up" || u.state === "proc") };
+  const busy = list.some((u) => u.state === "up" || u.state === "proc");
+  // Closing or reloading the tab would stop the upload: the browser asks first.
+  useEffect(() => { if (!busy) return; const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; }; window.addEventListener("beforeunload", h); return () => window.removeEventListener("beforeunload", h); }, [busy]);
+  return { list, add, remove, retry, busy };
 }
 
 /* A tile while it uploads: the local preview straight away, a progress ring, and cancel or retry. */

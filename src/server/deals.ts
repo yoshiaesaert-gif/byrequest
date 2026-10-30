@@ -5,7 +5,7 @@ import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
 import { quote, quoteFromTotal, split, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
 import { payments, STATEMENT_NAME } from "./payments";
-import { audioLevel, ingest, remove, type Stored } from "./media";
+import { audioLevel, ingest, remove, type DiskFile, type Stored } from "./media";
 import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
@@ -189,7 +189,7 @@ async function deliverable(creatorId: string, dealId: string) {
   if (d.status !== "held") throw new RuleError(d.status === "reviewing" ? "Your delivery is already being checked." : "This deal does not take a delivery now.");
   return d;
 }
-export async function stageFile(creatorId: string, dealId: string, file: File) {
+export async function stageFile(creatorId: string, dealId: string, file: File | DiskFile) {
   await deliverable(creatorId, dealId);
   let s: Stored;
   try { s = await ingest(file); } catch (e) { throw new RuleError(e instanceof Error && /not supported/.test(e.message) ? "This file type is not supported." : e instanceof RuleError ? e.message : "Upload failed. Try again."); }
