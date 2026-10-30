@@ -1862,3 +1862,18 @@ html:has(.cr),html:has(.cr) body{background:#0B0A14}
 @media (max-width:860px){.cr-sgrid{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.cr-mq{width:280px}.cr-mq blockquote{font-size:.98rem}.cr-sgrid{grid-template-columns:1fr}.cr-sample-top{top:-30px}}
 @media (prefers-reduced-motion:reduce){.cr-track{animation:none}.cr-row{overflow-x:auto}}
+
+/* Creator review ask (Earnings) */
+.rv-ask{display:grid;gap:12px;justify-items:start;padding:20px 22px;border-radius:22px;background:linear-gradient(135deg,#FFF6E0,#FFE6F1 60%,#F1E8FF);box-shadow:inset 0 0 0 1px #F2D2E6}
+.rv-ask>div:first-child{display:grid;gap:2px}.rv-ask b{font-size:1.05rem}.rv-ask span{font-size:.86rem;color:#6B3A52}
+.rv-stars{display:flex;gap:4px}.rv-stars button{border:0;background:none;font-size:2rem;line-height:1;color:#E8D4C8;cursor:pointer;padding:0 2px;transition:transform .12s}
+.rv-stars button.on{color:#F5A524}.rv-stars button:hover{transform:scale(1.15)}
+.rv-ask textarea{width:100%;max-width:640px;padding:12px 14px;border:0;border-radius:14px;background:#fff;font:inherit;font-size:16px;resize:none;box-shadow:inset 0 0 0 1px #EAD7E2}
+.rv-ok{display:flex;gap:8px;align-items:center;font-size:.86rem;color:#4A2E3E}
+
+.cv-row{display:grid;grid-template-columns:110px minmax(0,1fr) 110px auto;gap:14px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}.cv-row:first-child{border-top:0}
+.cv-st{color:#F5A524;letter-spacing:2px}.cv-st i{font-style:normal;color:var(--line-2)}
+.cv-q{display:grid;gap:2px;font-size:.92rem}.cv-q small{font-size:.74rem;color:var(--muted)}.cv-q em{color:var(--muted)}
+.cv-act{display:flex;gap:6px}
+@media (max-width:760px){.cv-row{grid-template-columns:1fr}}
+.cr-avg{font-size:1.6rem;font-weight:900;letter-spacing:-.02em}

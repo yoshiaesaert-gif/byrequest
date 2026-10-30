@@ -10,7 +10,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
   const o = await linkOpened(code).catch(() => null);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
   const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
-  const to = new URL(`/signin?as=${as}${o ? `&ref=${encodeURIComponent(normalizeCode(code))}` : ""}`, `${proto}://${host}`);
+  // Creators land on the creator page first (what it is, live budgets, real reviews); buyers go straight to sign up.
+  const refq = o ? `ref=${encodeURIComponent(normalizeCode(code))}` : "";
+  const to = new URL(as === "earn" ? `/creators${refq ? `?${refq}` : ""}` : `/signin?as=${as}${refq ? `&${refq}` : ""}`, `${proto}://${host}`);
   const res = NextResponse.redirect(to, 302);
   if (o) res.cookies.set(REF_COOKIE, normalizeCode(code), { path: "/", sameSite: "lax", httpOnly: true, secure: proto === "https", maxAge: REF_COOKIE_DAYS * 86400 });
   return res;

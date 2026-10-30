@@ -2672,5 +2672,13 @@ const fr: Record<string, string> = {
   "Yes. You use a username and an avatar. Your legal details are only used for the age and identity check and for payouts.": "Oui. Tu utilises un pseudo et un avatar. Tes données légales servent uniquement à la vérification d'âge et d'identité et aux versements.",
   "What does it cost to join?": "Combien coûte l'inscription ?",
   "Nothing. Creating an account is free and there is no subscription.": "Rien. Créer un compte est gratuit et sans abonnement.",
+  "{avg} out of 5 from creators who already earned": "{avg} sur 5 par des créateurs qui ont déjà gagné",
+  "earned on ByRequest": "a déjà gagné sur ByRequest",
+  "You earned on ByRequest. How do you like it?": "Tu as déjà gagné sur ByRequest. Ça te plaît ?",
+  "One sentence helps other creators decide. Takes ten seconds.": "Une phrase aide d'autres créateurs à se décider. Dix secondes.",
+  "For example: my first request paid more than a week of shifts.": "Par exemple : ma première demande a payé plus qu'une semaine de service.",
+  "ByRequest may show this with my username": "ByRequest peut l'afficher avec mon pseudo",
+  "Reviews open after your first paid deal.": "Les avis s'ouvrent après ton premier deal payé.",
+  "Choose 1 to 5 stars.": "Choisis 1 à 5 étoiles.",
 };
 export default fr;

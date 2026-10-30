@@ -467,3 +467,16 @@ export const techIssues = pgTable("tech_issues", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   handledAt: timestamp("handled_at", { withTimezone: true }),
 }, (t) => [index("tech_issues_status_idx").on(t.status, t.createdAt)]);
+
+/* What a creator who already earned thinks of ByRequest: stars and a short quote. Shown on the creator page only
+   when the creator allowed it and staff approved it. One per creator; they can update it. */
+export const creatorReviews = pgTable("creator_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stars: integer("stars").notNull(),
+  quote: text("quote").notNull().default(""),
+  mayPublish: boolean("may_publish").notNull().default(false),
+  status: text("status").$type<"pending" | "approved" | "hidden">().notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("creator_reviews_user").on(t.userId)]);

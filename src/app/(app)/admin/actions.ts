@@ -11,6 +11,7 @@ import * as TC from "@/server/teamchat";
 import * as M from "@/server/moderation";
 import * as Ref from "@/server/referrals";
 import * as I from "@/server/issues";
+import * as CR from "@/server/creatorreviews";
 import type { RefConfig } from "@/domain/referral";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
 import { reviewPhoto } from "@/server/albums";
@@ -76,4 +77,10 @@ export async function issuesStatus(ids: string[], status: "open" | "handling" | 
   const { user } = await requireStaff();
   await I.setIssues(ids, status, user.handle);
   revalidatePath("/admin/problems");
+}
+
+export async function reviewDecision(id: string, status: "approved" | "hidden") {
+  await requireStaff();
+  await CR.decideReview(id, status);
+  revalidatePath("/admin/creator-reviews");
 }

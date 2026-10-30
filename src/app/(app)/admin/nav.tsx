@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 /* One quiet line: the daily queues on the left, everything else tucked into "More". */
 const MAIN: [string, string][] = [["/admin", "Overview"], ["/admin/requests", "Requests"], ["/admin/offers", "Offers"], ["/admin/problems", "Support"], ["/admin/review", "Review queue"], ["/admin/users", "Accounts"], ["/admin/money", "Money"]];
-const MORE: [string, string, string][] = [["/admin/visitors", "Visitors", "Who is on the site"], ["/admin/house", "Internal", "ByRequest team profiles"], ["/admin/referrals", "Referrals", "Codes and bonuses"], ["/admin/emails", "Emails", "Automatic mails"], ["/admin/team", "Team", "Staff and roles"], ["/admin/audit", "Audit log", "Every staff action"]];
+const MORE: [string, string, string][] = [["/admin/visitors", "Visitors", "Who is on the site"], ["/admin/house", "Internal", "ByRequest team profiles"], ["/admin/referrals", "Referrals", "Codes and bonuses"], ["/admin/creator-reviews", "Creator reviews", "Stars and quotes for the creator page"], ["/admin/emails", "Emails", "Automatic mails"], ["/admin/team", "Team", "Staff and roles"], ["/admin/audit", "Audit log", "Every staff action"]];
 
 export default function AdminNav({ counts }: { counts: Record<string, number> }) {
   const path = usePathname();

@@ -5,6 +5,8 @@ import { access } from "@/server/onboarding";
 import { earnings, isPeriod, PERIODS, eur } from "@/server/earnings";
 import { euros } from "@/domain/rules";
 import { EarnChart, Ledger, ExportMenu } from "./parts";
+import { ReviewAsk } from "./review";
+import { canReview, myReview } from "@/server/creatorreviews";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ function Delta({ a, b, t }: { a: number; b: number; t: (s: string, v?: Record<st
 export default async function Earnings({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   const [{ t }, u, sp] = await Promise.all([getT(), requireCreator(), searchParams]);
   const p = isPeriod(sp.p) ? sp.p : "30d";
-  const [e, a] = await Promise.all([earnings(u.id, p), access(u.id)]);
+  const [e, a, may, mine] = await Promise.all([earnings(u.id, p), access(u.id), canReview(u.id), myReview(u.id)]);
   const label = t(PERIODS.find(([k]) => k === p)![1]);
   const maxCat = Math.max(1, ...e.categories.map((c) => c.cents));
   const maxDay = Math.max(1, ...e.weekday);
@@ -43,6 +45,8 @@ export default async function Earnings({ searchParams }: { searchParams: Promise
       </div>
       {e.onHold ? <Link href="/onboarding" className="ea-hold">{t("{amount} is waiting for your payout setup. Finish it to receive it.", { amount: eur(e.onHold) })}<span>→</span></Link> : !a.caps.receivePayouts ? <Link href="/onboarding" className="ea-hold">{t("Set up payouts to receive your earnings.")}<span>→</span></Link> : null}
     </section>
+
+    {may && !mine ? <ReviewAsk done={false} /> : null}
 
     <div className="ea-kpis">
       <div className="ea-k"><span>{t("Deals completed")}</span><b className="num">{e.dealCount}</b>{p !== "all" ? <Delta a={e.dealCount} b={e.prevDealCount} t={t} /> : <small>{t("since you started")}</small>}</div>

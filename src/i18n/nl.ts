@@ -2672,5 +2672,13 @@ const nl: Record<string, string> = {
   "Yes. You use a username and an avatar. Your legal details are only used for the age and identity check and for payouts.": "Ja. Je gebruikt een gebruikersnaam en een avatar. Je officiële gegevens worden alleen gebruikt voor de leeftijds- en identiteitscontrole en voor uitbetalingen.",
   "What does it cost to join?": "Wat kost aanmelden?",
   "Nothing. Creating an account is free and there is no subscription.": "Niets. Een account maken is gratis en er is geen abonnement.",
+  "{avg} out of 5 from creators who already earned": "{avg} op 5 van creators die al verdienden",
+  "earned on ByRequest": "verdiende al op ByRequest",
+  "You earned on ByRequest. How do you like it?": "Je verdiende al op ByRequest. Hoe bevalt het?",
+  "One sentence helps other creators decide. Takes ten seconds.": "Eén zin helpt andere creators beslissen. Duurt tien seconden.",
+  "For example: my first request paid more than a week of shifts.": "Bijvoorbeeld: mijn eerste zoekertje betaalde meer dan een week shiften.",
+  "ByRequest may show this with my username": "ByRequest mag dit tonen met mijn gebruikersnaam",
+  "Reviews open after your first paid deal.": "Reviews kan je geven na je eerste betaalde deal.",
+  "Choose 1 to 5 stars.": "Kies 1 tot 5 sterren.",
 };
 export default nl;
