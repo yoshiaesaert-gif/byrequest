@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { object } from "../../actions";
 import { BuyerReview, CreatorReview, TipCard, ReviewDone } from "./review";
 import { toast } from "@/components/chrome";
+import { UpTile, useUploads } from "@/components/uploads";
 import { when } from "@/components/ui";
 import { useLocale, useT } from "@/i18n/client";
 
@@ -86,27 +87,35 @@ function ObjectSheet({ dealId, onClose }: { dealId: string; onClose: () => void 
 
 function UploadSheet({ p, onClose }: { p: Props; onClose: () => void }) {
   const tr = useT();
-  const [files, setFiles] = useState<File[]>([]);
   const [only, setOnly] = useState<boolean | null>(null);
   const [sel, setSel] = useState<string[]>([]);
   const [lines, setLines] = useState<{ ok: boolean; text: string }[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  const accept = p.deal.category === "photos" ? "image/*" : p.deal.category === "voice" ? "audio/*" : p.deal.category === "video" ? "video/*" : "image/*,video/*,audio/*";
+  const cat = p.deal.category;
+  const accept = cat === "photos" || cat === "worn" ? "image/*" : cat === "voice" ? "audio/*" : "video/*";
+  const many = cat === "photos" || cat === "worn";
+  // Every file uploads on its own, in parallel; the delivery is sent once they are all in.
+  const up = useUploads<{ id: string }>({ endpoint: `/api/deliveries/${p.deal.id}/files`, parse: (j) => j.item as { id: string } });
+  const drop = (key: string) => { const u = up.list.find((x) => x.key === key); if (u?.result) fetch(`/api/deliveries/${p.deal.id}/files?id=${u.result.id}`, { method: "DELETE" }).catch(() => null); up.remove(key); setLines(null); };
+  const ready = up.list.length > 0 && up.list.every((u) => u.state === "done");
   const go = async () => {
     setBusy(true); setErr(null); setLines(null);
-    const f = new FormData(); files.forEach((x) => f.append("files", x)); f.set("onlyCreator", only ? "yes" : "no"); sel.forEach((s) => f.append("participant", s));
     try {
-      const r = await (await fetch(`/api/deliveries/${p.deal.id}`, { method: "POST", body: f })).json();
+      const r = await (await fetch(`/api/deliveries/${p.deal.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mediaIds: up.list.map((u) => u.result!.id), onlyCreator: !!only, participantIds: only ? [] : sel }) })).json();
       setLines(r.lines ?? null);
       if (r.ok) { toast(tr("Delivered. It is being reviewed.")); router.refresh(); setTimeout(onClose, 900); } else setErr(r.error);
-    } catch { setErr(tr("Upload failed. Check your connection.")); }
+    } catch { setErr(tr("Sending failed. Check your connection.")); }
     setBusy(false);
   };
-  return (<div className="scrim" onClick={(e) => e.target === e.currentTarget && !busy && onClose()}><div className="sheet" role="dialog" aria-modal="true" aria-label={tr("Upload delivery")}>
-    <div className="sheet-h"><div><span className="eyebrow">{tr("Deliver to {name}", { name: p.other.handle })}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{p.deal.category === "photos" ? tr("{n} photos", { n: p.deal.amount }) : tr("{n} minutes", { n: p.deal.amount })}</h3></div><button className="icon-btn" onClick={onClose} aria-label={tr("Close")} disabled={busy}><Ico n="x" /></button></div>
-    <label className="drop"><input type="file" accept={accept} multiple={p.deal.category === "photos"} onChange={(e) => { setFiles(Array.from(e.target.files ?? [])); setLines(null); setErr(null); }} /><Ico n={p.deal.category === "photos" ? "image" : p.deal.category === "voice" ? "mic" : "video"} c="lg" /><b>{files.length ? tr(files.length > 1 ? "{n} files selected" : "{n} file selected", { n: files.length }) : tr("Choose files")}</b><span className="t-sm muted">{files.map((f) => f.name).join(", ") || tr("Location and device data are removed automatically.")}</span></label>
+  return (<div className="scrim" onClick={(e) => e.target === e.currentTarget && !busy && !up.busy && onClose()}><div className="sheet" role="dialog" aria-modal="true" aria-label={tr("Upload delivery")}>
+    <div className="sheet-h"><div><span className="eyebrow">{tr("Deliver to {name}", { name: p.other.handle })}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{cat === "photos" ? tr("{n} photos", { n: p.deal.amount }) : tr("{n} minutes", { n: p.deal.amount })}</h3></div><button className="icon-btn" onClick={onClose} aria-label={tr("Close")} disabled={busy}><Ico n="x" /></button></div>
+    <div className="up-grid">
+      {up.list.map((u) => <UpTile key={u.key} u={u} onRemove={() => drop(u.key)} onRetry={() => up.retry(u.key)} />)}
+      {many || !up.list.length ? <label className="up-add"><input type="file" accept={accept} multiple={many} hidden onChange={(e) => { up.add(Array.from(e.target.files ?? [])); e.target.value = ""; setLines(null); setErr(null); }} />
+        <Ico n={cat === "photos" || cat === "worn" ? "image" : cat === "voice" ? "mic" : "video"} c="lg" /><b>{up.list.length ? tr("Add more") : tr(many ? "Choose your photos" : "Choose your file")}</b><span>{many ? tr("{n} of {m} added", { n: up.list.length, m: p.deal.amount }) : tr("Uploads start right away")}</span></label> : null}
+    </div>
     <div className="field"><label>{tr("Who appears in this content?")}</label><div className="seg2">
       <button type="button" className={only === true ? "on" : ""} onClick={() => setOnly(true)}><b>{tr("Only me")}</b><span className="t-sm muted">{tr("Nobody else is visible or audible.")}</span></button>
       <button type="button" className={only === false ? "on" : ""} onClick={() => setOnly(false)}><b>{tr("Me and others")}</b><span className="t-sm muted">{tr("Each person verifies and consents first.")}</span></button></div></div>
@@ -116,7 +125,7 @@ function UploadSheet({ p, onClose }: { p: Props; onClose: () => void }) {
       <span className="t-sm muted">{tr("Your own statement is not enough. The delivery stays hidden until each person has verified and consented.")}</span></div>) : null}
     {lines ? <div className="upl">{lines.map((l) => <div key={l.text} className={"upc" + (l.ok ? "" : " bad")}><Ico n={l.ok ? "check" : "x"} c="sm" /><span>{l.text}</span></div>)}</div> : null}
     {err ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{tr(err)}{lines?.some((l) => !l.ok) ? " " + tr("Fix the item in red and upload again. This protects the buyer, and you.") : ""}</span></div> : null}
-    <button className="btn btn-brand btn-lg btn-block" disabled={busy || !files.length || only === null || (only === false && !sel.length)} onClick={go}>{busy ? tr("Checking…") : tr("Check and send")}</button>
+    <button className="btn btn-brand btn-lg btn-block" disabled={busy || !ready || only === null || (only === false && !sel.length)} onClick={go}>{busy ? tr("Checking…") : up.busy ? tr("Uploading…") : tr("Check and send")}</button>
     <p className="t-xs muted">{tr("The file check reads only technical facts. A reviewer then checks the content before it is made available.")}</p>
   </div></div>);
 }

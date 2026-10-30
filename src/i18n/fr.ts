@@ -2566,5 +2566,17 @@ const fr: Record<string, string> = {
   "This video is larger than 300 MB. Shorten or compress it first.": "Cette vidéo dépasse 300 Mo. Raccourcis-la ou compresse-la d'abord.",
   "This photo is larger than 25 MB.": "Cette photo dépasse 25 Mo.",
   "Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.": "Photos jusqu'à 25 Mo, visibles 10 secondes chacune. Une vidéo jusqu'à 2 minutes et 300 Mo, lue une fois du début à la fin.",
+  "Only {n} more fit in your album.": "Il ne reste de la place que pour {n} dans ton album.",
+  "Could not remove it. Try again.": "Impossible de supprimer. Réessaie.",
+  "No connection. Try again.": "Pas de connexion. Réessaie.",
+  "Upload failed. Try again.": "Échec de l'envoi. Réessaie.",
+  "Add more": "Ajouter plus",
+  "Choose your photos": "Choisis tes photos",
+  "Choose your file": "Choisis ton fichier",
+  "{n} of {m} added": "{n} sur {m} ajoutés",
+  "Uploads start right away": "L'envoi démarre tout de suite",
+  "Sending failed. Check your connection.": "Échec de l'envoi. Vérifie ta connexion.",
+  "This file type is not supported.": "Ce type de fichier n'est pas pris en charge.",
+  "A file is missing. Upload it again.": "Un fichier manque. Envoie-le à nouveau.",
 };
 export default fr;

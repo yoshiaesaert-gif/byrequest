@@ -170,3 +170,6 @@ export async function streamMedia(key: string, mime: string, req: Request, heade
   if (start >= size || start > end) return new Response(null, { status: 416, headers: { ...base, "Content-Range": `bytes */${size}` } });
   return new Response(Readable.toWeb(createReadStream(p, { start, end })) as ReadableStream, { status: 206, headers: { ...base, "Content-Length": String(end - start + 1), "Content-Range": `bytes ${start}-${end}/${size}` } });
 }
+
+/* Loudness of a stored audio file, for the voice note check. */
+export async function audioLevel(key: string) { return meanVolume(await localFile(key)); }

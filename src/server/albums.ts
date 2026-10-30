@@ -5,7 +5,6 @@ import { RuleError } from "@/domain/rules";
 import { ingest, remove } from "./media";
 import { notify } from "./deals";
 import { requireCap, log } from "./onboarding";
-import { REVIEW_MODE } from "@/config/compliance";
 import { blockedEither } from "./blocks";
 
 const { previewAlbums, previewPhotos, offers, requests, media } = schema;
@@ -44,12 +43,11 @@ export async function addPhotos(creatorId: string, files: File[], kind: "looks" 
   if (long) { for (const s of stored) await remove(s.key); throw new RuleError("A preview video can be at most 2 minutes."); }
   const ids = await db.transaction(async (tx) => {
     const rows = await tx.insert(media).values(stored.map((s) => ({ ownerId: creatorId, storageKey: s.key, mime: s.mime, bytes: s.bytes, width: s.width ?? null, height: s.height ?? null, durationSec: s.durationSec ?? null }))).returning();
-    const ph = await tx.insert(previewPhotos).values(rows.map((r) => ({ creatorId, mediaId: r.id, kind }))).returning({ id: previewPhotos.id });
+    const ph = await tx.insert(previewPhotos).values(rows.map((r) => ({ creatorId, mediaId: r.id, kind, status: "approved" as const }))).returning({ id: previewPhotos.id });   // private album: ready at once, no manual check (known illegal material is still refused on upload)
     await log(tx, `user:${creatorId}`, "album.photos_added", creatorId, { n: ph.length, kind });
     return ph.map((p) => p.id);
   });
-  if (REVIEW_MODE === "test_auto") for (const id of ids) await reviewPhoto(id, "approved", "system:test_auto");
-  return ids.length;
+  return ids;
 }
 
 export async function removePhoto(creatorId: string, photoId: string) {

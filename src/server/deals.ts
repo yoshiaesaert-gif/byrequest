@@ -5,7 +5,7 @@ import { and, eq, lte, ne, inArray, sql } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
 import { quote, quoteFromTotal, split, transition, checkDelivery, vaultAtLeast, vaultUntil, addHours, RuleError, type DealEvent, type Effect, type VaultPeriod } from "@/domain/rules";
 import { payments, STATEMENT_NAME } from "./payments";
-import { ingest, remove, type Stored } from "./media";
+import { audioLevel, ingest, remove, type Stored } from "./media";
 import { issueDecision } from "./decisions";
 import { requireCap, access, log, isAgeVerified } from "./onboarding";
 import { REVIEW_MODE, BUYER_AGE_CHECK, vatRate } from "@/config/compliance";
@@ -171,6 +171,57 @@ export async function deliver(creatorId: string, dealId: string, files: File[], 
   const deliveryId = await db.transaction(async (tx) => {
     const rows = await tx.insert(media).values(stored.map((s) => ({ ownerId: creatorId, storageKey: s.key, mime: s.mime, bytes: s.bytes, durationSec: s.durationSec ?? null, width: s.width ?? null, height: s.height ?? null }))).returning();
     const [dl] = await tx.insert(schema.deliveries).values({ dealId, creatorId, mediaIds: rows.map((m) => m.id), technical: check.lines, onlyCreator: decl.onlyCreator, participantIds: decl.onlyCreator ? [] : decl.participantIds }).returning();
+    await tx.update(deals).set({ status: next.status }).where(eq(deals.id, dealId));
+    await system(tx, dealId, "Delivered. It passed the automatic file check and is now being reviewed before it reaches the vault.");
+    await log(tx, `user:${creatorId}`, "delivery.submitted", creatorId, { deliveryId: dl.id, dealId, participants: dl.participantIds.length });
+    return dl.id;
+  });
+  if (REVIEW_MODE === "test_auto") await reviewDelivery(deliveryId, "approved", "system:test_auto");
+  return { ok: true as const, lines: check.lines };
+}
+
+/* Fast delivery, step 1: each file is uploaded on its own, in parallel, and stored right away. Nothing is
+   shared yet; until the delivery is sent the creator can remove it again. */
+async function deliverable(creatorId: string, dealId: string) {
+  await requireCap(creatorId, "upload");
+  const d = await db.query.deals.findFirst({ where: eq(deals.id, dealId) });
+  if (!d || d.creatorId !== creatorId) throw new RuleError("Not your deal.");
+  if (d.status !== "held") throw new RuleError(d.status === "reviewing" ? "Your delivery is already being checked." : "This deal does not take a delivery now.");
+  return d;
+}
+export async function stageFile(creatorId: string, dealId: string, file: File) {
+  await deliverable(creatorId, dealId);
+  let s: Stored;
+  try { s = await ingest(file); } catch (e) { throw new RuleError(e instanceof Error && /not supported/.test(e.message) ? "This file type is not supported." : e instanceof RuleError ? e.message : "Upload failed. Try again."); }
+  const [m] = await db.insert(media).values({ ownerId: creatorId, storageKey: s.key, mime: s.mime, bytes: s.bytes, durationSec: s.durationSec ?? null, width: s.width ?? null, height: s.height ?? null }).returning();
+  return { id: m.id, mime: m.mime, durationSec: m.durationSec, width: m.width, height: m.height };
+}
+export async function unstageFile(creatorId: string, mediaId: string) {
+  const m = await db.query.media.findFirst({ where: and(eq(media.id, mediaId), eq(media.ownerId, creatorId)) });
+  if (!m) return;
+  const used = await db.select({ id: schema.deliveries.id }).from(schema.deliveries).where(sql`${schema.deliveries.mediaIds} @> ${JSON.stringify([mediaId])}::jsonb`).limit(1);
+  if (used.length) return;
+  await db.delete(media).where(eq(media.id, mediaId)); await remove(m.storageKey);
+}
+/* Step 2: the uploaded files are checked together against the agreed offer and sent as one delivery. */
+export async function deliverStaged(creatorId: string, dealId: string, mediaIds: string[], decl: Declaration) {
+  const d = await deliverable(creatorId, dealId);
+  if (!decl.onlyCreator && !decl.participantIds.length) throw new RuleError("Add every other person who appears, or confirm it is only you.");
+  if (decl.participantIds.length) {
+    const own = await db.select({ id: schema.participants.id }).from(schema.participants).where(and(eq(schema.participants.creatorId, creatorId), inArray(schema.participants.id, decl.participantIds)));
+    if (own.length !== new Set(decl.participantIds).size) throw new RuleError("Unknown participant.");
+  }
+  const ids = [...new Set(mediaIds)].slice(0, 60);
+  if (!ids.length) throw new RuleError("Choose a file first.");
+  const rows = await db.select().from(media).where(and(eq(media.ownerId, creatorId), inArray(media.id, ids)));
+  if (rows.length !== ids.length) throw new RuleError("A file is missing. Upload it again.");
+  const r = (await db.query.requests.findFirst({ where: eq(requests.id, d.requestId) }))!;
+  const facts = await Promise.all(rows.map(async (m) => ({ mime: m.mime, bytes: m.bytes, durationSec: m.durationSec ?? undefined, width: m.width ?? undefined, height: m.height ?? undefined, meanVolumeDb: m.mime.startsWith("audio/") ? await audioLevel(m.storageKey) : null })));
+  const check = checkDelivery(r.category, r.amount, facts as Parameters<typeof checkDelivery>[2]);
+  if (!check.ok) return { ok: false as const, lines: check.lines };
+  const next = transition(d, { type: "deliver", at: new Date() }).state;
+  const deliveryId = await db.transaction(async (tx) => {
+    const [dl] = await tx.insert(schema.deliveries).values({ dealId, creatorId, mediaIds: ids, technical: check.lines, onlyCreator: decl.onlyCreator, participantIds: decl.onlyCreator ? [] : decl.participantIds }).returning({ id: schema.deliveries.id, participantIds: schema.deliveries.participantIds });
     await tx.update(deals).set({ status: next.status }).where(eq(deals.id, dealId));
     await system(tx, dealId, "Delivered. It passed the automatic file check and is now being reviewed before it reaches the vault.");
     await log(tx, `user:${creatorId}`, "delivery.submitted", creatorId, { deliveryId: dl.id, dealId, participants: dl.participantIds.length });

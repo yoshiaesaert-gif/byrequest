@@ -2566,5 +2566,17 @@ const nl: Record<string, string> = {
   "This video is larger than 300 MB. Shorten or compress it first.": "Deze video is groter dan 300 MB. Maak hem eerst korter of kleiner.",
   "This photo is larger than 25 MB.": "Deze foto is groter dan 25 MB.",
   "Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.": "Foto's tot 25 MB, elk 10 seconden zichtbaar. Eén video tot 2 minuten en 300 MB, één keer afgespeeld van begin tot eind.",
+  "Only {n} more fit in your album.": "Er passen nog maar {n} in je album.",
+  "Could not remove it. Try again.": "Verwijderen lukte niet. Probeer opnieuw.",
+  "No connection. Try again.": "Geen verbinding. Probeer opnieuw.",
+  "Upload failed. Try again.": "Uploaden mislukt. Probeer opnieuw.",
+  "Add more": "Meer toevoegen",
+  "Choose your photos": "Kies je foto's",
+  "Choose your file": "Kies je bestand",
+  "{n} of {m} added": "{n} van {m} toegevoegd",
+  "Uploads start right away": "Uploaden start meteen",
+  "Sending failed. Check your connection.": "Versturen mislukt. Controleer je verbinding.",
+  "This file type is not supported.": "Dit bestandstype wordt niet ondersteund.",
+  "A file is missing. Upload it again.": "Er ontbreekt een bestand. Upload het opnieuw.",
 };
 export default nl;

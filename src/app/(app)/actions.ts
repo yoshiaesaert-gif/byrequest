@@ -163,19 +163,8 @@ export async function answerAlbum(albumId: string, share: string[] | null): Prom
   });
 }
 
-export async function addPreviewPhotos(f: FormData): Promise<Result> {
-  return guard(async () => {
-    const u = await requireCreator();
-    const files = f.getAll("files").filter((x): x is File => x instanceof File && x.size > 0);
-    const kind = (["looks", "body", "intimate"] as const).find((k) => k === f.get("kind")) ?? "looks";
-    const n = await albums.addPhotos(u.id, files, kind);
-    revalidatePath("/studio");
-    return { ok: true, msg: n === 1 ? "Photo added. It is checked before it can be shared." : "Photos added. They are checked before they can be shared." };
-  });
-}
-
 export async function removePreviewPhoto(id: string): Promise<Result> {
-  return guard(async () => { const u = await requireCreator(); await albums.removePhoto(u.id, id); revalidatePath("/studio"); return { ok: true, msg: "Photo removed." }; });
+  return guard(async () => { const u = await requireCreator(); await albums.removePhoto(u.id, id); revalidatePath("/studio"); return { ok: true }; });
 }
 
 export async function closePreview(albumId: string) {
