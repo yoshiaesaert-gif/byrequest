@@ -2578,5 +2578,6 @@ const fr: Record<string, string> = {
   "Sending failed. Check your connection.": "Échec de l'envoi. Vérifie ta connexion.",
   "This file type is not supported.": "Ce type de fichier n'est pas pris en charge.",
   "A file is missing. Upload it again.": "Un fichier manque. Envoie-le à nouveau.",
+  "Photos show 10 seconds each. Videos up to 2 minutes and 300 MB play once, start to end.": "Les photos s'affichent 10 secondes chacune. Les vidéos jusqu'à 2 minutes et 300 Mo se lisent une fois, du début à la fin.",
 };
 export default fr;

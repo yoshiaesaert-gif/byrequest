@@ -12,26 +12,24 @@ type Photo = { id: string; mediaId: string; kind: string; status: string; mime: 
 function Tile({ p }: { p: Photo }) {
   return p.mime.startsWith("video/") ? <><video src={`/api/preview-photo/${p.id}`} muted loop playsInline autoPlay preload="metadata" /><span className="badge glass alb-len">▶ {p.durationSec ?? 0}s</span></> : <img src={`/api/preview-photo/${p.id}`} alt="" draggable={false} />;
 }
-const KINDS = [["looks", "Looks"], ["body", "Body"], ["intimate", "Intimate"]] as const;
 
 /* The creator's own hidden album: up to six photos or videos, ready to share at once. Every file uploads on its own
    tile with its own progress; removing is instant; a tap opens it full screen. */
 export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max: number; canUpload: boolean }) {
   const t = useT();
   const router = useRouter();
-  const [kind, setKind] = useState<"looks" | "body" | "intimate">("looks");
   const [added, setAdded] = useState<Photo[]>([]);
   const [gone, setGone] = useState<string[]>([]);
   const [view, setView] = useState<number | null>(null);
   const [note, setNote] = useState("");
-  const up = useUploads<Photo | undefined>({ endpoint: "/api/album/upload", field: "files", extra: () => ({ kind }), parse: (j) => (j.items as Photo[] | undefined)?.[0],
+  const up = useUploads<Photo | undefined>({ endpoint: "/api/album/upload", field: "files", target: "album", shrink: { side: 2400, quality: 0.88, over: 1.5 * 1048576 }, parse: (j) => (j.items as Photo[] | undefined)?.[0],
     onDone: (p, u) => { if (p) setAdded((a) => [...a, p]); window.setTimeout(() => up.remove(u.key), 450); } });
   const items = [...photos, ...added.filter((a) => !photos.some((p) => p.id === a.id))].filter((p) => p.status !== "rejected" && !gone.includes(p.id));
   const room = max - items.length - up.list.filter((u) => u.state !== "done").length;
   const pick = (files: File[]) => {
     setNote("");
     const ok = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
-    const big = ok.find((f) => (f.type.startsWith("video/") ? f.size > 300 * 1048576 : f.size > 25 * 1048576));
+    const big = ok.find((f) => (f.type.startsWith("video/") ? f.size > 300 * 1048576 : f.size > 60 * 1048576));
     if (big) { setNote(t(big.type.startsWith("video/") ? "This video is larger than 300 MB. Shorten or compress it first." : "This photo is larger than 25 MB.")); return; }
     if (ok.length > room) setNote(t("Only {n} more fit in your album.", { n: Math.max(0, room) }));
     up.add(ok.slice(0, Math.max(0, room)));
@@ -44,7 +42,6 @@ export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max:
   return (<div className="alb">
     <div className="alb-grid">
       {items.map((p, i) => (<div key={p.id} className="alb-ph" role="button" tabIndex={0} onClick={() => setView(i)} onKeyDown={(e) => e.key === "Enter" && setView(i)}><Tile p={p} />
-        <span className="badge glass alb-k">{t(KINDS.find((k) => k[0] === p.kind)?.[1] ?? "Looks")}</span>
         <button className="alb-x" aria-label={t("Remove")} onClick={(e) => { e.stopPropagation(); drop(p.id); }}><svg className="ico sm" aria-hidden="true"><use href="#i-x" /></svg></button></div>))}
       {up.list.map((u) => <UpTile key={u.key} u={u} onRemove={() => up.remove(u.key)} onRetry={() => up.retry(u.key)} />)}
       {room > 0 ? (canUpload ? <label className="alb-add"><input type="file" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden onChange={(e) => { pick(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
@@ -52,8 +49,7 @@ export function AlbumManager({ photos, max, canUpload }: { photos: Photo[]; max:
         : <Link href="/onboarding" className="alb-add"><span>{t("Finish setup to add photos")}</span></Link>) : null}
     </div>
     {note ? <p className="up-note">{note}</p> : null}
-    <div className="optrow alb-kind"><span className="t-sm muted">{t("New items are")}</span>{KINDS.map(([k, l]) => <button key={k} type="button" className={"chip" + (kind === k ? " is-on" : "")} onClick={() => setKind(k)}>{t(l)}</button>)}</div>
-    <p className="t-xs muted" style={{ margin: 0 }}>{t("Photos up to 25 MB, shown 10 seconds each. One video up to 2 minutes and 300 MB, played once from start to end.")}</p>
+    <p className="t-xs muted" style={{ margin: 0 }}>{t("Photos show 10 seconds each. Videos up to 2 minutes and 300 MB play once, start to end.")}</p>
     {view !== null ? <Lightbox items={items.map((p) => ({ src: `/api/preview-photo/${p.id}`, video: p.mime.startsWith("video/") }))} index={view} onClose={() => setView(null)} /> : null}
   </div>);
 }

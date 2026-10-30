@@ -8,10 +8,10 @@
   --shadow-1:0 1px 2px rgba(14,16,19,.06),0 1px 1px rgba(14,16,19,.04);
   --shadow-2:0 10px 30px -12px rgba(14,16,19,.22),0 2px 6px rgba(14,16,19,.05);
   --shadow-3:0 30px 80px -24px rgba(14,16,19,.45);
-  --font:"Geist", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font:var(--font-geist-sans), "Geist", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
   --r-sm:10px; --r:14px; --r-lg:20px; --r-xl:28px;
   --notif-bg:rgba(246,246,248,.78); --notif-line:rgba(255,255,255,.7);
-  --nav-h:72px; --meta:"Instrument Sans","Geist","Segoe UI",system-ui,sans-serif;
+  --nav-h:72px; --meta:"Instrument Sans",var(--font-geist-sans),"Geist","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#0B0C0E; --surface:#141518; --raised:#1A1C20; --sunk:#101113; --line:#24262B; --line-2:#30333A;

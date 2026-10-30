@@ -2578,5 +2578,6 @@ const nl: Record<string, string> = {
   "Sending failed. Check your connection.": "Versturen mislukt. Controleer je verbinding.",
   "This file type is not supported.": "Dit bestandstype wordt niet ondersteund.",
   "A file is missing. Upload it again.": "Er ontbreekt een bestand. Upload het opnieuw.",
+  "Photos show 10 seconds each. Videos up to 2 minutes and 300 MB play once, start to end.": "Foto's tonen elk 10 seconden. Video's tot 2 minuten en 300 MB spelen één keer, van begin tot eind.",
 };
 export default nl;

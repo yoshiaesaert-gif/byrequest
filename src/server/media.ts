@@ -34,6 +34,11 @@ export function open(buf: Buffer) {
 }
 async function upload(key: string) {
   if (!s3) return;
+  const t0 = Date.now();
+  try { await uploadInner(key); } finally { lastStoreMs = Date.now() - t0; }
+}
+async function uploadInner(key: string) {
+  if (!s3) return;
   // Sign first, then send the bytes as a plain buffer: handing the signed Request to fetch streams the body without a
   // length, and R2 answers 411 Length Required.
   const body = seal(await readFile(filePath(key)));
@@ -79,6 +84,14 @@ export type Stored = FileFacts & { key: string; bytes: number };
 
 /* Strips location, device and time data, then reads only technical facts. Nobody looks at the content. */
 export async function ingest(file: File): Promise<Stored> {
+  const t0 = Date.now();
+  const s = await ingestInner(file);
+  // One line per file, so slow steps show up in the logs: size, total time and the storage part of it.
+  console.log(`upload timing: ${s.mime} ${(s.bytes / 1048576).toFixed(1)}MB total ${Date.now() - t0}ms store ${lastStoreMs}ms`);
+  return s;
+}
+let lastStoreMs = 0;
+async function ingestInner(file: File): Promise<Stored> {
   const ext = EXT[file.type];
   if (!ext) throw new Error(`File type ${file.type || "unknown"} is not supported.`);
   const raw = Buffer.from(await file.arrayBuffer());

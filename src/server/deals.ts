@@ -480,3 +480,16 @@ async function effect(tx: Tx, d: typeof deals.$inferSelect, ef: Effect) {
     await log(tx, "system", "account.flagged", uid, { dealId: d.id, reason: ef.reason });
   }
 }
+
+/* Files uploaded for a delivery that was never sent: removed after two days, from the database and the storage. */
+export async function sweepStaged() {
+  const old = await db.execute<{ id: string; storage_key: string }>(sql`select m.id, m.storage_key from media m
+    where m.created_at < now() - interval '2 days'
+      and not exists (select 1 from deliveries d where d.media_ids @> jsonb_build_array(m.id::text))
+      and not exists (select 1 from preview_photos p where p.media_id = m.id)
+      and not exists (select 1 from vault_items v where v.media_id = m.id)
+      and not exists (select 1 from users u where u.id = m.owner_id and u.avatar->>'mediaId' = m.id::text)
+    limit 200`);
+  for (const r of old.rows) { await db.delete(media).where(eq(media.id, r.id)); await remove(r.storage_key); }
+  return old.rows.length;
+}
