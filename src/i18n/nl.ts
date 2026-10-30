@@ -2200,7 +2200,7 @@ const nl: Record<string, string> = {
   "Your content stays yours. Your name stays secret.": "Je content blijft van jou. Je naam blijft geheim.",
   "Keep logos, team kit and rooms people recognise out of the shot.": "Tip: hou logo's, clubkledij en herkenbare ruimtes uit beeld.",
   "Nothing to post, no feed to fill": "Niets posten, geen feed vullen",
-  "No real name, no gallery, no content up front. Your profile is a few lines of text. Only when a buyer wants you can you send a few photos that vanish after 10 seconds.": "Geen echte naam, geen galerij, geen content vooraf. Je profiel is een paar regels tekst. Pas als een koper jou wil, kan je enkele foto's sturen die na 10 seconden verdwijnen.",
+  "No real name, no gallery, no content up front. Your profile is a few lines of text. Photos only come in when a buyer is interested in you: you choose a few, and they vanish after 10 seconds.": "Geen echte naam, geen galerij, geen content vooraf. Je profiel is een paar regels tekst. Foto's komen er pas aan te pas als een koper interesse heeft in jou: jij kiest er enkele, en ze verdwijnen na 10 seconden.",
   "Stars keep everyone honest": "Sterren houden iedereen eerlijk",
   "After every deal buyer and creator rate each other. Whoever behaves badly runs out of deals fast. So everyone behaves.": "Na elke deal beoordelen koper en creator elkaar. Wie zich slecht gedraagt, raakt snel zijn deals kwijt. Dus gedraagt iedereen zich.",
   "No numbers, nothing odd in your inbox": "Geen nummers, niets raars in je mailbox",
