@@ -1690,3 +1690,19 @@ html.cx-lock .hb-launch{display:none}
 .sp-badge{background:linear-gradient(135deg,#E0559A,#7A3FE8)}
 .sp-earn em{color:#A63BD8}
 .sp-next::before{background:repeating-radial-gradient(circle at 4% -8%,rgba(255,255,255,0) 0 16px,rgba(255,255,255,.38) 17px,rgba(255,255,255,0) 19px 26px);mix-blend-mode:overlay}
+
+/* Album with video */
+.alb-ph video,.alb-pk video{width:100%;height:100%;object-fit:cover;display:block}
+.alb-len{position:absolute;right:8px;bottom:8px;font-size:.7rem}
+.alb-add.is-busy{cursor:default;gap:6px}.alb-pct{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.alb-prog{display:block;width:70%;height:6px;border-radius:999px;background:rgba(14,16,19,.1);overflow:hidden}.alb-prog b{display:block;height:100%;background:linear-gradient(90deg,#F59A3E,#E0559A,#7A3FE8);transition:width .2s}
+.alb-stage video{max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;pointer-events:none}
+.alb-snd{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);z-index:5;border:0;border-radius:999px;padding:8px 16px;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);color:#fff;font:inherit;font-size:.84rem;font-weight:600;cursor:pointer}
+
+/* ByRequest error screen */
+.oops{min-height:100dvh;display:grid;place-items:center;align-content:center;gap:28px;padding:24px 16px;background:radial-gradient(60% 50% at 20% 0%,#FFF1D6 0%,transparent 60%),radial-gradient(50% 50% at 100% 100%,#EDE6FF 0%,transparent 60%),#F7F7F4;color:#0E1013}
+.oops-logo img{height:34px;display:block}
+.oops-card{width:min(460px,100%);display:grid;justify-items:center;gap:12px;padding:36px 30px;border-radius:28px;background:#fff;text-align:center;box-shadow:0 30px 80px -30px rgba(14,16,19,.35),0 0 0 1px rgba(14,16,19,.05)}
+.oops-ic{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:1.6rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#F59A3E,#E0559A 55%,#7A3FE8)}
+.oops-card h1{margin:4px 0 0;font-size:1.45rem;letter-spacing:-.02em}.oops-card p{margin:0;color:#6B7079;line-height:1.5}
+.oops-btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center}.oops-card small{color:#9A9EA6;font-size:.72rem}

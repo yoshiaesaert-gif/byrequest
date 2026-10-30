@@ -74,7 +74,7 @@ export default async function Studio() {
       </section>
     </div>
 
-    <section className="ea-card" id="album"><div className="ea-ch"><div><h2>{t("Your preview album")}</h2><p>{t("A few photos only you control. Hidden from everyone; a buyer sees each photo once, for 10 seconds, with their name on it, and only when you share.")}</p></div><span className="sp-badge soft">{photos.length}/{ALBUM_MAX}</span></div>
+    <section className="ea-card" id="album"><div className="ea-ch"><div><h2>{t("Your preview album")}</h2><p>{t("Photos and a video only you control. Hidden from everyone; a buyer sees each photo once for 10 seconds and each video once, with their name on it, and only when you share.")}</p></div><span className="sp-badge soft">{photos.length}/{ALBUM_MAX}</span></div>
       <AlbumManager photos={photos} max={ALBUM_MAX} canUpload={a.caps.upload} />
     </section>
   </div>);

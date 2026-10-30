@@ -21,21 +21,28 @@ const { previewAlbums, previewPhotos, offers, requests, media } = schema;
 export const PHOTO_SECONDS = 10;
 export const PREVIEW_LIMIT = 5;
 export const ALBUM_MAX = 6;
+export const VIDEO_MAX_SECONDS = 120;
+const VIDEO_MAX_BYTES = 300 * 1024 * 1024;
+/* How long one item stays open for the buyer: a photo 10 seconds, a video exactly its own length. */
+export const itemSeconds = (m: { mime: string; durationSec: number | null } | undefined) => (m?.mime.startsWith("video/") ? Math.min(VIDEO_MAX_SECONDS, Math.max(1, m.durationSec ?? 30)) + 2 : PHOTO_SECONDS);
 const GRACE_MS = 4000;            // a photo may load again within its own 10 seconds (slow network), never after
 
 /* ---------- the creator's own album ---------- */
 export async function myPhotos(creatorId: string) {
-  return db.select({ id: previewPhotos.id, mediaId: previewPhotos.mediaId, kind: previewPhotos.kind, status: previewPhotos.status }).from(previewPhotos).where(eq(previewPhotos.creatorId, creatorId)).orderBy(previewPhotos.createdAt);
+  return db.select({ id: previewPhotos.id, mediaId: previewPhotos.mediaId, kind: previewPhotos.kind, status: previewPhotos.status, mime: media.mime, durationSec: media.durationSec }).from(previewPhotos).innerJoin(media, eq(media.id, previewPhotos.mediaId)).where(eq(previewPhotos.creatorId, creatorId)).orderBy(previewPhotos.createdAt);
 }
 
 export async function addPhotos(creatorId: string, files: File[], kind: "looks" | "body" | "intimate") {
   await requireCap(creatorId, "upload");
   const have = (await myPhotos(creatorId)).filter((p) => p.status !== "rejected").length;
-  const imgs = files.filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, ALBUM_MAX - have));
-  if (!imgs.length) throw new RuleError(have >= ALBUM_MAX ? "Your album is full. Remove a photo first." : "Add at least one photo.");
+  const imgs = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/")).slice(0, Math.max(0, ALBUM_MAX - have));
+  if (!imgs.length) throw new RuleError(have >= ALBUM_MAX ? "Your album is full. Remove something first." : "Add at least one photo or video.");
+  if (imgs.some((f) => f.type.startsWith("video/") && f.size > VIDEO_MAX_BYTES)) throw new RuleError("A preview video can be at most 300 MB.");
   const stored: Awaited<ReturnType<typeof ingest>>[] = []; for (const f of imgs) stored.push(await ingest(f));
+  const long = stored.find((s) => s.mime.startsWith("video/") && (s.durationSec ?? 0) > VIDEO_MAX_SECONDS);
+  if (long) { for (const s of stored) await remove(s.key); throw new RuleError("A preview video can be at most 2 minutes."); }
   const ids = await db.transaction(async (tx) => {
-    const rows = await tx.insert(media).values(stored.map((s) => ({ ownerId: creatorId, storageKey: s.key, mime: s.mime, bytes: s.bytes, width: s.width ?? null, height: s.height ?? null }))).returning();
+    const rows = await tx.insert(media).values(stored.map((s) => ({ ownerId: creatorId, storageKey: s.key, mime: s.mime, bytes: s.bytes, width: s.width ?? null, height: s.height ?? null, durationSec: s.durationSec ?? null }))).returning();
     const ph = await tx.insert(previewPhotos).values(rows.map((r) => ({ creatorId, mediaId: r.id, kind }))).returning({ id: previewPhotos.id });
     await log(tx, `user:${creatorId}`, "album.photos_added", creatorId, { n: ph.length, kind });
     return ph.map((p) => p.id);
@@ -125,15 +132,25 @@ export async function viewPhoto(buyerId: string, albumId: string, n: number, now
   const a = await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.id, albumId) });
   if (!a || a.buyerId !== buyerId) return { status: 404 as const };
   if (a.status !== "opened" || !Number.isInteger(n) || n < 0 || n >= a.mediaIds.length) return { status: 410 as const };
+  const m = await db.query.media.findFirst({ where: eq(media.id, a.mediaIds[n]) });
+  if (!m) return { status: 404 as const };
+  const secs = itemSeconds(m);
   const seen = a.views[String(n)];
-  if (seen && now.getTime() - new Date(seen).getTime() > PHOTO_SECONDS * 1000 + GRACE_MS) return { status: 410 as const };
+  if (seen && now.getTime() - new Date(seen).getTime() > secs * 1000 + GRACE_MS) return { status: 410 as const };
   if (!seen) {
-    // Photos show in order: the one before must have had its turn.
+    // Items show in order: the one before must have had its turn.
     if (n > 0 && !a.views[String(n - 1)]) return { status: 409 as const };
     await db.update(previewAlbums).set({ views: sql`${previewAlbums.views} || ${JSON.stringify({ [String(n)]: now.toISOString() })}::jsonb` }).where(eq(previewAlbums.id, albumId));
   }
-  const m = await db.query.media.findFirst({ where: eq(media.id, a.mediaIds[n]) });
-  return m ? { status: 200 as const, storageKey: m.storageKey, left: Math.max(0, PHOTO_SECONDS * 1000 - (seen ? now.getTime() - new Date(seen).getTime() : 0)) } : { status: 404 as const };
+  return { status: 200 as const, storageKey: m.storageKey, mime: m.mime, left: Math.max(0, secs * 1000 - (seen ? now.getTime() - new Date(seen).getTime() : 0)) };
+}
+
+/* Per item of a share: is it a video and how many seconds it stays open. */
+export async function shareItems(mediaIds: string[]) {
+  if (!mediaIds.length) return [];
+  const rows = await db.select({ id: media.id, mime: media.mime, durationSec: media.durationSec }).from(media).where(inArray(media.id, mediaIds));
+  const by = new Map(rows.map((r) => [r.id, r]));
+  return mediaIds.map((id) => ({ video: !!by.get(id)?.mime.startsWith("video/"), seconds: itemSeconds(by.get(id)) }));
 }
 
 /* Closes shares whose photos have all had their turn (or that were left open), so nothing stays
@@ -142,8 +159,9 @@ export async function closeShares(now = new Date()) {
   const open = await db.select().from(previewAlbums).where(eq(previewAlbums.status, "opened"));
   let closed = 0;
   for (const a of open) {
-    const total = a.mediaIds.length * PHOTO_SECONDS * 1000 + 60_000;
-    const allSeen = a.mediaIds.every((_, i) => { const v = a.views[String(i)]; return v && now.getTime() - new Date(v).getTime() > PHOTO_SECONDS * 1000 + GRACE_MS; });
+    const items = await shareItems(a.mediaIds);
+    const total = items.reduce((x, it) => x + it.seconds * 1000, 0) + 60_000;
+    const allSeen = a.mediaIds.every((_, i) => { const v = a.views[String(i)]; return v && now.getTime() - new Date(v).getTime() > items[i].seconds * 1000 + GRACE_MS; });
     if (allSeen || (a.openedAt && now.getTime() - a.openedAt.getTime() > total)) {
       await db.update(previewAlbums).set({ status: "gone", mediaIds: [] }).where(eq(previewAlbums.id, a.id));
       closed++;

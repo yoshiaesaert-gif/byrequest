@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/server/auth";
-import { openAlbum, viewerFor, PHOTO_SECONDS } from "@/server/albums";
+import { openAlbum, viewerFor, shareItems } from "@/server/albums";
 import { RuleError } from "@/domain/rules";
 import { I } from "@/components/ui";
 import Viewer from "./viewer";
@@ -23,6 +23,7 @@ export default async function Album({ params }: { params: Promise<{ id: string }
   }
   // The first photo that has not had its full turn yet: earlier ones are gone for good.
   const now = Date.now();
-  const start = a.mediaIds.findIndex((_, i) => { const v = a.views[String(i)]; return !v || now - new Date(v).getTime() < PHOTO_SECONDS * 1000; });
-  return <Viewer id={id} count={a.mediaIds.length} start={start < 0 ? a.mediaIds.length : start} seconds={PHOTO_SECONDS} handle={u.handle} />;
+  const items = await shareItems(a.mediaIds);
+  const start = a.mediaIds.findIndex((_, i) => { const v = a.views[String(i)]; return !v || now - new Date(v).getTime() < items[i].seconds * 1000; });
+  return <Viewer id={id} items={items} start={start < 0 ? a.mediaIds.length : start} handle={u.handle} />;
 }
