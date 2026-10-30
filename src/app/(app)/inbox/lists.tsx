@@ -56,5 +56,5 @@ export function NoteList({ notes }: { notes: Note[] }) {
 /* The team's messages as chat bubbles; times in the viewer's own time zone. */
 export function TeamTimes({ msgs }: { msgs: { id: string; title: string; body: string; at: string }[] }) {
   const { short } = useClock();
-  return <>{msgs.map((m) => <div key={m.id} className="tc-m"><b>{m.title}</b><p>{m.body}</p><time>{short(m.at)}</time></div>)}</>;
+  return <>{msgs.map((m) => <div key={m.id} className="bt-m"><b>{m.title}</b><p>{m.body}</p><time>{short(m.at)}</time></div>)}</>;
 }
