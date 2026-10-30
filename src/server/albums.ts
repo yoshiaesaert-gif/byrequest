@@ -152,6 +152,23 @@ export async function closeShares(now = new Date()) {
   return closed;
 }
 
+/* A team profile is ByRequest itself: the back office looks at its album as that profile, with the same rules (each photo once, 10 seconds, named watermark of the staff member). */
+export async function viewerFor(userId: string, albumId: string) {
+  const a = await db.query.previewAlbums.findFirst({ where: eq(previewAlbums.id, albumId), columns: { buyerId: true } });
+  if (!a || a.buyerId === userId) return userId;
+  const [s, b] = await Promise.all([db.query.staff.findFirst({ where: eq(schema.staff.userId, userId) }), db.query.users.findFirst({ where: eq(schema.users.id, a.buyerId), columns: { house: true } })]);
+  return s && s.role !== "none" && b?.house ? a.buyerId : userId;
+}
+
+/* Asking for a preview in a team request: the back office acts as the team profile that posted it. */
+export async function buyerForOffer(userId: string, offerId: string) {
+  const o = await db.query.offers.findFirst({ where: eq(offers.id, offerId), columns: { requestId: true } });
+  const r = o && await db.query.requests.findFirst({ where: eq(requests.id, o.requestId), columns: { buyerId: true } });
+  if (!r || r.buyerId === userId) return userId;
+  const [s, b] = await Promise.all([db.query.staff.findFirst({ where: eq(schema.staff.userId, userId) }), db.query.users.findFirst({ where: eq(schema.users.id, r.buyerId), columns: { house: true } })]);
+  return s && s.role !== "none" && b?.house ? r.buyerId : userId;
+}
+
 export async function closeShare(buyerId: string, albumId: string) {
   await db.update(previewAlbums).set({ status: "gone", mediaIds: [] }).where(and(eq(previewAlbums.id, albumId), eq(previewAlbums.buyerId, buyerId), eq(previewAlbums.status, "opened")));
 }

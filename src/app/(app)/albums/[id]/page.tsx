@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/server/auth";
-import { openAlbum, PHOTO_SECONDS } from "@/server/albums";
+import { openAlbum, viewerFor, PHOTO_SECONDS } from "@/server/albums";
 import { RuleError } from "@/domain/rules";
 import { I } from "@/components/ui";
 import Viewer from "./viewer";
@@ -13,7 +13,7 @@ export default async function Album({ params }: { params: Promise<{ id: string }
   const { id } = await params;
   const { t } = await getT();
   const u = await requireUser();
-  const a = await openAlbum(u.id, id).catch((e) => { if (e instanceof RuleError) return null; throw e; });
+  const a = await openAlbum(await viewerFor(u.id, id), id).catch((e) => { if (e instanceof RuleError) return null; throw e; });
   if (!a) notFound();
   if (a.status !== "opened" || !a.mediaIds.length) {
     const wait = a.status === "requested";

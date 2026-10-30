@@ -151,7 +151,7 @@ export async function rateBuyer(dealId: string, review: deals.CreatorReview): Pr
 }
 
 export async function requestAlbum(offerId: string): Promise<Result> {
-  return guard(async () => { const u = await requireUser(); await albums.requestAlbum(u.id, offerId); revalidatePath("/c", "layout"); revalidatePath("/requests", "layout"); return { ok: true, msg: "Asked. They decide whether to share." }; });
+  return guard(async () => { const u = await requireUser(); await albums.requestAlbum(await albums.buyerForOffer(u.id, offerId), offerId); revalidatePath("/c", "layout"); revalidatePath("/requests", "layout"); return { ok: true, msg: "Asked. They decide whether to share." }; });
 }
 
 export async function answerAlbum(albumId: string, share: string[] | null): Promise<Result> {
@@ -179,7 +179,7 @@ export async function removePreviewPhoto(id: string): Promise<Result> {
 }
 
 export async function closePreview(albumId: string) {
-  const u = await requireUser(); await albums.closeShare(u.id, albumId);
+  const u = await requireUser(); await albums.closeShare(await albums.viewerFor(u.id, albumId), albumId);
 }
 
 /* The client encrypts with NaCl box before calling this. The server stores nonce and ciphertext only. */

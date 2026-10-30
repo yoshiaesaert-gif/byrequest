@@ -1,7 +1,8 @@
 "use client";
 import { useT } from "@/i18n/client";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { requestAlbum } from "../../actions";
 import { toast } from "@/components/chrome";
 
@@ -12,7 +13,11 @@ const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c
 export default function AlbumAsk({ offerId, handle, album, left }: { offerId: string; handle: string; album: { id: string; status: string } | null; left: number }) {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState(album?.status ?? null);
+  const router = useRouter();
+  const [asked, setAsked] = useState(false);
+  const state = album?.status ?? (asked ? "requested" : null);
+  // While you wait, the card turns into "ready" by itself once the creator shared.
+  useEffect(() => { if (state !== "requested") return; const h = setInterval(() => router.refresh(), 8000); return () => clearInterval(h); }, [state, router]);
   const [pending, start] = useTransition();
 
   const card = !state ? (
@@ -33,7 +38,7 @@ export default function AlbumAsk({ offerId, handle, album, left }: { offerId: st
           <div className="sheet-h"><div><span className="eyebrow">{t("Private preview")}</span><h3 className="t-h2" style={{ marginTop: 4 }}>{t("Ask {name} to show a bit more", { name: handle })}</h3></div><button className="icon-btn" onClick={() => setOpen(false)} aria-label={t("Close")}><Ico n="x" /></button></div>
           <p className="t-sm muted">{t("{name} keeps a small private album and picks what to share with you. Every photo was checked by our team.", { name: handle })}</p>
           <div className="cp-rules"><div><Ico n="eye" c="sm" /><span>{t("Each photo once, 10 seconds")}</span></div><div><Ico n="lock" c="sm" /><span>{t("Your name on every photo")}</span></div><div><Ico n="x" c="sm" /><span>{t("Gone after viewing, nothing kept")}</span></div><div><Ico n="shield" c="sm" /><span>{t("Max 5 candidates per request")}</span></div></div>
-          <button className="btn btn-brand btn-lg btn-block" disabled={pending} onClick={() => start(async () => { const r = await requestAlbum(offerId); if (r.ok) { setState("requested"); setOpen(false); toast(t(r.msg ?? "Sent")); } else toast(t(r.error), "err"); })}>{pending ? t("Sending…") : t("Send request")}</button>
+          <button className="btn btn-brand btn-lg btn-block" disabled={pending} onClick={() => start(async () => { const r = await requestAlbum(offerId); if (r.ok) { setAsked(true); setOpen(false); toast(t(r.msg ?? "Sent")); } else toast(t(r.error), "err"); })}>{pending ? t("Sending…") : t("Send request")}</button>
           <p className="t-xs muted">{t("{name} can always say no. Free while you choose. {n} of 5 asks left.", { name: handle, n: left })}</p>
         </div>
       </div>) : null}

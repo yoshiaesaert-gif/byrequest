@@ -1,5 +1,5 @@
 import { currentUser } from "@/server/auth";
-import { viewPhoto } from "@/server/albums";
+import { viewPhoto, viewerFor } from "@/server/albums";
 import { watermarkImage } from "@/server/media";
 
 /* One preview photo: only to the buyer it was shared with, only during its own 10 seconds, with their
@@ -8,7 +8,7 @@ export async function GET(_: Request, ctx: RouteContext<"/api/album/[id]/[n]">) 
   const { id, n } = await ctx.params;
   const u = await currentUser();
   if (!u) return new Response("Unauthorized", { status: 401 });
-  const v = await viewPhoto(u.id, id, Number(n));
+  const v = await viewPhoto(await viewerFor(u.id, id), id, Number(n));
   if (v.status !== 200) return new Response(v.status === 410 ? "Gone" : v.status === 409 ? "Not yet" : "Not found", { status: v.status, headers: { "Cache-Control": "no-store" } });
   const stamp = new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Brussels" });
   const img = await watermarkImage(v.storageKey, `${u.handle} · ${stamp}`);
