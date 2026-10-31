@@ -1,4 +1,5 @@
 "use client";
+import { ask } from "@/components/confirm";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/chrome";
@@ -57,7 +58,7 @@ export function AutoApprove({ on, canChange }: { on: boolean; canChange: boolean
 
 export function BulkApprove({ ids }: { ids: string[] }) {
   const [p, start] = useTransition(); const router = useRouter();
-  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => { if (confirm(`Approve ${ids.length} requests where the check found nothing?`)) start(async () => { const r = await reqBulk(ids, "approve"); say(r, "Approved"); router.refresh(); }); }}>Approve all {ids.length} clean ones</button>;
+  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={async () => { if (await ask(`The check found nothing in these ${ids.length} requests. They go live right away.`, { title: `Approve ${ids.length} requests?`, ok: "Approve all" })) start(async () => { const r = await reqBulk(ids, "approve"); say(r, "Approved"); router.refresh(); }); }}>Approve all {ids.length} clean ones</button>;
 }
 
 type R = { id: string; title: string; details: string; category: string; amount: number; dealCents: number; who: string; ageMin: number; ageMax: number; face: string; minVault: string; dueHours: number; lang: string; cover: string | null; status: string };

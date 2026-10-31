@@ -2002,3 +2002,35 @@ html:has(.cy),html:has(.cy) body{background:#0B0A12}
 @media (max-width:760px){.jr-sum{grid-template-columns:repeat(2,1fr)}.jr-s>summary{grid-template-columns:1fr}.jr-tags{justify-content:flex-start}.jr-steps li{grid-template-columns:58px 10px 1fr}.jr-steps em{display:none}}
 .pr-ans{display:flex;flex-direction:column;gap:8px;margin:10px 0}.pr-ans>div{padding:12px 14px;border-radius:12px;background:#EEF6F0;box-shadow:inset 0 0 0 1px #CFE6D7}
 .pr-ans b{font-size:.75rem;color:#137A47;text-transform:uppercase;letter-spacing:.05em}.pr-ans p{margin:4px 0 0}
+
+/* Admin support tickets: thread, receipts, notes, customer sidebar */
+.pl-head,.pl-row{grid-template-columns:36px 170px minmax(0,1fr) 150px 120px 100px}
+.pl-who small{display:block;font-size:.72rem;font-weight:600;color:var(--muted)}
+.pl-last{font-size:.8125rem;color:var(--ink-2);display:flex;align-items:center;gap:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tk-rc{font-style:normal;font-weight:800;font-size:.75rem;color:#8A8A86}.tk-rc.read{color:#2F7CF6}
+.pl-age.warm{color:#B86E00;font-weight:700}.pl-age.late{color:#C9372C;font-weight:800}
+.tk{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:0;border-top:1px solid var(--line);background:#FAFAFC}
+.tk-main{padding:18px 20px;min-width:0}
+.tk-thread{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tk-m{padding:14px 16px;border-radius:14px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);max-width:760px}
+.tk-m.reply{margin-left:auto;background:#F1EFFF;box-shadow:inset 0 0 0 1px #DAD5FF}
+.tk-m.note{margin-left:auto;background:#FFF8DB;box-shadow:inset 0 0 0 1px #F2E3A0}
+.tk-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}.tk-h b{font-size:.875rem}.tk-h span{font-size:.75rem;color:var(--muted)}
+.tk-m p{margin:0;line-height:1.5;white-space:pre-wrap}
+.tk-rcpt{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:.75rem;font-weight:600;color:var(--muted)}.tk-rcpt i{font-style:normal;font-weight:800}
+.tk-rcpt.read{color:#2F7CF6}
+.tk-ev{align-self:center;font-size:.75rem;color:var(--muted);padding:2px 10px;border-radius:999px;background:var(--sunk)}
+.tk-conv{margin-top:10px}.tk-conv summary{cursor:pointer;font-size:.78rem;font-weight:700;color:#4434E6}.tk-conv code{display:block;white-space:pre-wrap;margin-top:6px;padding:10px 12px;border-radius:10px;background:#F4F3FF;font-size:.78rem;line-height:1.5}
+.tk-comp{margin-top:16px;border-radius:14px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}.tk-comp.note{box-shadow:inset 0 0 0 1px #F2E3A0;background:#FFFCEE}
+.tk-tabs{display:flex;gap:2px;padding:6px 6px 0}.tk-tabs button{padding:8px 12px;border:0;border-radius:9px 9px 0 0;background:none;font:inherit;font-size:.8125rem;font-weight:700;color:var(--muted);cursor:pointer}.tk-tabs button.on{color:var(--ink);box-shadow:inset 0 -2px 0 #4434E6}
+.tk-comp.note .tk-tabs button.on{box-shadow:inset 0 -2px 0 #C79A00}
+.tk-comp textarea{display:block;width:100%;border:0;border-top:1px solid var(--line);padding:12px 14px;font:inherit;font-size:.9375rem;resize:vertical;background:transparent;color:var(--ink);outline:0}
+.tk-act{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 10px;border-top:1px solid var(--line)}.tk-act>span{margin-right:auto}
+.tk-closed{margin-top:14px;font-size:.8125rem;color:var(--muted)}
+.tk-side{border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:18px;background:var(--surface)}
+.tk-side h4{margin:0 0 8px;font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tk-side dl{margin:0 0 10px;display:grid;gap:6px}.tk-side dl div{display:flex;justify-content:space-between;gap:10px;font-size:.8125rem}.tk-side dt{color:var(--muted)}.tk-side dd{margin:0;text-align:right;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.tk-side dd.ok{color:#137A47}.tk-side dd.warn{color:#C9372C}.tk-side code{font-size:.75rem}
+.tk-who{display:block;font-size:1rem;font-weight:800;margin-bottom:8px}
+.tk-sbtns{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:900px){.tk{grid-template-columns:1fr}.tk-side{border-left:0;border-top:1px solid var(--line)}.pl-head,.pl-row{grid-template-columns:30px 110px minmax(0,1fr) 90px}.pl-head span:nth-child(4),.pl-row .pl-last,.pl-head span:nth-child(6),.pl-row .pl-age{display:none}}

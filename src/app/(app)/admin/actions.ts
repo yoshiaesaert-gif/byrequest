@@ -68,10 +68,20 @@ export async function issueStatus(id: string, status: "open" | "handling" | "don
   await I.setIssue(id, status, user.handle);
   revalidatePath("/admin/problems");
 }
-export async function issueAnswer(id: string, text: string): Promise<{ error?: string }> {
+export async function issueAnswer(id: string, text: string, close = true): Promise<{ error?: string }> {
   const { user } = await requireStaff();
-  try { await I.answerIssue(id, text, user.handle); } catch (e) { if (e instanceof RuleError) return { error: e.message }; throw e; }
+  try { await I.answerIssue(id, text, user.handle, close); } catch (e) { if (e instanceof RuleError) return { error: e.message }; throw e; }
   revalidatePath("/admin/problems"); return {};
+}
+export async function issueNote(id: string, text: string): Promise<{ error?: string }> {
+  const { user } = await requireStaff();
+  try { await I.noteIssue(id, text, user.handle); } catch (e) { if (e instanceof RuleError) return { error: e.message }; throw e; }
+  revalidatePath("/admin/problems"); return {};
+}
+export async function issueAssign(id: string) {
+  const { user } = await requireStaff();
+  await I.assignIssue(id, user.handle);
+  revalidatePath("/admin/problems");
 }
 
 export async function issuesStatus(ids: string[], status: "open" | "handling" | "done") {

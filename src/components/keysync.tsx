@@ -1,4 +1,5 @@
 "use client";
+import { ask as confirmAsk } from "./confirm";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { startAuthentication, browserSupportsWebAuthn, type AuthenticationResponseJSON } from "@simplewebauthn/browser";
@@ -100,7 +101,7 @@ export function KeySync({ uid, accountPub, passkeys, locked }: { uid: string; ac
     if (r?.ok) { setShown(linkCode(pub(eph.current))); setCode(r.data!); } else toast(t("That did not work. Try again."), "err");
   };
   const fresh = async () => {
-    if (!confirm(t("Start with a new chat key? Messages from before stay locked on this device. Only do this if you no longer have a device where your chats open."))) return;
+    if (!(await confirmAsk(t("Messages from before stay locked on this device. Only do this if you no longer have a device where your chats open."), { title: t("Start with a new chat key?"), ok: t("New chat key"), cancel: t("Cancel"), danger: true }))) return;
     const k = newKeys(); keepKey(uid, k.secretKey); await forceNewKey(pub(k)); location.reload();
   };
   const approve = async () => {

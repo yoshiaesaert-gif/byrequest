@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, redoId, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal, teamSend, teamOfferSend } from "./actions";
 import { toast } from "@/components/chrome";
+import { ask } from "@/components/confirm";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
 
@@ -60,7 +61,7 @@ export function BlockAccount({ id, blocked }: { id: string; blocked: boolean }) 
 export function RedoIdentity({ id }: { id: string }) {
   const [p, start] = useTransition(); const [done, setDone] = useState(false);
   if (done) return <span className="t-sm muted">Sent back to the ID check. They got a notice.</span>;
-  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => { if (confirm("The current ID result stops counting and the creator must verify again with Didit. Continue?")) start(async () => { const r = await redoId(id); say(r, "ID check must be done again"); if (r.ok) setDone(true); }); }}>Redo ID check</button>;
+  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={async () => { if (await ask("The current ID result stops counting. The creator gets a notice and must verify again with Didit.", { title: "Redo the ID check?", ok: "Redo ID check", danger: true })) start(async () => { const r = await redoId(id); say(r, "ID check must be done again"); if (r.ok) setDone(true); }); }}>Redo ID check</button>;
 }
 export function RemoveRequest({ id }: { id: string }) {
   const [reason, setReason] = useState(""); const [p, start] = useTransition(); const [done, setDone] = useState(false);

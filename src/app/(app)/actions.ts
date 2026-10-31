@@ -385,3 +385,11 @@ export async function offerThread(offerId: string) {
 export async function sendOfferMessage(offerId: string, sealed: { nonce: string; body: string }): Promise<Result> {
   return guard(async () => { const u = await requireUser(); await TCH.offerSendFrom(u.id, offerId, sealed); });
 }
+
+/* A reply to the ByRequest team from the person's ByRequest messages: it joins their support ticket. */
+export async function replyToTeam(text: string): Promise<{ ok: boolean; error?: string }> {
+  const u = await requireUser();
+  try { await (await import("@/server/issues")).customerReply(u.id, text); } catch (e) { if (e instanceof Error && e.name === "RuleError") return { ok: false, error: e.message }; throw e; }
+  revalidatePath("/inbox/byrequest");
+  return { ok: true };
+}

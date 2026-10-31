@@ -8,6 +8,7 @@ import { db, schema } from "@/db";
 import { eq } from "drizzle-orm";
 import { Av, I } from "@/components/ui";
 import { MenuButton, HideButton, Live } from "@/components/chrome";
+import { AskHost } from "@/components/confirm";
 import NavLinks from "@/components/navlinks";
 import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
@@ -63,7 +64,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <UploadDock />
       <InstallApp />
       <ProblemSheet role={mode === "sell" ? "creator" : "buyer"} />
-      <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} />
+      <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} /><AskHost />
     </div>
   );
 }
