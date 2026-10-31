@@ -97,12 +97,14 @@ export async function translateOne(text: string, from: Locale, to: Locale) {
   if (!p || !text.trim() || from === to) return null;
   const k = key(to, text);
   const have = await db.query.translations.findFirst({ where: eq(schema.translations.key, k) });
-  if (have) return have.text;
+  if (have?.text.trim()) return have.text;
   let out: string, used: string = p;
   if (p === "deepl") out = await deepl(text, from, to);
   else if (p === "claude") out = await claude(text, from, to).catch(() => { used = "mymemory"; return mymemory(text, from, to); });
   else out = await mymemory(text, from, to);
-  await db.insert(schema.translations).values({ key: k, source: from, target: to, text: out, provider: used }).onConflictDoNothing();
+  if (!out.trim()) throw new Error(`${used} empty`);
+  await db.insert(schema.translations).values({ key: k, source: from, target: to, text: out, provider: used })
+    .onConflictDoUpdate({ target: schema.translations.key, set: { text: out, provider: used, createdAt: new Date() } });
   return out;
 }
 
@@ -119,7 +121,7 @@ export async function fillTranslations(max = 12) {
       if (to === r.lang) continue;
       for (const text of [r.title, r.details]) {
         if (!text || done >= max) continue;
-        if (await db.query.translations.findFirst({ where: eq(schema.translations.key, key(to, text)), columns: { key: true } })) continue;
+        if ((await db.query.translations.findFirst({ where: eq(schema.translations.key, key(to, text)), columns: { text: true } }))?.text.trim()) continue;
         try { await translateOne(text, r.lang, to); done++; } catch (e) { return { done, error: String(e) }; }
       }
     }
