@@ -54,7 +54,7 @@ export default function IssueList({ rows }: { rows: Row[] }) {
     {sel.size ? <div className="pl-bulk"><b>{sel.size} selected</b><button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => bulk("handling")}>Mark in progress</button><button className="btn btn-primary btn-sm" disabled={pending} onClick={() => bulk("done")}>Mark done</button><button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => bulk("open")}>Reopen</button><button className="pr-link" onClick={() => setSel(new Set())}>Clear</button></div> : null}
     <div className="pl-table" role="table">
       <div className="pl-head" role="row"><label className="pl-ck"><input type="checkbox" checked={allPicked} onChange={() => setSel(allPicked ? new Set() : new Set(list.map((r) => r.id)))} aria-label="Select all" /></label><span>Person</span><span>Subject</span><span>Last activity</span><span>Status</span><span className="r">Waiting</span></div>
-      {list.length ? list.map((r) => <Item key={r.id} r={r} open={openIds.has(r.id)} picked={sel.has(r.id)} onPick={() => pick(r.id)} onToggle={() => toggle(r.id)} age={ago(r.at, now)} />) : <p className="pl-empty">{rows.length ? "Nothing matches these filters." : "No reports yet. Quiet is good."}</p>}
+      {list.length ? list.map((r) => <Item key={r.id} r={r} open={openIds.has(r.id)} picked={sel.has(r.id)} onPick={() => pick(r.id)} onToggle={() => toggle(r.id)} age={ago(r.at, now)} now={now} />) : <p className="pl-empty">{rows.length ? "Nothing matches these filters." : "No reports yet. Quiet is good."}</p>}
     </div>
     <p className="t-sm muted pl-foot">{list.length} of {rows.length} shown</p>
   </div>);
@@ -63,7 +63,7 @@ export default function IssueList({ rows }: { rows: Row[] }) {
 const fmt = (iso: string) => new Date(iso).toLocaleString("en-GB", { timeZone: "Europe/Brussels", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const span = (a: string, b: string) => { const m = Math.max(0, Math.round((+new Date(b) - +new Date(a)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.round(m / 1440)} d`; };
 
-function Item({ r, open, picked, onPick, onToggle, age }: { r: Row; open: boolean; picked: boolean; onPick: () => void; onToggle: () => void; age: string }) {
+function Item({ r, open, picked, onPick, onToggle, age, now }: { r: Row; open: boolean; picked: boolean; onPick: () => void; onToggle: () => void; age: string; now: number }) {
   const c = r.ctx as Ctx;
   const [text, setText] = useState(""); const [mode, setMode] = useState<"reply" | "note">("reply"); const [err, setErr] = useState(""); const [p, start] = useTransition();
   // The typed text is kept in this tab, so a reload (for example during an update) never loses it.
@@ -83,7 +83,7 @@ function Item({ r, open, picked, onPick, onToggle, age }: { r: Row; open: boolea
   const last = r.thread.at(-1);
   const waiting = r.status !== "done" && (!lastReply || r.thread.findLastIndex((e) => e.kind === "customer") > r.thread.findLastIndex((e) => e.kind === "reply"));
   const firstResponse = replies[0] ? span(r.at, replies[0].at) : null;
-  const sla = waiting ? (Date.now() - +new Date(r.thread.filter((e) => e.kind === "customer").at(-1)?.at ?? r.at)) / 60000 : 0;
+  const sla = waiting && now ? (now - +new Date(r.thread.filter((e) => e.kind === "customer").at(-1)?.at ?? r.at)) / 60000 : 0;
   return (<div className={"pl-item" + (open ? " is-open" : "")}>
     <div className="pl-row" role="row" onClick={onToggle}>
       <label className="pl-ck" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={picked} onChange={onPick} aria-label="Select" /></label>
