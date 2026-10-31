@@ -51,7 +51,7 @@ export default function Feed({ items, tab, sell, frost }: { items: Item[]; tab: 
                 <div className="fdeal">
                   <div className="fearn"><span className="lbl">{t("Budget")}</span><b className="num">{euros(r.dealCents)}</b>{sell ? <span className="ffix">{t("You get {amount} · fixed price", { amount: euros(Math.round(r.dealCents * CREATOR_SHARE)) })}</span> : null}</div>
                   {r.applied ? <Link className="fgo is-applied" href={`/requests/${r.id}#offer`}><i><Ico n="check" c="sm" /></i><span>{t("Applied")}</span></Link>
-                    : <Link className="fgo" href={`/requests/${r.id}${sell ? "#offer" : ""}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>}
+                    : <Link className="fgo" href={`/requests/${r.id}`}><span>{sell ? t("Apply") : t("View request")}</span><i><Ico n="right" c="sm" /></i></Link>}
                 </div>
               </div>
             </article>

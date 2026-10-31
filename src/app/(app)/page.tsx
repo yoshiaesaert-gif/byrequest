@@ -281,7 +281,7 @@ async function CreatorHome({ userId, handle, board }: { userId: string; handle: 
     <section className="h-sec h-split">
       <div className="h-most"><span className="h-kick dark">{t("Top budgets")}</span><h2>{t("Best paid requests right now")}</h2>
         <ol>{topPaid.map((x, i) => (
-          <li key={x.id}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{TL(x.title)}</b><span>{t(CAT_LABEL[x.category])} · {amountLabel(x.category, x.amount, t)} · {t("You get {amount}", { amount: euros(Math.round(x.dealCents * CREATOR_SHARE)) })}</span></div><b className="h-top-eur num">{euros(x.dealCents)}</b><Link href={`/requests/${x.id}#offer`} aria-label={TL(x.title)}><I n="right" /></Link></li>))}</ol></div>
+          <li key={x.id}><span className="ix num">{String(i + 1).padStart(2, "0")}</span><div><b>{TL(x.title)}</b><span>{t(CAT_LABEL[x.category])} · {amountLabel(x.category, x.amount, t)} · {t("You get {amount}", { amount: euros(Math.round(x.dealCents * CREATOR_SHARE)) })}</span></div><b className="h-top-eur num">{euros(x.dealCents)}</b><Link href={`/requests/${x.id}`} aria-label={TL(x.title)}><I n="right" /></Link></li>))}</ol></div>
       <div className="h-how"><span className="h-kick">{t("How it works")}</span>
         <div className="h-step"><span className="num">1</span><div><b>{t("Pick")}</b><p>{t("Only requests you like. The amount is on it.")}</p></div></div>
         <div className="h-step"><span className="num">2</span><div><b>{t("Make")}</b><p>{t("In your own time, face or not.")}</p></div></div>

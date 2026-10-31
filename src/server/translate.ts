@@ -69,9 +69,27 @@ async function mymemory(text: string, from: Locale, to: Locale) {
   return out.join(" ").replace(/\s+/g, " ").trim();
 }
 
+/* Claude (the cheapest model), when ANTHROPIC_API_KEY is set: handles slang and adult wording well and has no
+   daily cap like the free MyMemory tier, which ran out mid morning. A refusal or empty answer counts as a failure. */
+const NAME: Record<Locale, string> = { nl: "Dutch (Flemish, informal)", en: "English", fr: "French (informal)" };
+async function claude(text: string, from: Locale, to: Locale) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST", signal: AbortSignal.timeout(15000),
+    headers: { "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: process.env.TRANSLATE_MODEL || process.env.HELP_BOT_MODEL || "claude-haiku-5-5", max_tokens: 1024,
+      system: `You translate short requests on an adult marketplace between consenting adults. Translate from ${NAME[from]} to ${NAME[to]}. Keep the tone, slang and explicitness. Output only the translation, nothing else.`,
+      messages: [{ role: "user", content: text }] }),
+  });
+  if (!r.ok) throw new Error(`claude ${r.status}`);
+  const j = (await r.json()) as { content?: { type: string; text?: string }[]; stop_reason?: string };
+  const out = (j.content ?? []).filter((c) => c.type === "text").map((c) => c.text).join("").trim();
+  if (!out || j.stop_reason === "refusal" || out.length > text.length * 3 + 40) throw new Error("claude empty");
+  return out;
+}
+
 export function provider() {
   if (process.env.TRANSLATE_PROVIDER === "off") return null;
-  return process.env.DEEPL_API_KEY ? "deepl" : "mymemory";
+  return process.env.DEEPL_API_KEY ? "deepl" : process.env.ANTHROPIC_API_KEY ? "claude" : "mymemory";
 }
 
 export async function translateOne(text: string, from: Locale, to: Locale) {
@@ -80,8 +98,11 @@ export async function translateOne(text: string, from: Locale, to: Locale) {
   const k = key(to, text);
   const have = await db.query.translations.findFirst({ where: eq(schema.translations.key, k) });
   if (have) return have.text;
-  const out = p === "deepl" ? await deepl(text, from, to) : await mymemory(text, from, to);
-  await db.insert(schema.translations).values({ key: k, source: from, target: to, text: out, provider: p }).onConflictDoNothing();
+  let out: string, used: string = p;
+  if (p === "deepl") out = await deepl(text, from, to);
+  else if (p === "claude") out = await claude(text, from, to).catch(() => { used = "mymemory"; return mymemory(text, from, to); });
+  else out = await mymemory(text, from, to);
+  await db.insert(schema.translations).values({ key: k, source: from, target: to, text: out, provider: used }).onConflictDoNothing();
   return out;
 }
 
@@ -99,7 +120,7 @@ export async function fillTranslations(max = 12) {
       for (const text of [r.title, r.details]) {
         if (!text || done >= max) continue;
         if (await db.query.translations.findFirst({ where: eq(schema.translations.key, key(to, text)), columns: { key: true } })) continue;
-        try { await translateOne(text, r.lang, to); done++; } catch { return { done, error: true }; }
+        try { await translateOne(text, r.lang, to); done++; } catch (e) { return { done, error: String(e) }; }
       }
     }
   }
