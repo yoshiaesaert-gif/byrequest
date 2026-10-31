@@ -8,7 +8,7 @@ const { visits, visitEvents, audit, users } = schema;
 
 export type Step = { at: Date; kind: "page" | "click" | "action" | "signup"; text: string; sub?: string; href?: string; tone?: "ok" | "warn" };
 export type Session = { id: string | null; startedAt: Date; lastAt: Date; device?: string | null; browser?: string | null; os?: string | null; city?: string | null; country?: string | null;
-  referrer?: string | null; refCode?: string | null; landing?: string | null; pages: number; clicks: number; beforeSignup: boolean; steps: Step[] };
+  referrer?: string | null; refCode?: string | null; landing?: string | null; app?: boolean; pages: number; clicks: number; beforeSignup: boolean; steps: Step[] };
 
 const ACTION: Record<string, string> = {
   "consent.terms": "Accepted the terms of use", "consent.privacy": "Accepted the privacy statement", "consent.creator_agreement": "Signed the creator agreement",
@@ -69,7 +69,7 @@ export async function journey(userId: string) {
     for (const d of await db.select({ id: schema.deals.id, title: schema.requests.title }).from(schema.deals).innerJoin(schema.requests, eq(schema.requests.id, schema.deals.requestId)).where(inArray(schema.deals.id, ids))) titles.set(d.id, d.title);
   }
 
-  const sessions: Session[] = vs.map((v) => ({ id: v.id, startedAt: v.startedAt, lastAt: v.lastAt, device: v.device, browser: v.browser, os: v.os, city: v.city, country: v.country, referrer: v.referrer, refCode: v.refCode,
+  const sessions: Session[] = vs.map((v) => ({ id: v.id, startedAt: v.startedAt, lastAt: v.lastAt, device: v.device, browser: v.browser, os: v.os, city: v.city, country: v.country, referrer: v.referrer, refCode: v.refCode, app: v.app,
     landing: v.landing, pages: v.pages, clicks: v.clicks, beforeSignup: v.startedAt < u.createdAt && !v.userId, steps: [] }));
   const byId = new Map(sessions.map((s) => [s.id, s]));
   for (const e of evs) {

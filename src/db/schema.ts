@@ -39,6 +39,8 @@ export const users = pgTable("users", {
   buyerRatingSum: integer("buyer_rating_sum").notNull().default(0),   // stars this person got as a buyer
   buyerRatingCount: integer("buyer_rating_count").notNull().default(0),
   country: text("country").notNull().default("BE"),                 // for VAT and tax reporting, ISO 3166 alpha 2
+  appSince: timestamp("app_since", { withTimezone: true }),          // first opened from the home screen app
+  appLast: timestamp("app_last", { withTimezone: true }),            // last opened from the home screen app
   ageVerifiedAt: timestamp("age_verified_at", { withTimezone: true }), // buyer age check passed at the provider
   sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
   supportOrg: text("support_org"),
@@ -390,6 +392,7 @@ export const visits = pgTable("visits", {
   referrer: text("referrer"),
   utm: jsonb("utm").$type<Record<string, string>>(),
   refCode: text("ref_code"),                                          // came in through an invite link
+  app: boolean("app").notNull().default(false),                       // opened from the home screen app (installed web app)
   landing: text("landing").notNull(),
   pages: integer("pages").notNull().default(0),
   clicks: integer("clicks").notNull().default(0),

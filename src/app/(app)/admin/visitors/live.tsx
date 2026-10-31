@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 /* "On the site now": a click opens the list of the people active in the last 5 minutes, one row each. */
 type P = { id: string; visitor_id: string; user_id: string | null; handle: string | null; is_creator: boolean | null; device: string | null; browser: string | null; os: string | null; city: string | null; country: string | null;
-  ref_code: string | null; referrer: string | null; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; label: string | null; visits_today: number };
+  ref_code: string | null; referrer: string | null; app: boolean; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; label: string | null; visits_today: number };
 const ago = (iso: string, now: number) => { const s = Math.max(0, Math.round((now - +new Date(iso)) / 1000)); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`; };
 const cap = (s: string | null) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 
@@ -33,7 +33,7 @@ export default function LiveNow({ people }: { people: P[] }) {
           <div className="lv-r lv-head"><span>Person</span><span>Now on</span><span>Device and place</span><span>On site</span><span className="r">Last action</span></div>
           {people.map((p) => (<div key={p.id} className="lv-r">
             <span className="lv-who">{p.user_id ? <Link href={`/admin/users/${p.user_id}`}>{p.handle}</Link> : <Link href={`/admin/visitors?v=${p.id}`}>Visitor {p.visitor_id.slice(-5)}</Link>}
-              <small>{p.user_id ? (p.is_creator ? "Creator" : "Buyer") : "Not signed in"}{p.ref_code ? ` · invite ${p.ref_code}` : p.referrer ? ` · from ${p.referrer}` : ""}{p.visits_today > 1 ? ` · ${p.visits_today} visits today` : ""}</small></span>
+              <small>{p.user_id ? (p.is_creator ? "Creator" : "Buyer") : "Not signed in"}{p.app ? " · 📱 app" : ""}{p.ref_code ? ` · invite ${p.ref_code}` : p.referrer ? ` · from ${p.referrer}` : ""}{p.visits_today > 1 ? ` · ${p.visits_today} visits today` : ""}</small></span>
             <span className="lv-pg">{p.label ?? "?"}<small><code>{p.page ?? ""}</code></small></span>
             <span className="lv-dev">{[cap(p.device), p.browser && p.os ? `${p.browser} on ${p.os}` : p.browser].filter(Boolean).join(" · ")}<small>{[p.city, p.country].filter(Boolean).join(", ") || "Location unknown"}</small></span>
             <span>{now ? ago(p.started_at, now) : ""}<small>{p.pages} pages · {p.clicks} clicks</small></span>

@@ -24,7 +24,7 @@ export default function Tracker() {
     let vid: string | undefined;
     if (all) { vid = get(localStorage, "brq_vid") ?? undefined; if (!vid) { vid = crypto.randomUUID(); put(localStorage, "brq_vid", vid); } }
     const send = (k: "page" | "click" | "ping", l?: string) => {
-      const body = JSON.stringify({ v: vid, s: all ? get(sessionStorage, "brq_sid") ?? undefined : undefined, k, p: location.pathname + location.search, l, r: first.current ? document.referrer : undefined, lang: navigator.language });
+      const body = JSON.stringify({ v: vid, s: all ? get(sessionStorage, "brq_sid") ?? undefined : undefined, k, p: location.pathname + location.search, l, r: first.current ? document.referrer : undefined, lang: navigator.language, app: matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true || undefined });
       fetch("/api/t", { method: "POST", body, keepalive: true, headers: { "content-type": "text/plain" } }).then((r) => r.ok && r.status === 200 ? r.json() : null).then((j) => { if (all && j?.s) put(sessionStorage, "brq_sid", j.s); }).catch(() => {});
     };
     send("page"); first.current = false;

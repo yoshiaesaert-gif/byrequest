@@ -2076,3 +2076,5 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .cpl-c span{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.cpl-c b{display:block;font-size:.875rem;margin-top:2px}.cpl-c small{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
 .cpl-c.n b{color:#C9372C}
 .dz-rt{display:inline-flex;align-items:center;gap:6px}.dz-rt i{width:7px;height:7px;border-radius:50%;background:#2BBF6A;animation:cyp 1.6s ease-in-out infinite}
+.bo-app{margin:4px 0 0;font-size:.8125rem;color:var(--muted)}.bo-app.on{color:#137A47;font-weight:600}
+.jr-tags i.t-app{background:#E6F7EE;color:#137A47}

@@ -37,7 +37,7 @@ export default function Journey({ sessions, summary }: { sessions: Session[]; su
         <summary>
           <span className="jr-when"><b>{day(s.startedAt)}</b>{time(s.startedAt).slice(0, 5)} to {time(s.lastAt).slice(0, 5)}</span>
           <span className="jr-meta">{s.id ? <>{[s.device && s.device[0].toUpperCase() + s.device.slice(1), s.browser && s.os ? `${s.browser} on ${s.os}` : s.browser, [s.city, s.country].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</> : "Actions outside a tracked visit"}</span>
-          <span className="jr-tags">{s.beforeSignup ? <i className="t-pre">before sign up</i> : null}{s.refCode ? <i>invite {s.refCode}</i> : null}{s.referrer ? <i>from {s.referrer}</i> : null}
+          <span className="jr-tags">{s.app ? <i className="t-app">home screen app</i> : null}{s.beforeSignup ? <i className="t-pre">before sign up</i> : null}{s.refCode ? <i>invite {s.refCode}</i> : null}{s.referrer ? <i>from {s.referrer}</i> : null}
             {s.id ? <i className="t-n">{dur(sec)} · {s.pages} pages · {s.clicks} clicks</i> : null}</span>
         </summary>
         <ol className="jr-steps">{steps.map((x, j) => (

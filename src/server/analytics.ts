@@ -6,7 +6,7 @@ const { visits, visitEvents, users } = schema;
 const IDLE_MS = 30 * 60_000;                       // a visit ends after 30 minutes without activity
 const BOT = /bot|crawl|spider|slurp|preview|monitor|curl|wget|headless|lighthouse|render/i;
 
-export type Beat = { v: string; s?: string; k: "page" | "click" | "ping"; p: string; l?: string; r?: string; lang?: string };
+export type Beat = { v: string; s?: string; k: "page" | "click" | "ping"; p: string; l?: string; r?: string; lang?: string; app?: boolean };
 
 function parseUa(ua: string) {
   const device = /ipad|tablet/i.test(ua) ? "tablet" : /mobi|iphone|android/i.test(ua) ? "mobile" : "desktop";
@@ -39,9 +39,11 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
     let ref: string | null = null;
     try { if (b.r) { const host = new URL(b.r).host; ref = /byrequest\.me$/.test(host) ? null : host; } } catch { /* no referrer */ }
     const code = url.pathname.startsWith("/r/") ? url.pathname.slice(3, 20) : h.refCode;
-    [v] = await db.insert(visits).values({ visitorId: b.v, userId: h.userId, ip: h.ip || null, ...parseUa(h.ua), lang: b.lang?.slice(0, 8) ?? null, referrer: ref, utm: Object.keys(utm).length ? utm : null, refCode: code?.slice(0, 20) ?? null, landing: b.p.slice(0, 300) }).returning();
+    [v] = await db.insert(visits).values({ visitorId: b.v, userId: h.userId, ip: h.ip || null, ...parseUa(h.ua), lang: b.lang?.slice(0, 8) ?? null, referrer: ref, utm: Object.keys(utm).length ? utm : null, refCode: code?.slice(0, 20) ?? null, landing: b.p.slice(0, 300), app: !!b.app }).returning();
     void locate(v.id, h.ip);
   }
+  // The home screen app: remember on the account when it was first and last used.
+  if (b.app && h.userId && b.k === "page") await db.update(users).set({ appSince: sql`coalesce(${users.appSince}, now())`, appLast: now }).where(eq(users.id, h.userId));
   if (b.k !== "ping") await db.insert(visitEvents).values({ visitId: v.id, kind: b.k, path: b.p.slice(0, 300), label: b.l?.slice(0, 80) ?? null });
   await db.update(visits).set({ lastAt: now, userId: v.userId ?? h.userId, pages: b.k === "page" ? sql`${visits.pages} + 1` : visits.pages, clicks: b.k === "click" ? sql`${visits.clicks} + 1` : visits.clicks }).where(eq(visits.id, v.id));
   return v.id;
@@ -97,8 +99,8 @@ export async function dashboard() {
    across browsers; an anonymous visitor is one browser (the daily id of IP and browser, or the stored id with consent). */
 export async function liveNow() {
   const rows = (await db.execute<{ id: string; visitor_id: string; user_id: string | null; handle: string | null; is_creator: boolean | null; device: string | null; browser: string | null; os: string | null; city: string | null; country: string | null;
-    ref_code: string | null; referrer: string | null; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; visits_today: number }>(sql`
-    select v.id, v.visitor_id, v.user_id, u.handle, u.is_creator, v.device, v.browser, v.os, v.city, v.country, v.ref_code, v.referrer, v.started_at, v.last_at, v.pages, v.clicks,
+    ref_code: string | null; referrer: string | null; app: boolean; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; visits_today: number }>(sql`
+    select v.id, v.visitor_id, v.user_id, u.handle, u.is_creator, v.device, v.browser, v.os, v.city, v.country, v.ref_code, v.referrer, v.app, v.started_at, v.last_at, v.pages, v.clicks,
       (select e.path from visit_events e where e.visit_id = v.id and e.kind = 'page' order by e.at desc limit 1) page,
       (select count(*)::int from visits v2 where v2.visitor_id = v.visitor_id and v2.started_at >= ${dayStart(0)}) visits_today
     from ${visits} v left join ${users} u on u.id = v.user_id
