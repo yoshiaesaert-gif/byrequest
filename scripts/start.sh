@@ -19,4 +19,8 @@ npx tsx scripts/rebalance-covers.ts || true
 # The cap follows the container: about two thirds of its memory limit, so an upgrade needs no setting.
 LIMIT=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max)
 case "$LIMIT" in ''|max|*[!0-9]*) AUTO=340 ;; *) AUTO=$((LIMIT / 1048576 * 2 / 3)); [ "$AUTO" -gt 4096 ] && AUTO=340 ;; esac
-exec node --max-old-space-size=${NODE_HEAP_MB:-$AUTO} node_modules/next/dist/bin/next start -p "${PORT:-3000}" -H 0.0.0.0
+# Listen on every address, IPv6 and IPv4 ("::"), when the container has IPv6: Render's paid network may connect over
+# IPv6 and never reaches a server bound to 0.0.0.0 only. Without IPv6, "::" fails to start, so fall back to IPv4.
+if [ -s /proc/net/if_inet6 ]; then HOST="::"; else HOST="0.0.0.0"; fi
+echo "listening on $HOST:${PORT:-3000}, heap ${NODE_HEAP_MB:-$AUTO} MB"
+exec node --max-old-space-size=${NODE_HEAP_MB:-$AUTO} node_modules/next/dist/bin/next start -p "${PORT:-3000}" -H "$HOST"
