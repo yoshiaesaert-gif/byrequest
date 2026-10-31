@@ -13,5 +13,7 @@ npx tsx scripts/house-requests.ts || true
 npx tsx scripts/demo-life.ts || true
 npx tsx scripts/clean-demo.ts || true
 npx tsx scripts/rebalance-covers.ts || true
-(sleep 20; npx tsx scripts/worker.ts) &
-exec npx next start -p "${PORT:-3000}" -H 0.0.0.0
+# The minute ticker is plain node with a tiny heap. Next runs without the npx wrapper and with a heap cap, so the
+# garbage collector works harder before the 512 MB container limit is reached instead of the container being killed.
+(sleep 20; exec node --max-old-space-size=32 scripts/tick.mjs) &
+exec node --max-old-space-size=${NODE_HEAP_MB:-340} node_modules/next/dist/bin/next start -p "${PORT:-3000}" -H 0.0.0.0
