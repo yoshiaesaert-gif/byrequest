@@ -109,3 +109,14 @@ export async function sendContact(input: { message: string; topic: string; conta
   const topic = (TOPICS as readonly string[]).includes(input.topic) ? input.topic : "other";
   await db.insert(techIssues).values({ userId: who.userId, message, kind: "message", topic, contact: input.contact.trim().slice(0, 200) || null, page: "/contact", context: {} });
 }
+
+/* Customer satisfaction with the help assistant: the last 30 days against the 30 before, and the latest ratings. */
+export async function helpStats() {
+  const H = schema.helpRatings;
+  const [cur] = await db.select({ n: count(), avg: sql<number>`coalesce(avg(${H.stars}),0)::float`, good: sql<number>`count(*) filter (where ${H.stars} >= 4)::int` }).from(H).where(gt(H.createdAt, sql`now() - interval '30 days'`));
+  const [prev] = await db.select({ avg: sql<number>`coalesce(avg(${H.stars}),0)::float`, n: count() }).from(H).where(and(gt(H.createdAt, sql`now() - interval '60 days'`), sql`${H.createdAt} <= now() - interval '30 days'`));
+  const dist = await db.select({ s: H.stars, n: count() }).from(H).where(gt(H.createdAt, sql`now() - interval '30 days'`)).groupBy(H.stars);
+  const recent = await db.select({ r: H, handle: users.handle }).from(H).leftJoin(users, eq(users.id, H.userId)).orderBy(desc(H.createdAt)).limit(30);
+  return { n: cur.n, avg: cur.avg, csat: cur.n ? Math.round((cur.good / cur.n) * 100) : 0, prevAvg: prev.avg, prevN: prev.n, dist: [5, 4, 3, 2, 1].map((s) => ({ s, n: dist.find((d) => d.s === s)?.n ?? 0 })),
+    recent: recent.map((x) => ({ id: x.r.id, stars: x.r.stars, comment: x.r.comment, handle: x.handle, userId: x.r.userId, role: x.r.role, filed: x.r.filed, conversation: x.r.conversation, at: x.r.createdAt.toISOString() })) };
+}

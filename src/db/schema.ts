@@ -480,3 +480,16 @@ export const creatorReviews = pgTable("creator_reviews", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
 }, (t) => [uniqueIndex("creator_reviews_user").on(t.userId)]);
+
+/* How people rated the help assistant at the end of a conversation: 1 to 5 stars, an optional comment. */
+export const helpRatings = pgTable("help_ratings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  stars: integer("stars").notNull(),
+  comment: text("comment"),
+  role: text("role"),
+  filed: boolean("filed").notNull().default(false),
+  turns: integer("turns").notNull().default(0),
+  conversation: text("conversation"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("help_ratings_at").on(t.createdAt)]);

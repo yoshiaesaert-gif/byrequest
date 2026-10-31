@@ -2046,3 +2046,32 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .lv-ago{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums}.lv-ago i{width:8px;height:8px;border-radius:50%;background:#2BBF6A}
 .lv-empty{padding:20px;color:var(--muted)}.lv-note{margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:.75rem;color:var(--muted);background:var(--sunk)}
 @media (max-width:760px){.lv-r{grid-template-columns:1fr auto}.lv-r>span:nth-child(2),.lv-r>span:nth-child(3),.lv-r>span:nth-child(4){display:none}}
+/* Help: team badge, rating */
+.hb-launch{position:relative}.hb-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#E5484D;color:#fff;font-style:normal;font-size:.72rem;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper,#fff)}
+.hb-team{display:flex;align-items:center;gap:8px;margin:0 12px 6px;padding:10px 12px;border-radius:12px;background:#F1EFFF;color:#3F2BA8;font-size:.8125rem;font-weight:700}.hb-team i{width:8px;height:8px;border-radius:50%;background:#E5484D;flex:none}.hb-team span{margin-left:auto}
+.hb-rate{margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:var(--sunk);text-align:center}.hb-rate b{display:block;font-size:.8125rem;margin-bottom:4px}
+.hb-stars{display:flex;justify-content:center;gap:2px}.hb-stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:#D3D3CF;cursor:pointer;padding:2px 3px;transition:transform .12s,color .12s}.hb-stars button.on{color:#F5B301}.hb-stars button:hover{transform:scale(1.15)}
+.hb-why{display:flex;gap:6px;margin-top:8px}.hb-why input{flex:1;min-width:0;height:34px;border-radius:10px;border:0;box-shadow:inset 0 0 0 1px var(--line);padding:0 10px;font:inherit;font-size:.8125rem;background:var(--surface)}.hb-why button{border:0;border-radius:10px;padding:0 12px;background:var(--ink);color:var(--paper);font-weight:700;font-size:.8125rem;cursor:pointer}
+.hb-thx{text-align:center;font-size:.78rem;color:var(--muted);margin:8px 0 0}
+/* Support: help ratings (CSAT) */
+.csat{display:grid;grid-template-columns:200px 200px minmax(0,1fr) auto;gap:14px;align-items:center;margin:0 0 16px;padding:16px 18px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.csat-k span{display:block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.csat-k b{display:block;font-size:1.8rem;letter-spacing:-.02em}.csat-k b i{font-style:normal;color:#F5B301;font-size:1.2rem;margin-left:4px}.csat-k small{font-size:.75rem;color:var(--muted)}
+.csat-d{display:grid;gap:3px}.csat-d div{display:grid;grid-template-columns:28px 1fr 28px;gap:8px;align-items:center;font-size:.75rem;color:var(--ink-2)}.csat-d i{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden}.csat-d i b{display:block;height:100%;background:#F5B301;border-radius:4px}.csat-d em{font-style:normal;text-align:right}
+.csat-list{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px}
+.csat-r summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:90px 160px minmax(0,1fr) 110px;gap:12px;align-items:center;padding:8px 10px;border-radius:10px;font-size:.8125rem}.csat-r summary::-webkit-details-marker{display:none}.csat-r summary:hover{background:var(--sunk)}
+.csat-r small{display:block;color:var(--muted);font-size:.72rem}.csat-st{color:#F5B301;letter-spacing:1px}.csat-st em{font-style:normal;color:#D9D9D5}.csat-c{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.csat-r time{color:var(--muted);text-align:right}
+.csat-r code{display:block;white-space:pre-wrap;margin:4px 10px 8px;padding:10px 12px;border-radius:10px;background:#F4F3FF;font-size:.75rem;line-height:1.5}
+@media (max-width:900px){.csat{grid-template-columns:1fr 1fr}.csat-d{grid-column:1/-1}.csat-r summary{grid-template-columns:80px 1fr}.csat-c,.csat-r time{display:none}}
+/* Admin account: compliance status */
+.cpl{margin:6px 0 22px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.cpl.ok{box-shadow:inset 0 0 0 1px #BFE3CD}.cpl.bad{box-shadow:inset 0 0 0 1.5px #F2B8B5}
+.cpl-h{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.cpl.ok .cpl-h{background:#F1FAF4}.cpl.bad .cpl-h{background:#FFF4F3}
+.cpl-badge{padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:800}.cpl.ok .cpl-badge{background:#1B9E5A;color:#fff}.cpl.bad .cpl-badge{background:#C9372C;color:#fff}
+.cpl-h b{font-size:1rem}.cpl-sum{font-size:.8125rem;color:var(--ink-2)}
+.cpl-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.cpl-c{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--line);border-right:1px solid var(--line)}
+.cpl-c i{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:800}
+.cpl-c.y i{background:#E6F7EE;color:#137A47}.cpl-c.n i{background:#FDECEA;color:#C9372C}.cpl-c.info i{background:var(--sunk);color:var(--muted)}
+.cpl-c span{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.cpl-c b{display:block;font-size:.875rem;margin-top:2px}.cpl-c small{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
+.cpl-c.n b{color:#C9372C}

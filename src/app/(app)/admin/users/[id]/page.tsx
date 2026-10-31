@@ -10,12 +10,13 @@ import { euros } from "@/domain/rules";
 import { BlockAccount, RedoIdentity, HouseAccept, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
 import { applicationsOf, offerUnread } from "@/server/teamchat";
 import { journey } from "@/server/journey";
+import { complianceOf } from "@/server/compliance-status";
 import Journey from "./journey";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
-  const [x, apps, prof, photos, jr] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id)]);
+  const [x, apps, prof, photos, jr, cp] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id), complianceOf(id)]);
   const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();
   const { u } = x;
@@ -28,6 +29,13 @@ export default async function Account({ params }: { params: Promise<{ id: string
       <p>{u.isCreator ? "Creator" : "Buyer"} · joined {when(u.createdAt)} · {role === "admin" ? u.email : "email visible to admins"}{u.marketingOptIn ? " · marketing opt in" : ""}</p>
       {u.bannedAt ? <p className="bo-warn">Blocked since {when(u.bannedAt)}{u.banReason ? `: ${u.banReason}` : ""}</p> : null}
     </div></div>
+
+    {cp ? <section className={"cpl" + (cp.ok ? " ok" : " bad")}>
+      <div className="cpl-h"><span className="cpl-badge">{cp.ok ? "✓ Meets the rules" : "! Action needed"}</span><b>{cp.creator ? "Creator compliance" : "Buyer compliance"}</b>
+        <span className="cpl-sum">{cp.ok ? "Age and identity confirmed by the verification partner, documents accepted." : `Missing: ${cp.missing.join(", ")}`}</span></div>
+      <div className="cpl-g">{cp.checks.map((c) => (<div key={c.k} className={"cpl-c " + (c.ok === null ? "info" : c.ok ? "y" : "n")}>
+        <i aria-hidden="true">{c.ok === null ? "i" : c.ok ? "✓" : "✕"}</i><div><span>{c.label}</span><b>{c.value}</b>{c.note ? <small>{c.note}</small> : null}</div></div>))}</div>
+    </section> : null}
 
     <dl className="bo-kpis bo-kpis-4">
       <div><dt>Requests posted</dt><dd className="num">{x.reqs.length}</dd></div>

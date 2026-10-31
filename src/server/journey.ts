@@ -88,7 +88,7 @@ export async function journey(userId: string) {
     const s = sessions.find((x) => a.at >= new Date(x.startedAt.getTime() - 60_000) && a.at <= new Date(x.lastAt.getTime() + 120_000));
     if (s) s.steps.push(a); else loose.push(a);
   }
-  for (const s of sessions) s.steps.sort((a, b) => +a.at - +b.at);
+  for (const s of sessions) s.steps.sort((a, b) => +b.at - +a.at);   // newest first, so the latest action is seen right away
   if (loose.length) {
     loose.sort((a, b) => +a.at - +b.at);
     sessions.push({ id: null, startedAt: loose[0].at, lastAt: loose.at(-1)!.at, pages: 0, clicks: 0, beforeSignup: false, steps: loose });

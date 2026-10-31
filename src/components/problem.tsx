@@ -42,6 +42,23 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
   const [report, setReport] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  // Stars at the end of a conversation, asked once per conversation; low scores can add a word.
+  const [rated, setRated] = useState<number>(() => { try { return Number(sessionStorage.getItem(CHAT + "_rated") ?? 0); } catch { return 0; } });
+  const [stars, setStars] = useState(0); const [why, setWhy] = useState("");
+  const [team, setTeam] = useState(0);
+  useEffect(() => {
+    const check = () => fetch("/api/notifications?team=1", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((j) => setTeam(j?.team ?? 0)).catch(() => {});
+    const id0 = window.setTimeout(check, 0); const id = window.setInterval(check, 60000);
+    return () => { clearTimeout(id0); clearInterval(id); };
+  }, [path]);
+  const rate = (n: number, comment?: string) => {
+    setStars(n);
+    if (n <= 3 && comment === undefined) return;
+    void fetch("/api/help-rating", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stars: n, comment, role, filed: turns.some((m) => m.filed), turns: turns.map(({ role, content }) => ({ role, content })) }) }).catch(() => {});
+    setRated(turns.length); try { sessionStorage.setItem(CHAT + "_rated", String(turns.length)); } catch { /* private mode */ }
+  };
+  const answered = turns.filter((m) => m.role === "assistant").length;
+  const askRating = answered >= 1 && !busy && rated === 0;
 
   useEffect(() => {
     const on = () => { setOpen(true); window.setTimeout(() => field.current?.focus(), 80); };
@@ -76,9 +93,10 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
 
   const chips = [t("My photo upload does not work"), t("Something does not save"), t("I have a question about a deal")];
   return (<>
-    {!open ? <button className="hb-launch" onClick={() => setOpen(true)} aria-label={t("Help")}><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg><span>{t("Help")}</span></button> : null}
+    {!open ? <button className="hb-launch" onClick={() => setOpen(true)} aria-label={team ? t("Help, {n} new message from the team", { n: team }) : t("Help")}><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg><span>{t("Help")}</span>{team ? <i className="hb-badge">{team}</i> : null}</button> : null}
     {open ? (<div className="hb" role="dialog" aria-label={t("Help assistant")}>
-      <header><span className="hb-logo"><img src="/apple-icon.png" alt="" width={36} height={36} /><i /></span><div><b>{t("ByRequest help")}</b><small>{t("AI assistant, 24/7")}</small></div><div className="hb-gear"><button onClick={() => setGear((g) => !g)} aria-label={t("Settings")} aria-expanded={gear}><svg className="ico" aria-hidden="true"><use href="#i-gear" /></svg></button>{gear ? <div className="hb-gm" role="menu"><Link role="menuitem" href="/help" onClick={() => { setGear(false); setOpen(false); }}><b>{t("Help centre and FAQ")}</b><span>{t("Browse every question and answer")}</span></Link><button role="menuitem" onClick={() => { setGear(false); setReport(true); window.setTimeout(() => field.current?.focus(), 50); }}><b>{t("Report a malfunction")}</b><span>{t("Goes straight to the team")}</span></button><button role="menuitem" onClick={() => { setGear(false); setTurns([]); setErr(""); setRetry(""); setReport(false); try { sessionStorage.removeItem(CHAT); } catch { /* private mode */ } }}><b>{t("Clear chat history")}</b><span>{t("Starts a fresh conversation")}</span></button></div> : null}</div><button onClick={() => setOpen(false)} aria-label={t("Close")}><svg className="ico" aria-hidden="true"><use href="#i-x" /></svg></button></header>
+      <header><span className="hb-logo"><img src="/apple-icon.png" alt="" width={36} height={36} /><i /></span><div><b>{t("ByRequest help")}</b><small>{t("AI assistant, 24/7")}</small></div><div className="hb-gear"><button onClick={() => setGear((g) => !g)} aria-label={t("Settings")} aria-expanded={gear}><svg className="ico" aria-hidden="true"><use href="#i-gear" /></svg></button>{gear ? <div className="hb-gm" role="menu"><Link role="menuitem" href="/help" onClick={() => { setGear(false); setOpen(false); }}><b>{t("Help centre and FAQ")}</b><span>{t("Browse every question and answer")}</span></Link><button role="menuitem" onClick={() => { setGear(false); setReport(true); window.setTimeout(() => field.current?.focus(), 50); }}><b>{t("Report a malfunction")}</b><span>{t("Goes straight to the team")}</span></button><button role="menuitem" onClick={() => { setGear(false); setTurns([]); setErr(""); setRetry(""); setReport(false); setRated(0); setStars(0); setWhy(""); try { sessionStorage.removeItem(CHAT); sessionStorage.removeItem(CHAT + "_rated"); } catch { /* private mode */ } }}><b>{t("Clear chat history")}</b><span>{t("Starts a fresh conversation")}</span></button></div> : null}</div><button onClick={() => setOpen(false)} aria-label={t("Close")}><svg className="ico" aria-hidden="true"><use href="#i-x" /></svg></button></header>
+      {team ? <Link className="hb-team" href="/inbox/byrequest" onClick={() => setOpen(false)}><i />{team === 1 ? t("You have a new message from the ByRequest team") : t("You have {n} new messages from the ByRequest team", { n: team })}<span>{t("Open")} →</span></Link> : null}
       <div className="hb-list" ref={list}>
         <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them">{role === "creator" ? t("Hi! You are in creator mode. Ask me about earning, your profile, offers or payouts, or tell me what is not working.") : t("Hi! You are in buyer mode. Ask me about posting requests, choosing creators, paying or your vault, or tell me what is not working.")}</p></div>
         {!turns.length ? <div className="hb-chips">{chips.map((c) => <button key={c} onClick={() => send(c)}>{c}</button>)}</div> : null}
@@ -91,6 +109,10 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
         {busy ? <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them hb-dots"><i /><i /><i /></p></div> : null}
         {err ? <p className="hb-err" role="alert">{err}</p> : null}
         {retry && !busy ? <div className="hb-chips"><button onClick={() => send(retry, true)}>{t("Try again")}</button></div> : null}
+        {askRating ? <div className="hb-rate"><b>{t("How was this help?")}</b>
+          <div className="hb-stars" role="radiogroup" aria-label={t("Rate this help")}>{[1, 2, 3, 4, 5].map((n) => <button key={n} role="radio" aria-checked={stars === n} className={n <= stars ? "on" : ""} onClick={() => rate(n)} aria-label={`${n}`}>★</button>)}</div>
+          {stars && stars <= 3 ? <div className="hb-why"><input value={why} onChange={(e) => setWhy(e.target.value)} maxLength={300} placeholder={t("What could be better? (optional)")} /><button onClick={() => rate(stars, why)}>{t("Send")}</button></div> : null}</div> : null}
+        {rated > 0 && answered >= 1 ? <p className="hb-thx">{t("Thanks for your rating!")}</p> : null}
       </div>
       {report ? <div className="hb-rep"><svg className="ico sm" aria-hidden="true"><use href="#i-alert" /></svg><span>{t("Describe what is not working. Your next message goes straight to the team.")}</span><button onClick={() => setReport(false)}>{t("Cancel")}</button></div> : null}
       <form onSubmit={(e) => { e.preventDefault(); send(text); }}>
