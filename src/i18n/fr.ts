@@ -2772,5 +2772,12 @@ const fr: Record<string, string> = {
   "You stay in control": "Tu gardes le contrôle",
   "A few photos or one short video is enough. Change or remove them whenever you want.": "Quelques photos ou une courte vidéo suffisent. Modifie-les ou supprime-les quand tu veux.",
   "Make my album": "Créer mon album",
+  "You have {n} new messages": "Vous avez {n} nouveaux messages",
+  "Notifications are on for this device": "Les notifications sont activées sur cet appareil",
+  "That did not work. Try again later.": "Cela n'a pas marché. Réessayez plus tard.",
+  "Turn on notifications": "Activer les notifications",
+  "Know it the moment someone answers": "Sachez-le dès que quelqu'un répond",
+  "A short notice on this device, without details on your lock screen.": "Une courte notification sur cet appareil, sans détails sur l'écran verrouillé.",
+  "Turn on": "Activer",
 };
 export default fr;

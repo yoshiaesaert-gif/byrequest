@@ -45,6 +45,12 @@ services:
         sync: false
       - key: DIDIT_WEBHOOK_SECRET
         sync: false
+      - key: VAPID_PUBLIC_KEY        # Web Push keys for phone and browser notifications; set in the dashboard
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: MAIL_FROM

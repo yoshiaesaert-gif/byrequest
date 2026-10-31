@@ -933,3 +933,5 @@ p{margin:0}
 .an ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}.an li{display:flex;gap:12px}.an li i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:.8rem;background:var(--sunk)}
 .an li b{display:block;font-size:.95rem}.an li span{font-size:.875rem;color:var(--ink-2);line-height:1.45}
 .an-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+/* Ask for notifications (components/push-ask.tsx), shares the install card look */
+.pa-card{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.pa-ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#F1EFFF;color:#4434E6}

@@ -16,6 +16,7 @@ import { PasskeyPrompt } from "@/components/passkey";
 import { listPasskeys } from "@/server/passkeys";
 import ProblemSheet from "@/components/problem";
 import AlbumNudge from "@/components/album-nudge";
+import PushAsk from "@/components/push-ask";
 import { albumNudge } from "@/server/albums";
 import { UploadDock } from "@/components/uploads";
 import InstallApp from "@/components/install";
@@ -65,6 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
       <UploadDock />
       <InstallApp />
+      <PushAsk />
       <ProblemSheet role={mode === "sell" ? "creator" : "buyer"} />
       {mode === "sell" && active && (await albumNudge(u.id, u.createdAt).catch(() => false)) ? <AlbumNudge /> : null}
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} /><AskHost />

@@ -25,3 +25,17 @@ self.addEventListener("fetch", (e) => {
     return (r.status >= 502 && r.status <= 504) || (!html && r.status >= 400) ? wait(e.request) : r;
   }).catch(() => wait(e.request)));
 });
+
+/* Notifications (Web Push). The text is already discreet when the person chose so; tapping opens the right page. */
+self.addEventListener("push", (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) { d = { title: "ByRequest", body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "ByRequest", { body: d.body || "", icon: "/app-192.png", badge: "/app-192.png", tag: d.tag || "brq", renotify: true, data: { href: d.href || "/inbox" } }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const href = (e.notification.data && e.notification.data.href) || "/inbox";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ("focus" in c) { c.navigate(href).catch(() => {}); return c.focus(); } }
+    return self.clients.openWindow(href);
+  }));
+});

@@ -2772,5 +2772,12 @@ const nl: Record<string, string> = {
   "You stay in control": "Jij houdt de controle",
   "A few photos or one short video is enough. Change or remove them whenever you want.": "Een paar foto's of één korte video is genoeg. Wijzig of verwijder ze wanneer je wilt.",
   "Make my album": "Maak mijn album",
+  "You have {n} new messages": "Je hebt {n} nieuwe berichten",
+  "Notifications are on for this device": "Meldingen staan aan op dit toestel",
+  "That did not work. Try again later.": "Dat lukte niet. Probeer later opnieuw.",
+  "Turn on notifications": "Meldingen aanzetten",
+  "Know it the moment someone answers": "Weet het meteen als iemand antwoordt",
+  "A short notice on this device, without details on your lock screen.": "Een korte melding op dit toestel, zonder details op je vergrendelscherm.",
+  "Turn on": "Aanzetten",
 };
 export default nl;

@@ -268,6 +268,7 @@ export const notifications = pgTable("notifications", {
   href: text("href").notNull(),
   readAt: timestamp("read_at", { withTimezone: true }),
   mailedAt: timestamp("mailed_at", { withTimezone: true }),         // when it went out in a notification email
+  pushedAt: timestamp("pushed_at", { withTimezone: true }),         // when it went out as a phone or browser notification
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("notifications_user").on(t.userId, t.createdAt)]);
 
@@ -496,3 +497,16 @@ export const helpRatings = pgTable("help_ratings", {
   conversation: text("conversation"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("help_ratings_at").on(t.createdAt)]);
+
+/* Devices that agreed to notifications (Web Push). One row per browser or home screen app. */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  device: text("device"),
+  app: boolean("app").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("push_subscriptions_endpoint").on(t.endpoint), index("push_subscriptions_user").on(t.userId)]);

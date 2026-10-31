@@ -17,7 +17,7 @@ import Journey from "./journey";
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
-  const [x, apps, prof, photos, jr, cp] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id), complianceOf(id)]);
+  const [x, apps, prof, photos, jr, cp, push] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id), complianceOf(id), db.select({ app: schema.pushSubscriptions.app, device: schema.pushSubscriptions.device, last: schema.pushSubscriptions.lastSentAt }).from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.userId, id))]);
   const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();
   const { u } = x;
@@ -29,6 +29,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
       <h1>{u.handle}{u.internal ? <span className="bo-tag">internal</span> : <span className="bo-tag ext">external</span>}{x.staff ? <span className="bo-tag">{x.staff}</span> : null}</h1><InternalToggle id={u.id} internal={u.internal} />
       <p>{u.isCreator ? "Creator" : "Buyer"} · joined {when(u.createdAt)} · {role === "admin" ? u.email : "email visible to admins"}{u.marketingOptIn ? " · marketing opt in" : ""}</p>
       <p className={"bo-app" + (u.appSince ? " on" : "")}>{u.appSince ? <>📱 Uses the home screen app · since {when(u.appSince)}{u.appLast ? ` · last opened ${when(u.appLast)}` : ""}</> : "Not using the home screen app yet (browser only)"}</p>
+      <p className={"bo-app" + (push.length ? " on" : "")}>{push.length ? <>🔔 Notifications on for {push.length} device{push.length > 1 ? "s" : ""}{push.some((p) => p.app) ? " (including the home screen app)" : ""}{push.some((p) => p.last) ? ` · last sent ${when(new Date(Math.max(...push.filter((p) => p.last).map((p) => +p.last!))))}` : ""}</> : "Notifications off: no device agreed yet"}</p>
       {u.bannedAt ? <p className="bo-warn">Blocked since {when(u.bannedAt)}{u.banReason ? `: ${u.banReason}` : ""}</p> : null}
     </div></div>
 
