@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal, teamSend, teamOfferSend } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, redoId, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal, teamSend, teamOfferSend } from "./actions";
 import { toast } from "@/components/chrome";
 
 const say = (r: { ok: boolean; error?: string }, ok = "Done") => toast(r.ok ? ok : r.error ?? "Failed", r.ok ? "ok" : "err");
@@ -56,6 +56,11 @@ export function BlockAccount({ id, blocked }: { id: string; blocked: boolean }) 
   if (blocked) return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(async () => say(await block(id, false, ""), "Account unblocked"))}>Unblock account</button>;
   return <div className="bo-inline"><input className="input" placeholder="Reason (logged, no sensitive data)" value={reason} onChange={(e) => setReason(e.target.value)} />
     <button className="btn btn-secondary btn-sm" disabled={p || reason.trim().length < 5} onClick={() => start(async () => say(await block(id, true, reason), "Account blocked and signed out"))}>Block account</button></div>;
+}
+export function RedoIdentity({ id }: { id: string }) {
+  const [p, start] = useTransition(); const [done, setDone] = useState(false);
+  if (done) return <span className="t-sm muted">Sent back to the ID check. They got a notice.</span>;
+  return <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => { if (confirm("The current ID result stops counting and the creator must verify again with Didit. Continue?")) start(async () => { const r = await redoId(id); say(r, "ID check must be done again"); if (r.ok) setDone(true); }); }}>Redo ID check</button>;
 }
 export function RemoveRequest({ id }: { id: string }) {
   const [reason, setReason] = useState(""); const [p, start] = useTransition(); const [done, setDone] = useState(false);

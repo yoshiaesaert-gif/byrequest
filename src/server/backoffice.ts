@@ -90,6 +90,17 @@ export async function setBan(staffId: string, userId: string, ban: boolean, reas
   await issueDecision(db, { userId, action: ban ? "account_blocked" : "account_unblocked", ground: "terms", facts: ban ? reason : "After review the account was reopened.", scope: ban ? "Whole account. You cannot sign in, post requests, make offers or open your vault." : "Whole account.", decidedBy: "staff" });
 }
 
+/* Sends a creator back through the real ID and age check: the earlier result no longer counts, they get a notice
+   with a direct link, and the shown age follows the verified birth year once the partner approves. */
+export async function redoIdentity(staffId: string, userId: string) {
+  await db.transaction(async (tx) => {
+    await tx.update(S.identityChecks).set({ status: "expired", reason: "Check redone at the request of the team" }).where(and(eq(S.identityChecks.userId, userId), eq(S.identityChecks.status, "approved")));
+    await tx.update(S.onboarding).set({ identity: "action_required", updatedAt: new Date() }).where(eq(S.onboarding.userId, userId));
+    await tx.insert(S.notifications).values({ userId, title: "Verify your ID once more", body: "One more step: confirm your ID with our verification partner. It takes a few minutes, and your profile then shows your verified age.", href: "/onboarding?step=identity" });
+    await log(tx, `staff:${staffId}`, "staff.identity_redo", userId, {});
+  });
+}
+
 /* Takes a request off the market: it closes, pending offers are declined and the poster gets a
    statement of reasons they can appeal. Deals already running are not touched. */
 export async function removeRequest(staffId: string, requestId: string, reason: string) {

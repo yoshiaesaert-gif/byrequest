@@ -34,6 +34,7 @@ export const restrict = async (userId: string, level: "none" | "restricted" | "s
 export const answer = async (appealId: string, text: string) => run((s) => A.answerAppeal(s, appealId, text));
 export const reveal = async (userId: string, purpose: string) => run((s) => A.revealIdentity(s, userId, purpose), "admin");
 export const removal = async (id: string, status: "content_hidden" | "resolved" | "rejected", deliveryId?: string) => run(async (s) => { if (deliveryId) await hideDelivery(deliveryId, `staff:${s}`); return A.setRemoval(s, id, status); });
+export const redoId = async (userId: string) => run((s) => B.redoIdentity(s, userId), "admin");
 export const block = async (userId: string, ban: boolean, reason: string) => run((s) => B.setBan(s, userId, ban, reason), "admin");
 export const dropRequest = async (id: string, reason: string) => run((s) => B.removeRequest(s, id, reason));
 export const staffRole = async (who: string, role: "none" | "support" | "admin") => run((s) => B.setStaffRole(s, who, role), "admin");

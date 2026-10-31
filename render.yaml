@@ -37,8 +37,8 @@ services:
         sync: false
       - key: S3_SECRET_ACCESS_KEY
         sync: false
-      - key: BRQ_IDENTITY_PROVIDER # didit once the keys below are set; sandbox until then
-        value: sandbox
+      - key: BRQ_IDENTITY_PROVIDER # didit in production; set in the dashboard, never by a Blueprint sync
+        sync: false
       - key: DIDIT_API_KEY
         sync: false
       - key: DIDIT_WORKFLOW_ID

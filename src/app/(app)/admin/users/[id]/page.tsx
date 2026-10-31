@@ -7,13 +7,15 @@ import { requireStaff } from "@/server/admin";
 import { userDetail } from "@/server/backoffice";
 import { Av, I, when } from "@/components/ui";
 import { euros } from "@/domain/rules";
-import { BlockAccount, HouseAccept, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
+import { BlockAccount, RedoIdentity, HouseAccept, InternalToggle, RemoveRequest, SupportOrgForm } from "../../parts";
 import { applicationsOf, offerUnread } from "@/server/teamchat";
+import { journey } from "@/server/journey";
+import Journey from "./journey";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
-  const [x, apps, prof, photos] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id))]);
+  const [x, apps, prof, photos, jr] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id)]);
   const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();
   const { u } = x;
@@ -33,6 +35,8 @@ export default async function Account({ params }: { params: Promise<{ id: string
       <div><dt>Offers made</dt><dd className="num">{x.offers}</dd></div>
       <div><dt>Earned</dt><dd className="num">{euros(earned)}</dd></div>
     </dl>
+
+    {jr ? <Journey sessions={jr.sessions} summary={jr} /> : null}
 
     <div className="bo-cols">
       <section>
@@ -65,7 +69,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
               <p className="t-xs muted">Preview album: {photos.length} photo{photos.length === 1 ? "" : "s"} ({photos.filter((x) => x.status === "approved").length} approved, {photos.filter((x) => x.status === "in_review").length} in review).</p></div>); })() : <p className="muted t-sm">No profile yet.</p>}
           <h2 className="bo-sh">Creator setup</h2>
           <p className="t-sm muted" style={{ marginBottom: 10 }}>Identity {x.onboarding?.identity ?? "not started"} · payouts {x.onboarding?.payout ?? "not started"} · restriction {x.onboarding?.restriction ?? "none"}</p>
-          <Link href={`/admin/creators/${u.id}`} className="btn btn-secondary btn-sm">Open creator file</Link></> : null}
+          <div className="bo-inline"><Link href={`/admin/creators/${u.id}`} className="btn btn-secondary btn-sm">Open creator file</Link>{role === "admin" && x.onboarding?.identity === "approved" ? <RedoIdentity id={u.id} /> : null}</div></> : null}
         <h2 className="bo-sh">Account</h2>
         {role === "admin" ? <BlockAccount id={u.id} blocked={!!u.bannedAt} /> : <p className="t-sm muted">Blocking an account needs an admin.</p>}
         <h2 className="bo-sh">Support organisation</h2>
