@@ -2000,3 +2000,5 @@ html:has(.cy),html:has(.cy) body{background:#0B0A12}
 .jr-steps li.k-signup .jr-tx{font-weight:800}
 .jr-none{color:var(--ink-3,#8A8A86);font-size:.8125rem}
 @media (max-width:760px){.jr-sum{grid-template-columns:repeat(2,1fr)}.jr-s>summary{grid-template-columns:1fr}.jr-tags{justify-content:flex-start}.jr-steps li{grid-template-columns:58px 10px 1fr}.jr-steps em{display:none}}
+.pr-ans{display:flex;flex-direction:column;gap:8px;margin:10px 0}.pr-ans>div{padding:12px 14px;border-radius:12px;background:#EEF6F0;box-shadow:inset 0 0 0 1px #CFE6D7}
+.pr-ans b{font-size:.75rem;color:#137A47;text-transform:uppercase;letter-spacing:.05em}.pr-ans p{margin:4px 0 0}

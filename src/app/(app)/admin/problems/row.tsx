@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { toast } from "@/components/chrome";
 import { issueAnswer, issueStatus, issuesStatus } from "../actions";
 
-type Ctx = { ua?: string; viewport?: string; net?: string | null; online?: boolean; errors?: { at: string; msg: string }[]; conversation?: string };
+type Ctx = { answers?: { at: string; by: string; text: string }[]; ua?: string; viewport?: string; net?: string | null; online?: boolean; errors?: { at: string; msg: string }[]; conversation?: string };
 type Row = { kind: string; topic: string | null; contact: string | null; id: string; handle: string | null; userId: string | null; status: string; at: string; message: string; page: string; ctx: Record<string, unknown> };
 const LABEL: Record<string, string> = { open: "Open", handling: "In progress", done: "Done" };
 const TOPIC: Record<string, string> = { question: "Question", problem: "Not working", payment: "Payments", account: "Account", partnership: "Partnership", other: "Other" };
@@ -60,6 +61,17 @@ export default function IssueList({ rows }: { rows: Row[] }) {
 function Item({ r, open, picked, onPick, onToggle, age }: { r: Row; open: boolean; picked: boolean; onPick: () => void; onToggle: () => void; age: string }) {
   const c = r.ctx as Ctx;
   const [reply, setReply] = useState(""); const [err, setErr] = useState(""); const [p, start] = useTransition();
+  // The typed answer is kept in this tab, so a reload (for example during an update) never loses it.
+  const key = `brq_ans_${r.id}`;
+  useEffect(() => { const id = window.setTimeout(() => { try { const d = sessionStorage.getItem(key); if (d) setReply(d); } catch { /* private mode */ } }, 0); return () => clearTimeout(id); }, [key]);
+  const type = (v: string) => { setReply(v); setErr(""); try { if (v) sessionStorage.setItem(key, v); else sessionStorage.removeItem(key); } catch { /* private mode */ } };
+  const send = () => start(async () => {
+    try {
+      const x = await issueAnswer(r.id, reply);
+      if (x.error) { setErr(x.error); return; }
+      type(""); toast(`Sent to ${r.handle ?? "them"}. The ticket moved to Done.`);
+    } catch { setErr("Not sent. Your text is kept: try again in a moment."); }
+  });
   const errs = c.errors?.length ?? 0;
   return (<div className={"pl-item s-" + r.status + (open ? " is-open" : "")}>
     <div className="pl-row" role="row" onClick={onToggle}>
@@ -75,10 +87,11 @@ function Item({ r, open, picked, onPick, onToggle, age }: { r: Row; open: boolea
       <div className="pr-meta"><span>{new Date(r.at).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span><code>{r.page || "unknown page"}</code>{c.viewport ? <span>{c.viewport}</span> : null}{c.net ? <span>{c.net}</span> : null}{c.online === false ? <span>offline</span> : null}{r.contact ? <span>Reach them: <b>{r.contact}</b></span> : null}</div>
       {c.conversation ? <div className="pr-errs conv"><b>Conversation with the assistant</b><code>{c.conversation}</code></div> : null}
       {errs ? <div className="pr-errs"><b>Last errors in the browser</b>{c.errors!.slice(-5).map((e, i) => <code key={i}>{e.msg}</code>)}</div> : null}
+      {c.answers?.length ? <div className="pr-ans">{c.answers.map((a, i) => <div key={i}><b>Answered by {a.by} · {new Date(a.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</b><p>{a.text}</p></div>)}</div> : null}
       {c.ua ? <p className="pr-ua t-xs muted">{c.ua}</p> : null}
       {r.status !== "done" ? <div className="pr-act">
-        <input value={reply} onChange={(e) => { setReply(e.target.value); setErr(""); }} placeholder="Answer from ByRequest, sent to their messages" maxLength={1500} />
-        <button className="btn btn-primary btn-sm" disabled={p || !r.userId} onClick={() => start(async () => { const x = await issueAnswer(r.id, reply); if (x.error) setErr(x.error); else setReply(""); })}>Send and close</button>
+        <input value={reply} onChange={(e) => type(e.target.value)} placeholder="Answer from ByRequest, sent to their messages" maxLength={1500} />
+        <button className="btn btn-primary btn-sm" disabled={p || !r.userId} onClick={send}>Send and close</button>
         {r.status === "open" ? <button className="btn btn-secondary btn-sm" disabled={p} onClick={() => start(() => issueStatus(r.id, "handling"))}>I am on it</button> : null}
         <button className="btn btn-ghost btn-sm" disabled={p} onClick={() => start(() => issueStatus(r.id, "done"))}>Mark done</button>
         {err ? <span className="pb-err">{err}</span> : null}

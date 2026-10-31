@@ -31,6 +31,9 @@ export async function answerIssue(id: string, text: string, by: string) {
   const body = text.trim().slice(0, 1500);
   if (!body) throw new RuleError("Write a short answer first.");
   await db.insert(notifications).values({ userId: i.userId, title: "About your report", body, href: TEAM_HREF });
+  // The answer stays on the ticket, so the team always sees what was said and by whom.
+  const answers = [...(((i.context ?? {}) as { answers?: unknown[] }).answers ?? []), { at: new Date().toISOString(), by, text: body }];
+  await db.update(techIssues).set({ context: { ...(i.context ?? {}), answers } }).where(eq(techIssues.id, id));
   await setIssue(id, "done", by);
 }
 
