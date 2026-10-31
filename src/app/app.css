@@ -2034,3 +2034,15 @@ html:has(.cy),html:has(.cy) body{background:#0B0A12}
 .tk-who{display:block;font-size:1rem;font-weight:800;margin-bottom:8px}
 .tk-sbtns{display:flex;flex-wrap:wrap;gap:6px}
 @media (max-width:900px){.tk{grid-template-columns:1fr}.tk-side{border-left:0;border-top:1px solid var(--line)}.pl-head,.pl-row{grid-template-columns:30px 110px minmax(0,1fr) 90px}.pl-head span:nth-child(4),.pl-row .pl-last,.pl-head span:nth-child(6),.pl-row .pl-age{display:none}}
+/* Visitors: live people list and unique vs visits */
+button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:brightness(.97);box-shadow:inset 0 0 0 1px #9FD9B8}
+.dz-hero-u{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}.dz-hero-u span{padding:4px 10px;border-radius:999px;background:var(--sunk);font-size:.8125rem;color:var(--ink-2)}.dz-hero-u b{color:var(--ink)}
+.lv{width:min(1040px,100%);max-height:86vh;display:flex;flex-direction:column;border-radius:22px;background:var(--paper,#fff);color:var(--ink);box-shadow:0 30px 80px rgba(14,16,19,.3);overflow:hidden}
+.lv-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}.lv-h b{display:block;font-size:1.125rem}.lv-h span{font-size:.8125rem;color:var(--muted)}
+.lv-t{overflow:auto}
+.lv-r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1.2fr) 120px 110px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid var(--line);font-size:.875rem}
+.lv-head{border-top:0;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:10px;padding-bottom:10px;background:var(--sunk)}
+.lv-r small{display:block;font-size:.75rem;color:var(--muted)}.lv-who a{font-weight:800}.lv-pg code{font-size:.78rem;overflow-wrap:anywhere}
+.lv-ago{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums}.lv-ago i{width:8px;height:8px;border-radius:50%;background:#2BBF6A}
+.lv-empty{padding:20px;color:var(--muted)}.lv-note{margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:.75rem;color:var(--muted);background:var(--sunk)}
+@media (max-width:760px){.lv-r{grid-template-columns:1fr auto}.lv-r>span:nth-child(2),.lv-r>span:nth-child(3),.lv-r>span:nth-child(4){display:none}}

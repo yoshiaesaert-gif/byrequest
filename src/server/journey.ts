@@ -22,7 +22,7 @@ const ACTION: Record<string, string> = {
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const STEP: Record<string, string> = { account: "account", identity: "ID check", payouts: "payouts", agreement: "agreement", done: "done" };
 
-function page(path: string, titles: Map<string, string>): { text: string; href?: string } {
+export function page(path: string, titles: Map<string, string> = new Map()): { text: string; href?: string } {
   const [p, q = ""] = path.split("?");
   const qs = new URLSearchParams(q);
   const id = p.match(UUID)?.[0];

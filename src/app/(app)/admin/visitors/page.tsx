@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireStaff } from "@/server/admin";
 import { dashboard, visitDetail } from "@/server/analytics";
 import { Chg, DayRace, Days, Spark } from "./charts";
+import LiveNow from "./live";
 
 export const dynamic = "force-dynamic";
 
@@ -42,10 +43,11 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
   ];
   const now = new Date().toLocaleString("en-GB", { timeZone: "Europe/Brussels", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
   return (<div className="wrap bo-page dz">
-    <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time</p></div><span className="dz-live"><i />{s.live} on the site now</span></div>
+    <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time</p></div><LiveNow people={s.liveList.map((p) => ({ ...p, started_at: new Date(p.started_at).toISOString(), last_at: new Date(p.last_at).toISOString() }))} /></div>
 
     <section className="dz-card dz-hero">
       <div className="dz-hero-n"><span className="dz-lbl">Visitors today</span><b className="num">{s.today.visitors}</b>
+        <div className="dz-hero-u"><span><b>{s.today.visitors}</b> unique people</span><span><b>{s.today.visits}</b> visits</span><span><b>{s.today.loggedIn}</b> signed in</span></div>
         <div className="dz-hero-c"><div><Chg a={s.today.visitors} b={s.yesterday.visitors} /><span>vs yesterday ({s.yesterday.visitors})</span></div><div><Chg a={s.today.visitors} b={s.lastWeek.visitors} /><span>vs last week ({s.lastWeek.visitors})</span></div></div>
         <div className="dz-hero-w"><span className="dz-lbl">Last 7 days</span><b className="num">{s.d7.visitors}</b><Chg a={s.d7.visitors} b={s.prev7.visitors} suffix=" vs 7 days before" /></div></div>
       <div className="dz-hero-g"><div className="dz-h"><h3>Visits so far</h3><span>Cumulative, per hour</span></div><DayRace today={hrs(s.hToday)} yesterday={hrs(s.hYesterday)} lastWeek={hrs(s.hLastWeek)} hour={s.hour} /></div>

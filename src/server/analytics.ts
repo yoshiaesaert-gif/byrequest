@@ -51,6 +51,7 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
 const TZ = "Europe/Brussels";
 /* Team browsers stay out of every number: any visitor id that was ever signed in as an internal account. */
 const GUEST = sql`${visits.visitorId} not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)`;
+const GUEST_RAW = "v.visitor_id not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)";
 const dayStart = (offsetDays: number) => sql`(date_trunc('day', now() at time zone ${TZ}) - (${offsetDays} || ' days')::interval) at time zone ${TZ}`;
 
 async function kpis(from: ReturnType<typeof dayStart>, to: ReturnType<typeof dayStart> | null) {
@@ -86,10 +87,26 @@ export async function dashboard() {
     top(sql`coalesce(${visits.referrer}, 'Direct')`), top(sql`${visits.refCode} || coalesce(' · ' || (select u2.handle from users u2 where u2.ref_code = ${visits.refCode}), '')`, sql`${visits.refCode} is not null`), top(sql`split_part(${visits.landing}, '?', 1)`)]);
   const ev = async (kind: string) => (await db.execute<{ k: string; n: number }>(sql`select ${kind === "page" ? sql`split_part(${visitEvents.path}, '?', 1)` : sql`coalesce(${visitEvents.label}, ${visitEvents.path})`} k, count(*)::int n from ${visitEvents} where ${visitEvents.visitId} not in (select id from visits where not (${GUEST})) and ${visitEvents.at} >= ${dayStart(6)} and ${visitEvents.kind} = ${kind} group by 1 order by 2 desc limit 10`)).rows;
   const [pages, clicks] = await Promise.all([ev("page"), ev("click")]);
-  const live = await db.select({ n: sql<number>`count(distinct ${visits.visitorId})::int` }).from(visits).where(and(GUEST, gt(visits.lastAt, new Date(Date.now() - 5 * 60_000))));
+  const liveList = await liveNow();
   const recent = await db.select({ v: visits, handle: users.handle, internal: users.internal, inviter: sql<string | null>`(select u2.handle from users u2 where u2.ref_code = ${visits.refCode})` }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(GUEST).orderBy(desc(visits.lastAt)).limit(40);
   const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${TZ})::int h`)).rows[0].h);
-  return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, pages, clicks, live: live[0].n, recent };
+  return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, pages, clicks, live: liveList.length, liveList, recent };
+}
+
+/* Who is on the site right now: active in the last 5 minutes, one row per person. A signed in person counts once
+   across browsers; an anonymous visitor is one browser (the daily id of IP and browser, or the stored id with consent). */
+export async function liveNow() {
+  const rows = (await db.execute<{ id: string; visitor_id: string; user_id: string | null; handle: string | null; is_creator: boolean | null; device: string | null; browser: string | null; os: string | null; city: string | null; country: string | null;
+    ref_code: string | null; referrer: string | null; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; visits_today: number }>(sql`
+    select v.id, v.visitor_id, v.user_id, u.handle, u.is_creator, v.device, v.browser, v.os, v.city, v.country, v.ref_code, v.referrer, v.started_at, v.last_at, v.pages, v.clicks,
+      (select e.path from visit_events e where e.visit_id = v.id and e.kind = 'page' order by e.at desc limit 1) page,
+      (select count(*)::int from visits v2 where v2.visitor_id = v.visitor_id and v2.started_at >= ${dayStart(0)}) visits_today
+    from ${visits} v left join ${users} u on u.id = v.user_id
+    where ${sql.raw(GUEST_RAW)} and v.last_at > now() - interval '5 minutes' order by v.last_at desc`)).rows;
+  const seen = new Set<string>();
+  const { page } = await import("./journey");
+  return rows.filter((r) => { const k = r.user_id ?? r.visitor_id; if (seen.has(k)) return false; seen.add(k); return true; })
+    .map((r) => ({ ...r, label: r.page ? page(r.page).text : null }));
 }
 
 export async function visitDetail(id: string) {
