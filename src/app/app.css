@@ -723,7 +723,9 @@ section+section .bo-sh,.bo-list+.bo-sh,.bo-inline+.bo-sh,.btn+.bo-sh,p+.bo-sh{ma
 @media (max-width:1100px){.lp-logo{height:60px}}
 @media (max-width:900px){.lp-logo{height:46px}}
 .lp-prog{position:absolute;left:0;right:0;bottom:0;z-index:2;height:4px;background:rgba(255,255,255,.14);overflow:hidden}
-.lp-prog b{display:block;height:100%;width:100%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.6);transform-origin:left;animation:lpFill 5s linear both}
+.lp-prog b{display:block;height:100%;width:100%;background:#fff;box-shadow:0 0 12px rgba(255,255,255,.6);transform-origin:left;animation:lpFill 15s linear both}
+.lp-vis:hover .lp-prog b,.lp-vis:active .lp-prog b{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.lp-prog{display:none}}
 .lp.is-earn .lp-prog b{background:linear-gradient(90deg,#FBE3A6,#E9B44C)}
 @keyframes lpFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media (max-width:900px){.lp-vis{margin:10px 10px 0;border-radius:var(--r-xl);padding:18px 18px 22px;overflow:hidden}.lp-board{height:220px;margin-top:6px}.lp-board .fc1,.lp-board .fc3{top:14px}.lp-board .fc2{top:0}}

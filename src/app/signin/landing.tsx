@@ -1,7 +1,7 @@
 "use client";
 import Reassure, { UspPills } from "@/components/reassure";
 import { COMPANY } from "@/config/company";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useT } from "@/i18n/client";
 import LangSwitch from "@/components/lang-switch";
 import SignInForm from "./form";
@@ -20,15 +20,12 @@ const Ico = ({ n, c }: { n: string; c?: string }) => <svg className={"ico " + (c
 export default function Landing({ initial, year, invite }: { initial?: "buy" | "earn"; year: number; invite?: { code: string; welcomePct: number; buyerGift: boolean } }) {
   const t = useT();
   const [side, setSide] = useState<"buy" | "earn">(initial ?? "earn");
-  // Creators first, then the two sides take turns every 5 seconds. A click on the switch restarts the
-  // count from that side; the turns stop only once the visitor starts typing.
+  // Creators first, then the two sides take turns every 15 seconds. The progress bar is the clock: when its fill
+  // ends, the side changes. Pointing at (or holding) the picture on the left pauses the fill, so nobody is cut off
+  // mid sentence. A click on the switch restarts the count from that side; typing stops the turns.
   const [auto, setAuto] = useState(true);
   const [turn, setTurn] = useState(0);
-  useEffect(() => {
-    if (!auto || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const h = setTimeout(() => setSide((x) => (x === "earn" ? "buy" : "earn")), 5000);
-    return () => clearTimeout(h);
-  }, [auto, side, turn]);
+  const flip = () => setSide((x) => (x === "earn" ? "buy" : "earn"));
   const pick = (x: "buy" | "earn") => { setSide(x); setTurn((n) => n + 1); };
   const earn = side === "earn";
   const steps = earn
@@ -40,7 +37,7 @@ export default function Landing({ initial, year, invite }: { initial?: "buy" | "
         <img className="cimg" src="/img/c20.webp" alt="" />
         <img className="cimg lp-img2" src="/img/tip_b2.webp" alt="" />
         <span className="lp-warm" aria-hidden="true" />
-        {auto ? <span className="lp-prog" aria-hidden="true"><b key={side + turn} /></span> : null}
+        {auto ? <span className="lp-prog" aria-hidden="true"><b key={side + turn} onAnimationEnd={flip} /></span> : null}
         <div className="lp-vis-top"><img className="lp-logo" src="/logo_white.png" alt="byrequest" /><span className="lp-18">18+</span></div>
 
         <div className="fan lp-board" aria-hidden="true">
