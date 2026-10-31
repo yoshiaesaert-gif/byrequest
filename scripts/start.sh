@@ -16,4 +16,7 @@ npx tsx scripts/rebalance-covers.ts || true
 # The minute ticker is plain node with a tiny heap. Next runs without the npx wrapper and with a heap cap, so the
 # garbage collector works harder before the 512 MB container limit is reached instead of the container being killed.
 (sleep 20; exec node --max-old-space-size=32 scripts/tick.mjs) &
-exec node --max-old-space-size=${NODE_HEAP_MB:-340} node_modules/next/dist/bin/next start -p "${PORT:-3000}" -H 0.0.0.0
+# The cap follows the container: about two thirds of its memory limit, so an upgrade needs no setting.
+LIMIT=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max)
+case "$LIMIT" in ''|max|*[!0-9]*) AUTO=340 ;; *) AUTO=$((LIMIT / 1048576 * 2 / 3)); [ "$AUTO" -gt 4096 ] && AUTO=340 ;; esac
+exec node --max-old-space-size=${NODE_HEAP_MB:-$AUTO} node_modules/next/dist/bin/next start -p "${PORT:-3000}" -H 0.0.0.0
