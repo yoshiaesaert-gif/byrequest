@@ -3,6 +3,7 @@ import { requireStaff } from "@/server/admin";
 import { dashboard, visitDetail } from "@/server/analytics";
 import { Chg, DayRace, Days, Spark } from "./charts";
 import LiveNow from "./live";
+import AutoRefresh from "./autorefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
   ];
   const now = new Date().toLocaleString("en-GB", { timeZone: "Europe/Brussels", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
   return (<div className="wrap bo-page dz">
-    <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time</p></div><LiveNow people={s.liveList.map((p) => ({ ...p, started_at: new Date(p.started_at).toISOString(), last_at: new Date(p.last_at).toISOString() }))} /></div>
+    <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time · <AutoRefresh /></p></div><LiveNow people={s.liveList.map((p) => ({ ...p, started_at: new Date(p.started_at).toISOString(), last_at: new Date(p.last_at).toISOString() }))} /></div>
 
     <section className="dz-card dz-hero">
       <div className="dz-hero-n"><span className="dz-lbl">Visitors today</span><b className="num">{s.today.visitors}</b>

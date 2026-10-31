@@ -2047,7 +2047,7 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .lv-empty{padding:20px;color:var(--muted)}.lv-note{margin:0;padding:12px 20px;border-top:1px solid var(--line);font-size:.75rem;color:var(--muted);background:var(--sunk)}
 @media (max-width:760px){.lv-r{grid-template-columns:1fr auto}.lv-r>span:nth-child(2),.lv-r>span:nth-child(3),.lv-r>span:nth-child(4){display:none}}
 /* Help: team badge, rating */
-.hb-launch{position:relative}.hb-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#E5484D;color:#fff;font-style:normal;font-size:.72rem;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper,#fff)}
+.hb-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#E5484D;color:#fff;font-style:normal;font-size:.72rem;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper,#fff)}
 .hb-team{display:flex;align-items:center;gap:8px;margin:0 12px 6px;padding:10px 12px;border-radius:12px;background:#F1EFFF;color:#3F2BA8;font-size:.8125rem;font-weight:700}.hb-team i{width:8px;height:8px;border-radius:50%;background:#E5484D;flex:none}.hb-team span{margin-left:auto}
 .hb-rate{margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:var(--sunk);text-align:center}.hb-rate b{display:block;font-size:.8125rem;margin-bottom:4px}
 .hb-stars{display:flex;justify-content:center;gap:2px}.hb-stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:#D3D3CF;cursor:pointer;padding:2px 3px;transition:transform .12s,color .12s}.hb-stars button.on{color:#F5B301}.hb-stars button:hover{transform:scale(1.15)}
@@ -2075,3 +2075,4 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .cpl-c.y i{background:#E6F7EE;color:#137A47}.cpl-c.n i{background:#FDECEA;color:#C9372C}.cpl-c.info i{background:var(--sunk);color:var(--muted)}
 .cpl-c span{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.cpl-c b{display:block;font-size:.875rem;margin-top:2px}.cpl-c small{display:block;font-size:.75rem;color:var(--muted);margin-top:2px}
 .cpl-c.n b{color:#C9372C}
+.dz-rt{display:inline-flex;align-items:center;gap:6px}.dz-rt i{width:7px;height:7px;border-radius:50%;background:#2BBF6A;animation:cyp 1.6s ease-in-out infinite}
