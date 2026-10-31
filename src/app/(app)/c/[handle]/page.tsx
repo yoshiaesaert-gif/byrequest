@@ -1,3 +1,4 @@
+import AvZoom from "@/components/avzoom";
 import { getT } from "@/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -47,7 +48,7 @@ export default async function Creator({ params }: { params: Promise<{ handle: st
     <Link href={offerId ? "/deals" : "/"} className="back"><I n="left" c="sm" />{t("Back")}</Link>
     <div className="cp">
       <div className="cp-side"><div className="cp-id">
-        <div className="cp-av"><Av a={u.avatar} name={u.handle} size={200} square /></div>
+        <div className="cp-av"><AvZoom a={u.avatar} name={u.handle} size={200} square /></div>
         <h1 className="t-h1">{u.handle}</h1>
         <div className="t-sm muted"><Stars sum={u.ratingSum} count={u.ratingCount} t={t} /> · {t("{n} deals", { n: deals })} · {replies}</div>
         <div className="optrow" style={{ justifyContent: "center" }}><span className="badge ok"><I n="shield" c="sm" />{t("Verified creator")}</span><span className="badge brand">{p.showsFace ? t("Face shown") : t("No face")}</span>{fans ? <span className="badge ic-badge">{t(fans === 1 ? "In 1 Inner Circle" : "In {n} Inner Circles", { n: fans })}</span> : null}</div>

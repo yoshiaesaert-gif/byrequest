@@ -292,7 +292,7 @@ function studio(root,opts){
     var LK=opts.looks||[], is3=st.m==="3d"&&LK.length>0;
     var modes='<div class="st-mode">'+(LK.length?'<button class="'+(is3?'on':'')+'" data-mode="3d">3D look</button>':'')+'<button class="'+(st.m==="av"?'on':'')+'" data-mode="av">Build</button><button class="'+(st.m==="ph"?'on':'')+'" data-mode="ph">Photo</button></div>';
     var body='<div class="st-stage"><div class="st-big">'+face+'</div>'+(st.photoMode?'':'<div class="st-actions"><button class="st-btn st-brand" data-surprise="1">Surprise me</button><button class="st-btn" data-shuffle="1">Shuffle</button></div>')+'</div>'+
-      (st.photoMode?'<div class="st-panel"><label class="st-upload"><input type="file" accept="image/*" data-file="1"><b>Choose a photo</b><span>Your face is optional. A mood photo works too.</span></label><div class="st-group"><div class="st-row"><b>Blur my photo</b><button class="st-tog'+(st.blur?' on':'')+'" data-blur="1" role="switch" aria-checked="'+st.blur+'" aria-label="Blur my photo"></button></div></div><p class="st-note">Your photo is cropped to a small round picture. Blur is applied before it is saved.</p></div>':
+      (st.photoMode?'<div class="st-panel"><label class="st-upload"><input type="file" accept="image/*" data-file="1"><b>Choose a photo</b><span>Your face is optional. A mood photo works too.</span></label><div class="st-group"><div class="st-row"><b>Blur my photo</b><button class="st-tog'+(st.blur?' on':'')+'" data-blur="1" role="switch" aria-checked="'+st.blur+'" aria-label="Blur my photo"></button></div></div>'+(st.orig?'<div class="st-group st-pos"><div class="st-row"><b>Position</b><span>Drag the photo to move it</span></div><div class="st-row"><b>Zoom</b><input type="range" min="1" max="3" step="0.01" value="'+(st.pz||1)+'" data-zoom="1" aria-label="Zoom"></div></div>':'')+'<p class="st-note">Drag the photo to place your face in the circle, zoom with the slider. Blur is applied before it is saved.</p></div>':
       '<div class="st-tabs" role="tablist">'+STABS.map(function(t){return '<button role="tab" class="'+(st.tab===t[0]?'on':'')+'" data-tab="'+t[0]+'" aria-selected="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><div class="st-panel">'+panel()+'</div>');
     var three=is3?'<div class="st-stage"><div class="st-big"><img src="'+LK[st.look].src+'" alt=""></div><div class="st-actions"><button class="st-btn st-brand" data-rnd3="1">Surprise me</button><button class="st-btn" data-mode="av">Fine tune</button></div></div>'+
       '<div class="st-panel"><div class="st-group"><h4>Pick a 3D look</h4><div class="st-looks">'+LK.map(function(l,n){return '<button class="st-look'+(n===st.look?' on':'')+'" data-look="'+n+'" aria-pressed="'+(n===st.look)+'" aria-label="Look '+(n+1)+'"><img src="'+l.src+'" alt="" loading="lazy"></button>'}).join('')+'</div></div><p class="st-note">Every look is a starting point. Change hair, skin, glasses or clothes in Fine tune.</p></div>':'';
@@ -316,12 +316,24 @@ function studio(root,opts){
     if(d.pick){st.A=st.res[+d.pick];st.sheet=false;draw();return}
     if(d.k){st.A[d.k]=d.n?+d.v:d.v;if(d.k==="hat"&&d.v==="hijab")st.A.ears="none";draw()}
   });
-  root.addEventListener("change",function(e){if(!e.target.dataset.file)return;var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){st.orig=im;bake();draw()};im.src=r.result};r.readAsDataURL(f)});
-  /* Square crop at 256px. Blur is baked in (shrink, then enlarge smoothly) so the sharp original is never stored. */
-  function bake(){if(!st.orig)return;var im=st.orig,s=Math.min(im.width,im.height),sx=(im.width-s)/2,sy=(im.height-s)/2,N=256;
+  root.addEventListener("change",function(e){if(!e.target.dataset.file)return;var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){st.orig=im;st.px=.5;st.py=im.height>im.width?.18:.5;st.pz=1;bake();draw()};im.src=r.result};r.readAsDataURL(f)});
+  /* Square crop at 512px from the position the person chose (drag the photo, zoom with the slider). A portrait
+     photo starts near the top, where the face usually is. Blur is baked in (shrink, then enlarge smoothly) so the
+     sharp original is never stored. */
+  function crop(){var im=st.orig,z=st.pz||1,s=Math.min(im.width,im.height)/z;return {s:s,sx:(im.width-s)*st.px,sy:(im.height-s)*st.py}}
+  function bake(){if(!st.orig)return;var im=st.orig,k0=crop(),s=k0.s,sx=k0.sx,sy=k0.sy,N=512;
     var c=document.createElement("canvas");c.width=c.height=N;var x=c.getContext("2d");x.imageSmoothingQuality="high";
     if(st.blur){var k=document.createElement("canvas");k.width=k.height=14;var kx=k.getContext("2d");kx.imageSmoothingQuality="high";kx.drawImage(im,sx,sy,s,s,0,0,14,14);x.drawImage(k,0,0,14,14,0,0,N,N)}else x.drawImage(im,sx,sy,s,s,0,0,N,N);
-    var u=c.toDataURL("image/webp",.82);if(u.indexOf("image/webp")<0)u=c.toDataURL("image/jpeg",.82);st.photo=u;if(opts.onPhoto)opts.onPhoto({src:u,blur:st.blur})}
+    var u=c.toDataURL("image/webp",.86);if(u.indexOf("image/webp")<0)u=c.toDataURL("image/jpeg",.86);st.photo=u;
+    var pv=root.querySelector(".st-big img");if(pv)pv.src=u;
+    if(opts.onPhoto)opts.onPhoto({src:u,blur:st.blur})}
+  var drag=null;
+  root.addEventListener("pointerdown",function(e){var b=e.target.closest&&e.target.closest(".st-big");if(!b||!st.photoMode||!st.orig)return;e.preventDefault();var r=b.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,px:st.px,py:st.py,w:r.width};try{b.setPointerCapture(e.pointerId)}catch(_){}b.classList.add("dragging")});
+  root.addEventListener("pointermove",function(e){if(!drag)return;var im=st.orig,k=crop(),sc=k.s/drag.w;
+    var rx=im.width-k.s,ry=im.height-k.s;st.px=rx>0?Math.max(0,Math.min(1,drag.px-(e.clientX-drag.x)*sc/rx)):.5;st.py=ry>0?Math.max(0,Math.min(1,drag.py-(e.clientY-drag.y)*sc/ry)):.5;bake()});
+  function endDrag(){if(!drag)return;drag=null;var b=root.querySelector(".st-big");if(b)b.classList.remove("dragging")}
+  root.addEventListener("pointerup",endDrag);root.addEventListener("pointercancel",endDrag);
+  root.addEventListener("input",function(e){if(!e.target.dataset||!e.target.dataset.zoom)return;st.pz=+e.target.value;bake()});
   draw();
   return {get:function(){return cl(st.A)},set:function(o){st.A=cl(o);draw()},state:st};
 }

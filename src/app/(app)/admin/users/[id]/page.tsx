@@ -1,3 +1,4 @@
+import AvZoom from "@/components/avzoom";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
@@ -24,7 +25,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
   const earned = x.deals.filter((d) => d.d.creatorId === u.id && d.d.status === "released").reduce((s, d) => s + d.d.creatorCents, 0);
   return (<div className="wrap bo-page">
     <Link href="/admin/users" className="back"><I n="left" c="sm" />Accounts</Link>
-    <div className="bo-acc-h"><Av a={u.avatar} name={u.handle} size={64} square /><div>
+    <div className="bo-acc-h"><AvZoom a={u.avatar} name={u.handle} size={64} square /><div>
       <h1>{u.handle}{u.internal ? <span className="bo-tag">internal</span> : <span className="bo-tag ext">external</span>}{x.staff ? <span className="bo-tag">{x.staff}</span> : null}</h1><InternalToggle id={u.id} internal={u.internal} />
       <p>{u.isCreator ? "Creator" : "Buyer"} · joined {when(u.createdAt)} · {role === "admin" ? u.email : "email visible to admins"}{u.marketingOptIn ? " · marketing opt in" : ""}</p>
       {u.bannedAt ? <p className="bo-warn">Blocked since {when(u.bannedAt)}{u.banReason ? `: ${u.banReason}` : ""}</p> : null}
