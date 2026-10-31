@@ -1,11 +1,11 @@
-# Render Blueprint, zero cost setup: the web app on the free Docker plan, the database on Neon
-# (free, does not expire) and deliveries in Cloudflare R2 (free up to 10 GB). A keep alive ping
-# (.github/workflows/keepalive.yml and/or cron-job.org) stops the free plan from sleeping.
+# Render Blueprint: the web app on a Standard Docker instance (2 GB, no sleeping, deploys without downtime),
+# the database on Neon and deliveries in Cloudflare R2. Keep plan in step with the dashboard: a Blueprint sync
+# applies what is written here.
 services:
   - type: web
     name: byrequest
     runtime: docker
-    plan: free
+    plan: standard
     region: frankfurt
     healthCheckPath: /api/health
     envVars:
