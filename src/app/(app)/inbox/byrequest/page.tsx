@@ -22,7 +22,7 @@ export default async function FromByRequest() {
   const own: PaneMsg[] = tickets.flatMap((k) => [{ id: k.id, at: k.at.toISOString(), text: k.message },
     ...(((k.ctx as { thread?: { at: string; kind: string; text: string }[] }).thread ?? []).filter((e) => e.kind === "customer").map((e, i) => ({ id: `${k.id}-${i}`, at: e.at, text: e.text })))])
     .map((m) => ({ id: m.id, kind: "e2e" as const, mine: true, text: m.text, nonce: null, body: "", at: m.at, read: true }));
-  const msgs: PaneMsg[] = [...rows.map((m) => ({ id: m.id, kind: "e2e" as const, mine: false, title: t(m.title), text: m.title === "About your report" ? m.body : t(m.body), nonce: null, body: "", at: m.createdAt.toISOString(), read: true })), ...own]
+  const msgs: PaneMsg[] = [...rows.map((m) => ({ id: m.id, kind: "e2e" as const, mine: false, title: t(m.title), text: m.title === "About your report" || m.title.endsWith("ByRequest support") ? m.body : t(m.body), nonce: null, body: "", at: m.createdAt.toISOString(), read: true })), ...own]
     .sort((a, b) => a.at.localeCompare(b.at));
   const logo = <img src="/apple-icon.png" alt="" width={52} height={52} style={{ borderRadius: "50%", width: "100%", height: "100%", objectFit: "cover" }} />;
   return (<ChatShell back="/inbox" backLabel={t("Inbox")} eyebrow={t("The team behind ByRequest")} title="ByRequest" avatar={logo}

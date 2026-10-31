@@ -100,7 +100,7 @@ function Item({ r, open, picked, onPick, onToggle, age, now }: { r: Row; open: b
             {c.conversation ? <details className="tk-conv"><summary>Conversation with the assistant</summary><code>{c.conversation}</code></details> : null}</li>
           {r.thread.map((e, i) => e.kind === "event" ? <li key={i} className="tk-ev"><span>{e.by ? <b>{e.by}</b> : null} {e.text.toLowerCase()} · {fmt(e.at)}</span></li> : (
             <li key={i} className={"tk-m " + (e.kind === "customer" ? "cust" : e.kind)}>
-              <div className="tk-h"><b>{e.kind === "customer" ? r.handle : e.by ?? "Team"}</b><span>{e.kind === "note" ? "internal note, only the team sees this" : e.kind === "reply" ? "to their ByRequest messages" : "replied"} · {fmt(e.at)}</span></div>
+              <div className="tk-h"><b>{e.kind === "customer" ? r.handle : e.by ?? "Team"}</b><span>{e.kind === "note" ? "internal note, only the team sees this" : e.kind === "reply" ? "sent as Sophie · ByRequest support" : "replied"} · {fmt(e.at)}</span></div>
               <p>{e.text}</p>
               {e.kind === "reply" ? <div className={"tk-rcpt" + (e.readAt ? " read" : "")}><i>{e.readAt ? "✓✓" : "✓"}</i>{e.readAt ? `Read ${fmt(e.readAt)}` : "Delivered, not read yet"}</div> : null}
             </li>))}
@@ -108,7 +108,7 @@ function Item({ r, open, picked, onPick, onToggle, age, now }: { r: Row; open: b
         {r.status !== "done" || mode === "note" ? <div className={"tk-comp" + (mode === "note" ? " note" : "")}>
           <div className="tk-tabs"><button className={mode === "reply" ? "on" : ""} onClick={() => setMode("reply")}>Reply to {r.handle ?? "person"}</button><button className={mode === "note" ? "on" : ""} onClick={() => setMode("note")}>Internal note</button></div>
           <textarea value={text} onChange={(e) => type(e.target.value)} rows={3} maxLength={1500} placeholder={mode === "note" ? "Only the team sees this" : r.userId ? "Lands in their ByRequest messages, with a notice" : "This person has no account: answer them via the contact they left"} />
-          <div className="tk-act">{err ? <span className="pb-err">{err}</span> : <span className="t-xs muted">{mode === "reply" ? "No email is sent. You see here when it is read." : "Visible to staff only."}</span>}
+          <div className="tk-act">{err ? <span className="pb-err">{err}</span> : <span className="t-xs muted">{mode === "reply" ? "They see it from Sophie · ByRequest support, never your own name. You see here when it is read." : "Visible to staff only."}</span>}
             {mode === "note" ? <button className="btn btn-primary btn-sm" disabled={p || !text.trim()} onClick={() => go(false)}>Save note</button>
               : <><button className="btn btn-secondary btn-sm" disabled={p || !text.trim() || !r.userId} onClick={() => go(false)}>Send</button><button className="btn btn-primary btn-sm" disabled={p || !text.trim() || !r.userId} onClick={() => go(true)}>Send and close</button></>}</div>
         </div> : <div className="tk-closed">Closed{r.handledBy ? ` by ${r.handledBy}` : ""}{r.handledAt ? ` · ${fmt(r.handledAt)}` : ""}. <button className="pr-link" onClick={() => start(() => issueStatus(r.id, "open"))}>Reopen</button> <button className="pr-link" onClick={() => setMode("note")}>Add a note</button></div>}

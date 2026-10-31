@@ -5,6 +5,9 @@ import { RuleError } from "@/domain/rules";
 import { TEAM_HREF } from "./queries";
 
 const { techIssues, notifications, users } = schema;
+/* How the team signs answers to customers. The staff member's own name stays inside the back office. */
+export const SUPPORT_NAME = `${process.env.SUPPORT_NAME || "Sophie"} · ByRequest support`;
+const ANSWER_TITLES = ["About your report", SUPPORT_NAME];
 
 /* A technical problem from a signed in person. Five an hour is plenty; it shows up in the back office (menu badge and overview), never in anyone's notifications. */
 export async function reportIssue(userId: string, handle: string, input: { message: string; page: string; context: Record<string, unknown> }) {
@@ -41,7 +44,7 @@ export async function openIssues() {
   if (nids.length) for (const n of await db.select({ id: notifications.id, readAt: notifications.readAt }).from(notifications).where(inArray(notifications.id, nids))) read.set(n.id, n.readAt);
   // Answers sent before tickets kept a thread: found back as the notification sent when the ticket was closed.
   const legacy = rows.filter((r) => r.i.userId && r.i.handledAt && !(r.i.context as Ctx).thread?.length);
-  const old = legacy.length ? await db.select().from(notifications).where(and(inArray(notifications.userId, legacy.map((r) => r.i.userId!)), eq(notifications.title, "About your report"))) : [];
+  const old = legacy.length ? await db.select().from(notifications).where(and(inArray(notifications.userId, legacy.map((r) => r.i.userId!)), inArray(notifications.title, ANSWER_TITLES))) : [];
   return rows.map((r) => {
     const ctx = r.i.context as Ctx;
     let thread = (ctx.thread ?? []).map((e) => ({ ...e, readAt: e.nid ? read.get(e.nid)?.toISOString() ?? null : null }));
@@ -66,7 +69,7 @@ export async function answerIssue(id: string, text: string, by: string, close = 
   if (!i?.userId) throw new RuleError("This person has no account any more.");
   const body = text.trim().slice(0, 1500);
   if (!body) throw new RuleError("Write a short answer first.");
-  const [n] = await db.insert(notifications).values({ userId: i.userId, title: "About your report", body, href: TEAM_HREF }).returning({ id: notifications.id });
+  const [n] = await db.insert(notifications).values({ userId: i.userId, title: SUPPORT_NAME, body, href: TEAM_HREF }).returning({ id: notifications.id });
   await push(id, { kind: "reply", by, text: body, nid: n.id }, { status: close ? "done" : "handling", handledBy: by, handledAt: close ? new Date() : null });
 }
 
