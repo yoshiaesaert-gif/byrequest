@@ -2762,5 +2762,15 @@ const fr: Record<string, string> = {
   "Start with a new chat key?": "Commencer avec une nouvelle clé de chat ?",
   "Messages from before stay locked on this device. Only do this if you no longer have a device where your chats open.": "Les anciens messages restent verrouillés sur cet appareil. Ne le faites que si vous n'avez plus d'appareil où vos chats s'ouvrent.",
   "New chat key": "Nouvelle clé de chat",
+  "Your profile is ready": "Ton profil est prêt",
+  "One more step: your preview album": "Encore une étape : ton album d'aperçu",
+  "more chance to get the deal when a buyer can see a preview": "de chances en plus d'obtenir le deal quand un acheteur peut voir un aperçu",
+  "Only on request": "Uniquement sur demande",
+  "Nobody sees your album. A buyer asks, you decide whether to share it, per buyer.": "Personne ne voit ton album. Un acheteur le demande, tu décides de le partager, acheteur par acheteur.",
+  "Seen once, then gone": "Vu une fois, puis disparu",
+  "Each photo shows once for 10 seconds, each video once, with the buyer's name on it. No download, no screenshots of a clean copy.": "Chaque photo s'affiche une fois 10 secondes, chaque vidéo une fois, avec le nom de l'acheteur dessus. Pas de téléchargement, pas de capture d'une copie propre.",
+  "You stay in control": "Tu gardes le contrôle",
+  "A few photos or one short video is enough. Change or remove them whenever you want.": "Quelques photos ou une courte vidéo suffisent. Modifie-les ou supprime-les quand tu veux.",
+  "Make my album": "Créer mon album",
 };
 export default fr;

@@ -2762,5 +2762,15 @@ const nl: Record<string, string> = {
   "Start with a new chat key?": "Beginnen met een nieuwe chatsleutel?",
   "Messages from before stay locked on this device. Only do this if you no longer have a device where your chats open.": "Eerdere berichten blijven op dit toestel vergrendeld. Doe dit alleen als je geen toestel meer hebt waar je chats openen.",
   "New chat key": "Nieuwe chatsleutel",
+  "Your profile is ready": "Je profiel is klaar",
+  "One more step: your preview album": "Nog één stap: je preview album",
+  "more chance to get the deal when a buyer can see a preview": "meer kans op de deal als een koper een preview kan zien",
+  "Only on request": "Enkel op aanvraag",
+  "Nobody sees your album. A buyer asks, you decide whether to share it, per buyer.": "Niemand ziet je album. Een koper vraagt het, jij beslist of je het deelt, per koper.",
+  "Seen once, then gone": "Eén keer gezien, dan weg",
+  "Each photo shows once for 10 seconds, each video once, with the buyer's name on it. No download, no screenshots of a clean copy.": "Elke foto toont één keer 10 seconden, elke video één keer, met de naam van de koper erop. Geen download, geen schermafbeelding van een propere kopie.",
+  "You stay in control": "Jij houdt de controle",
+  "A few photos or one short video is enough. Change or remove them whenever you want.": "Een paar foto's of één korte video is genoeg. Wijzig of verwijder ze wanneer je wilt.",
+  "Make my album": "Maak mijn album",
 };
 export default nl;

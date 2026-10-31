@@ -198,3 +198,15 @@ export async function albumEvents(offerId: string): Promise<{ id: string; at: st
   if (a.openedAt) ev.push({ id: "ev:open:" + a.id, at: a.openedAt.toISOString(), text: "Preview album opened" });
   return ev;
 }
+
+/* When to explain the preview album: a creator whose profile is complete and who has no album yet, on a later
+   visit (the account is at least a few hours old), so it never competes with the first setup. */
+export async function albumNudge(userId: string, createdAt: Date) {
+  if (Date.now() - +createdAt < 3 * 3600_000) return false;
+  const [prof, photos] = await Promise.all([
+    db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, userId) }),
+    db.select({ id: schema.previewPhotos.id }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, userId)).limit(1),
+  ]);
+  const { profileMissing } = await import("@/domain/looks-detail");
+  return !!prof && profileMissing(prof).length === 0 && photos.length === 0;
+}

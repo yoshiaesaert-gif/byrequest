@@ -924,3 +924,12 @@ p{margin:0}
 .avz{border:0;padding:0;background:none;cursor:zoom-in;border-radius:inherit;display:inline-flex}
 .avz-back{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:24px;background:rgba(14,16,19,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);cursor:zoom-out}
 .avz-back img{width:min(512px,86vw);height:auto;aspect-ratio:1;object-fit:cover;border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+/* Preview album explainer for creators */
+.an{width:min(500px,100%);padding:28px;border-radius:24px;background:var(--paper,#fff);color:var(--ink);box-shadow:0 30px 80px rgba(14,16,19,.3)}
+.an-k{font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#B4532A}
+.an h2{margin:8px 0 14px;font-size:1.5rem;letter-spacing:-.02em;line-height:1.15}
+.an-big{display:flex;align-items:center;gap:14px;margin:0 0 18px;padding:14px 16px;border-radius:16px;background:linear-gradient(90deg,#FFF3D6,#FDE3EE);font-weight:600;line-height:1.35}
+.an-big b{font-size:2rem;letter-spacing:-.03em;background:linear-gradient(90deg,#F59A3E,#E0559A);-webkit-background-clip:text;background-clip:text;color:transparent;flex:none}
+.an ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}.an li{display:flex;gap:12px}.an li i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:.8rem;background:var(--sunk)}
+.an li b{display:block;font-size:.95rem}.an li span{font-size:.875rem;color:var(--ink-2);line-height:1.45}
+.an-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}

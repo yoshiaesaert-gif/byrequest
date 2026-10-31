@@ -15,6 +15,8 @@ import ConsentGate from "@/components/consent-gate";
 import { PasskeyPrompt } from "@/components/passkey";
 import { listPasskeys } from "@/server/passkeys";
 import ProblemSheet from "@/components/problem";
+import AlbumNudge from "@/components/album-nudge";
+import { albumNudge } from "@/server/albums";
 import { UploadDock } from "@/components/uploads";
 import InstallApp from "@/components/install";
 import { KeySync } from "@/components/keysync";
@@ -64,6 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <UploadDock />
       <InstallApp />
       <ProblemSheet role={mode === "sell" ? "creator" : "buyer"} />
+      {mode === "sell" && active && (await albumNudge(u.id, u.createdAt).catch(() => false)) ? <AlbumNudge /> : null}
       <Live uid={u.id} discreet={u.prefs.discreetPush} neutralTab={u.prefs.neutralTab} /><AskHost />
     </div>
   );
