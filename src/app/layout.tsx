@@ -1,3 +1,4 @@
+import { OG_IMAGE, SHARE } from "@/config/share";
 import type { Metadata, Viewport } from "next";
 import { SPRITE } from "@/components/sprite";
 import { GeistSans } from "geist/font/sans";   // self hosted and preloaded: the first paint already has the final font, no jump
@@ -12,9 +13,12 @@ import AgeGate from "@/components/age-gate";
 import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.SITE_URL || "https://byrequest.me"),
   title: "ByRequest",
-  description: "Personal content made to order, between adults. Discreet by design.",
+  description: SHARE.description,
   robots: { index: false, follow: false },
+  openGraph: { type: "website", siteName: "ByRequest", title: SHARE.title, description: SHARE.description, locale: "en_GB", images: [OG_IMAGE] },
+  twitter: { card: "summary_large_image", title: SHARE.title, description: SHARE.description, images: [OG_IMAGE.url] },
   icons: { icon: "/icon.png", apple: "/apple-icon.png" },
   appleWebApp: { capable: true, title: "ByRequest", statusBarStyle: "default" },
 };

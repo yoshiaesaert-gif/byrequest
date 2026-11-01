@@ -1,16 +1,16 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { share } from "@/config/share";
 import { sql } from "drizzle-orm";
 import { getT } from "@/i18n/server";
 import { db } from "@/db";
 import { topBudgets, boardTotals } from "@/server/queries";
 import { owner, getConfig } from "@/server/referrals";
-import { textsIn } from "@/server/translate";
 import { publicReviews } from "@/server/creatorreviews";
 import { euros, CAT_LABEL } from "@/domain/rules";
 import { COMPANY } from "@/config/company";
 
-export const metadata: Metadata = { title: "Create on ByRequest" };
+export const metadata: Metadata = share({ title: "Create on ByRequest · Get paid for requests", description: "Buyers post what they would like, with the budget reserved up front. Verified creators pick what fits them and get paid after delivery. No followers needed.", path: "/creators", index: true });
 export const dynamic = "force-dynamic";
 
 /* The page creators land on from an invite link. Big type, stars and short quotes from our creators, live money,
@@ -55,7 +55,8 @@ async function liveFeed() {
 
 export default async function Creators({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
   const [{ t, locale }, sp, top, feed, rv, board] = await Promise.all([getT(), searchParams, topBudgets(4).catch(() => []), liveFeed().catch(() => []), publicReviews().catch(() => ({ quotes: [], avg: 0, n: 0 })), boardTotals().catch(() => ({ open: 0, cents: 0 }))]);
-  const L = await textsIn(top.map((r) => r.title), locale).catch(() => (s: string) => s);
+  // A shared page never shows what buyers wrote: request titles become a neutral line per kind of request.
+  const L = (_title: string, cat?: string) => t(cat === "photos" ? "A custom photo set" : cat === "voice" ? "A personal voice note" : cat === "custom" ? "Something made to order" : "A custom video");
   const ref = (sp.ref ?? "").replace(/[^A-Z0-9-]/gi, "").slice(0, 12);
   const invited = ref ? await owner(ref).catch(() => null) : null;
   const welcomePct = invited ? (await getConfig().catch(() => ({ welcomePct: 0 }))).welcomePct : 0;
@@ -75,8 +76,8 @@ export default async function Creators({ searchParams }: { searchParams: Promise
       </div>
       {top[0] ? (<div className="cy-phone" aria-hidden="true"><div className="cy-scr">
         <div className="cy-ph-top"><span>{t("For you")}</span><i>{board.open} {t("open")}</i></div>
-        <div className="cy-req"><small>{t(CAT_LABEL[top[0].category])}</small><b>{L(top[0].title)}</b><div className="cy-req-m"><em>{euros(top[0].dealCents)}</em><span>{t("Paid up front")}</span></div><div className="cy-req-b">{t("Apply")}</div></div>
-        {top.slice(1, 3).map((r) => (<div key={r.id} className="cy-req sm"><small>{t(CAT_LABEL[r.category])}</small><b>{L(r.title)}</b><em>{euros(r.dealCents)}</em></div>))}
+        <div className="cy-req"><small>{t(CAT_LABEL[top[0].category])}</small><b>{L(top[0].title, top[0].category)}</b><div className="cy-req-m"><em>{euros(top[0].dealCents)}</em><span>{t("Paid up front")}</span></div><div className="cy-req-b">{t("Apply")}</div></div>
+        {top.slice(1, 3).map((r) => (<div key={r.id} className="cy-req sm"><small>{t(CAT_LABEL[r.category])}</small><b>{L(r.title, r.category)}</b><em>{euros(r.dealCents)}</em></div>))}
         <div className="cy-toast"><span>€</span><div><b>{t("Payment received")}</b><small>{euros(top[0].dealCents)} · {t("just now")}</small></div></div>
       </div></div>) : null}
     </section>
@@ -94,7 +95,7 @@ export default async function Creators({ searchParams }: { searchParams: Promise
     {top.length ? (<section className="cy-sec" id="money">
       <span className="cy-live"><i />{t("Waiting for a creator right now")}</span>
       <h2>{t("This is what gets paid.")}</h2>
-      <div className="cy-money">{top.map((r) => (<div key={r.id}><small>{t(CAT_LABEL[r.category])}</small><i>{t("up to")}</i><b>{euros(r.dealCents)}</b><span>{L(r.title)}</span></div>))}</div>
+      <div className="cy-money">{top.map((r) => (<div key={r.id}><small>{t(CAT_LABEL[r.category])}</small><i>{t("up to")}</i><b>{euros(r.dealCents)}</b><span>{L(r.title, r.category)}</span></div>))}</div>
       <div className="cy-mid">{cta("Claim your first request")}</div>
     </section>) : null}
 

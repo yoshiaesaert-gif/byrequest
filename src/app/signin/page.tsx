@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { share } from "@/config/share";
 import { cookies } from "next/headers";
 import { currentUser } from "@/server/auth";
 import { owner, getConfig } from "@/server/referrals";
@@ -7,6 +8,8 @@ import Landing from "./landing";
 
 /* The public landing page and sign in, on one screen. ?as=earn opens on the creator side.
    Arriving through an invite link (?ref= or the remembered cookie) shows who invited you. */
+export const metadata = share({ title: "ByRequest · Custom content, made on request", description: "Post a request, a verified creator makes it, and it is delivered privately. Secure checkout, ID-verified adults, no public feed.", path: "/", index: true });
+
 export default async function SignIn({ searchParams }: { searchParams: Promise<{ as?: string; ref?: string }> }) {
   if (await currentUser()) redirect("/");
   const sp = await searchParams;
