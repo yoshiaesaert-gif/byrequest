@@ -2783,5 +2783,9 @@ const nl: Record<string, string> = {
   "Replying to {name}": "Antwoord op {name}",
   "Cancel reply": "Antwoord annuleren",
   "React": "Reageer",
+  "sec left": "sec over",
+  "Finish": "Afronden",
+  "Sound on, tap to mute": "Geluid aan, tik om te dempen",
+  "Online": "Online",
 };
 export default nl;

@@ -963,3 +963,14 @@ p{margin:0}
 .cx-pal button{border:0;background:none;font-size:1.35rem;line-height:1;padding:4px;border-radius:50%;cursor:pointer;transition:transform .12s}.cx-pal button:hover{transform:scale(1.25)}.cx-pal button.on{background:#ECEAFF}
 .cx-pal .cx-pal-x{font-size:.8rem;color:var(--muted);padding:4px 6px}
 @media (prefers-reduced-motion:no-preference){.cx-pal{animation:askIn .16s cubic-bezier(.2,.8,.2,1)}}
+/* Preview album viewer: seconds left, next, sound */
+.alb-left{position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:4;display:flex;align-items:baseline;gap:6px;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.alb-left b{font-size:1.4rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.alb-left span{font-size:.75rem;opacity:.8}
+.alb-next{position:absolute;right:16px;bottom:84px;z-index:5;border:0;border-radius:999px;padding:10px 18px;background:#fff;color:#0E1013;font:inherit;font-weight:800;cursor:pointer}
+.alb-snd.on{background:rgba(255,255,255,.9);color:#0E1013}
+.alb-snd{left:16px;transform:none}
+/* Chat: online dot next to the profile picture */
+.cx-av{position:relative}.cx-dot{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 2px var(--paper,#fff)}
+.cx-on-l{display:inline-flex;align-items:center;gap:6px;color:#15803D;font-weight:600}.cx-on-l i{width:7px;height:7px;border-radius:50%;background:#22C55E}
+.cx-av.is-on{overflow:visible}.cx-av.is-on>:not(.cx-dot){border-radius:50%;overflow:hidden}.cx-av>.cx-dot{width:12px;height:12px}
+.scrim:has(.alb-view){z-index:300}

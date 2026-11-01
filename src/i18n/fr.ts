@@ -2783,5 +2783,9 @@ const fr: Record<string, string> = {
   "Replying to {name}": "Réponse à {name}",
   "Cancel reply": "Annuler la réponse",
   "React": "Réagir",
+  "sec left": "s restantes",
+  "Finish": "Terminer",
+  "Sound on, tap to mute": "Son activé, touchez pour couper",
+  "Online": "En ligne",
 };
 export default fr;

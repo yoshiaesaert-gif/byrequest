@@ -12,7 +12,7 @@ import { toast } from "./chrome";
    message bar fixed at the bottom. */
 export type PaneMsg = { id: string; kind: "e2e" | "system"; mine: boolean; text: string | null; nonce: string | null; body: string; at: string; read: boolean; title?: string };
 export type PaneEvent = { id: string; at: string; text: string };
-export type PaneState = { v: string; status: string | null; typing: boolean; otherKey: string | null; closed: boolean; msgs: PaneMsg[] };
+export type PaneState = { v: string; status: string | null; typing: boolean; online?: boolean; otherKey: string | null; closed: boolean; msgs: PaneMsg[] };
 export const EMPTY_PANE: PaneState = { v: "", status: null, typing: false, otherKey: null, closed: false, msgs: [] };
 type Pending = { id: string; text: string; at: string };
 type Props = {
@@ -237,19 +237,19 @@ export default function ChatPane(p: Props) {
   const lastMsg = [...shown].reverse().find((m) => m.kind === "e2e");
   const peekRaw = lastMsg ? (lastMsg.pending ? lastMsg.text : plain(lastMsg)) : null;
   const peek = peekRaw == null ? null : splitReply(peekRaw).text;
-  const sub = st.typing ? <span className="cx-typing-l">{t("typing…")}</span> : p.lock ? <span><Ico n="lock" c="sm" />{p.lock}</span> : null;
+  const sub = st.typing ? <span className="cx-typing-l">{t("typing…")}</span> : st.online ? <span className="cx-on-l"><i />{t("Online")}</span> : p.lock ? <span><Ico n="lock" c="sm" />{p.lock}</span> : null;
   const disabled = !!p.disabledReason || (p.e2e && !st.otherKey && loaded);
 
   return (<section ref={pane} className={"card cx" + (full ? " is-full" : "")} aria-label={t("Chat with {name}", { name: p.name })}>
     <button type="button" className="cx-peek" onClick={() => setFull(true)}>
-      <span className="cx-av">{p.avatar}</span>
+      <span className={"cx-av" + (st.online ? " is-on" : "")}>{p.avatar}{st.online ? <i className="cx-dot" aria-label={t("Online")} /> : null}</span>
       <span className="cx-pt"><b>{t("Chat with {name}", { name: p.name })}</b><span>{st.typing ? t("typing…") : peek ?? (loaded ? t("Say hello") : "…")}</span></span>
       <span className="cx-go">{t("Open chat")}<Ico n="right" c="sm" /></span>
     </button>
     <div className="cx-inner">
       <header className="cx-top">
         <button type="button" className="cx-back" onClick={() => setFull(false)} aria-label={t("Back")}><Ico n="left" /></button>
-        <span className="cx-av">{p.avatar}</span>
+        <span className={"cx-av" + (st.online ? " is-on" : "")}>{p.avatar}{st.online ? <i className="cx-dot" aria-label={t("Online")} /> : null}</span>
         <span className="cx-who"><b>{p.name}</b>{sub}</span>
       </header>
       <div className="cx-scroll" ref={scroller} onScroll={onScroll} aria-live="polite" aria-busy={!loaded}>

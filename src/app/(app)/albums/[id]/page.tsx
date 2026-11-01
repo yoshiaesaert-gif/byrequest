@@ -25,5 +25,8 @@ export default async function Album({ params }: { params: Promise<{ id: string }
   const now = Date.now();
   const items = await shareItems(a.mediaIds);
   const start = a.mediaIds.findIndex((_, i) => { const v = a.views[String(i)]; return !v || now - new Date(v).getTime() < items[i].seconds * 1000; });
-  return <Viewer id={id} items={items} start={start < 0 ? a.mediaIds.length : start} handle={u.handle} />;
+  // Coming back to an item whose turn already started: only the seconds that are left.
+  const seen = start >= 0 ? a.views[String(start)] : null;
+  const startMs = start >= 0 ? (seen ? Math.max(500, items[start].seconds * 1000 - (now - new Date(seen).getTime())) : items[start].seconds * 1000) : 0;
+  return <Viewer id={id} items={items} start={start < 0 ? a.mediaIds.length : start} startMs={startMs} handle={u.handle} />;
 }

@@ -44,7 +44,7 @@ async function markRead(c: Ctx, now: Date) {
 }
 
 export type ChatMsg = { id: string; kind: "e2e" | "system"; mine: boolean; text: string | null; nonce: string | null; body: string; at: string; read: boolean };
-export type ChatState = { v: string; status: string | null; typing: boolean; otherKey: string | null; closed: boolean; msgs: ChatMsg[] } | { same: true };
+export type ChatState = { v: string; status: string | null; typing: boolean; online: boolean; otherKey: string | null; closed: boolean; msgs: ChatMsg[] } | { same: true };
 
 /* Called every couple of seconds by the open chat. Marks it as seen, so the other side's ticks turn green. */
 export async function chatState(userId: string, kind: Kind, id: string, have?: string): Promise<ChatState | null> {
@@ -62,8 +62,10 @@ export async function chatState(userId: string, kind: Kind, id: string, have?: s
     db.query.chatLive.findFirst({ where: and(eq(S.chatLive.scope, c.scope), eq(S.chatLive.userId, c.other.id), gt(S.chatLive.typingAt, new Date(Date.now() - TYPING_MS))) }),
   ]);
   const typing = !!live;
+  // Online: the other person had the site open in the last 70 seconds (a heartbeat every 20 s), or is typing.
+  const online = typing || (!!c.other.activeAt && Date.now() - c.other.activeAt.getTime() < 70_000);
   const readCount = c.kind === "deal" ? rows.filter((m) => m.sender === userId && c.readAt && c.readAt >= m.at).length : rows.filter((m) => m.sender === userId && m.readAt).length;
-  const v = `${rows.length}:${rows[rows.length - 1]?.id ?? ""}:${readCount}:${typing ? 1 : 0}:${c.status ?? ""}:${c.closed ? 1 : 0}:${c.other.publicKey ?? ""}`;
+  const v = `${rows.length}:${rows[rows.length - 1]?.id ?? ""}:${readCount}:${typing ? 1 : 0}:${online ? 1 : 0}:${c.status ?? ""}:${c.closed ? 1 : 0}:${c.other.publicKey ?? ""}`;
   if (have && have === v) return { same: true };
   const secret = c.other.house ? (await teamKeys(c.other.id)).secret : null;
   const msgs: ChatMsg[] = rows.map((m) => {
@@ -75,7 +77,7 @@ export async function chatState(userId: string, kind: Kind, id: string, have?: s
     const text = secret && m.nonce ? (openWith(m.body, m.nonce, [m.peer, c.me.publicKey, c.other.publicKey], secret) ?? LOST) : null;
     return { id: m.id, kind: "e2e", mine, text, nonce: secret ? null : m.nonce, body: secret ? "" : m.body, at: m.at.toISOString(), read };
   });
-  return { v, status: c.status, typing, otherKey: c.other.publicKey, closed: c.closed, msgs };
+  return { v, status: c.status, typing, online, otherKey: c.other.publicKey, closed: c.closed, msgs };
 }
 
 export async function setTyping(userId: string, kind: Kind, id: string) {
@@ -143,6 +145,8 @@ export async function staffState(staffUserId: string, kind: Kind, id: string, ha
   await db.update(S.notifications).set({ readAt: new Date() }).where(and(eq(S.notifications.userId, staffUserId), eq(S.notifications.href, href), isNull(S.notifications.readAt)));
   const typing = await creatorTyping(kind, id, th.creator.id);
   const msgs: ChatMsg[] = th.msgs.map((m) => ({ id: m.id, kind: "system" in m && m.system ? "system" : "e2e", mine: m.mine, text: m.text, nonce: null, body: "", at: m.at.toISOString(), read: "read" in m ? !!m.read : false }));
-  const v = `${msgs.length}:${msgs[msgs.length - 1]?.id ?? ""}:${msgs.filter((m) => m.read).length}:${typing ? 1 : 0}`;
-  return have && have === v ? { same: true } : { v, status: null, typing, otherKey: null, closed: false, msgs };
+  const who = await db.query.users.findFirst({ where: eq(S.users.id, th.creator.id), columns: { activeAt: true } });
+  const online = typing || (!!who?.activeAt && Date.now() - who.activeAt.getTime() < 70_000);
+  const v = `${msgs.length}:${msgs[msgs.length - 1]?.id ?? ""}:${msgs.filter((m) => m.read).length}:${typing ? 1 : 0}:${online ? 1 : 0}`;
+  return have && have === v ? { same: true } : { v, status: null, typing, online, otherKey: null, closed: false, msgs };
 }

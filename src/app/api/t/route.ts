@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import { cookies, headers } from "next/headers";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
 import { beat, type Beat } from "@/server/analytics";
 import { REF_COOKIE } from "@/domain/referral";
@@ -14,6 +16,8 @@ export async function POST(req: Request) {
     // Without consent the browser sends no id. The server then makes an anonymous one that changes every day, so nothing is stored on the device.
     if (!b.v) b.v = "a_" + createHash("sha256").update(`${ip}|${h.get("user-agent") ?? ""}|${new Date().toISOString().slice(0, 10)}|${process.env.SESSION_SECRET ?? ""}`).digest("hex").slice(0, 24);
     const u = await currentUser().catch(() => null);
+    // Online in chats: a heartbeat at most every 30 seconds per account, also for the team.
+    if (u) await db.update(schema.users).set({ activeAt: new Date() }).where(and(eq(schema.users.id, u.id), or(isNull(schema.users.activeAt), lt(schema.users.activeAt, new Date(Date.now() - 30_000))))).catch(() => {});
     // Team devices are never counted: once an internal account used this browser it stays out, also signed out.
     const jar = await cookies();
     if (u?.internal) { jar.set("brq_int", "1", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 400 * 86400 }); return new Response(null, { status: 204 }); }
