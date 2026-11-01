@@ -2078,3 +2078,5 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .dz-rt{display:inline-flex;align-items:center;gap:6px}.dz-rt i{width:7px;height:7px;border-radius:50%;background:#2BBF6A;animation:cyp 1.6s ease-in-out infinite}
 .bo-app{margin:4px 0 0;font-size:.8125rem;color:var(--muted)}.bo-app.on{color:#137A47;font-weight:600}
 .jr-tags i.t-app{background:#E6F7EE;color:#137A47}
+.ml{margin-bottom:16px}.ml-url{display:flex;gap:8px;align-items:center;margin:10px 0 4px;padding:10px 12px;border-radius:12px;background:var(--sunk)}.ml-url code{flex:1;min-width:0;overflow-wrap:anywhere;font-size:.8rem}
+.ml-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;font-size:.875rem;color:var(--ink-2)}.ml-row>span{margin-right:auto}

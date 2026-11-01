@@ -95,3 +95,17 @@ export async function reviewDecision(id: string, status: "approved" | "hidden") 
   await CR.decideReview(id, status);
   revalidatePath("/admin/creator-reviews");
 }
+
+/* The private growth link for an outside marketing agent: only admins make, renew or revoke it. */
+export async function metricsLinkNew(): Promise<{ url?: string; error?: string }> {
+  const { user } = await A.requireStaff("admin");
+  const G = await import("@/server/growth");
+  const token = await G.newMetricsLink(user.handle);
+  revalidatePath("/admin/visitors");
+  return { url: `${process.env.SITE_URL || "https://byrequest.me"}/api/metrics/${token}` };
+}
+export async function metricsLinkRevoke() {
+  await A.requireStaff("admin");
+  await (await import("@/server/growth")).revokeMetricsLink();
+  revalidatePath("/admin/visitors");
+}

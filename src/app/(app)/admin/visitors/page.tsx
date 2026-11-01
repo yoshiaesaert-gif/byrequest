@@ -4,6 +4,8 @@ import { dashboard, visitDetail } from "@/server/analytics";
 import { Chg, DayRace, Days, Spark } from "./charts";
 import LiveNow from "./live";
 import AutoRefresh from "./autorefresh";
+import MetricsLink from "./metrics-link";
+import { metricsLink } from "@/server/growth";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,7 @@ function Rank({ title, rows, note }: { title: string; rows: { k: string; n: numb
 }
 
 export default async function Visitors({ searchParams }: { searchParams: Promise<{ v?: string }> }) {
-  await requireStaff();
+  const { role } = await requireStaff();
   const { v } = await searchParams;
   if (v) {
     const d = await visitDetail(v);
@@ -29,7 +31,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
       {d.others.length > 1 ? <div className="card"><b>Other visits from this browser</b>{d.others.map((o) => <Link key={o.id} className="vz-row link" href={`/admin/visitors?v=${o.id}`}><span>{time(o.startedAt)}</span><b>{o.pages} pages</b></Link>)}</div> : null}
     </div>);
   }
-  const s = await dashboard();
+  const [s, ml] = await Promise.all([dashboard(), metricsLink()]);
   const hrs = (rows: { h: number; v: number }[]) => Array.from({ length: 24 }, (_, h) => rows.find((r) => r.h === h)?.v ?? 0);
   const su = Object.fromEntries(s.signupsDaily.map((r) => [r.d, r.n]));
   const spark = (f: (r: (typeof s.daily)[number]) => number) => s.daily.map((r) => ({ d: r.d, v: f(r) }));
@@ -46,6 +48,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
   return (<div className="wrap bo-page dz">
     <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time · <AutoRefresh /></p></div><LiveNow people={s.liveList.map((p) => ({ ...p, started_at: new Date(p.started_at).toISOString(), last_at: new Date(p.last_at).toISOString() }))} /></div>
 
+    {role === "admin" ? <MetricsLink active={!!ml} since={ml?.createdAt ?? null} by={ml?.by ?? null} /> : null}
     <section className="dz-card dz-hero">
       <div className="dz-hero-n"><span className="dz-lbl">Visitors today</span><b className="num">{s.today.visitors}</b>
         <div className="dz-hero-u"><span><b>{s.today.visitors}</b> unique people</span><span><b>{s.today.visits}</b> visits</span><span><b>{s.today.loggedIn}</b> signed in</span></div>
