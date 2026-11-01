@@ -84,23 +84,24 @@ export async function dashboard() {
     select days.d, coalesce(v.v,0) v, coalesce(v.u,0) u, coalesce(v.p,0) p, coalesce(v.s,0) s, coalesce(v.b,0) b, coalesce(v.r,0) r from days left join v on v.d = days.d order by 1`)).rows;
   const signupsDaily = (await db.execute<{ d: string; n: number }>(sql`select to_char(${users.createdAt} at time zone ${TZ}, 'YYYY-MM-DD') d, count(*)::int n from ${users} where ${users.createdAt} >= ${dayStart(29)} and ${users.internal} = false group by 1`)).rows;
   const top = async (col: ReturnType<typeof sql>, where = sql`true`, n = 8) => (await db.execute<{ k: string; n: number }>(sql`select ${col} k, count(*)::int n from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(6)} and ${where} group by 1 order by 2 desc limit ${n}`)).rows;
+  const campaigns = await top(sql`coalesce(${visits.utm}->>'utm_source', '?') || coalesce(' · ' || (${visits.utm}->>'utm_campaign'), '')`, sql`${visits.utm} is not null`);
   const [countries, cities, devices, browsers, referrers, codes, landings] = await Promise.all([
     top(sql`coalesce(${visits.country}, 'Unknown')`), top(sql`coalesce(${visits.city} || ', ' || ${visits.country}, 'Unknown')`), top(sql`${visits.device}`), top(sql`${visits.browser} || ' · ' || ${visits.os}`),
-    top(sql`coalesce(${visits.referrer}, 'Direct')`), top(sql`${visits.refCode} || coalesce(' · ' || (select u2.handle from users u2 where u2.ref_code = ${visits.refCode}), '')`, sql`${visits.refCode} is not null`), top(sql`split_part(${visits.landing}, '?', 1)`)]);
+    top(sql`coalesce(${visits.utm}->>'utm_source' || ' (ad)', ${visits.referrer}, 'Direct')`), top(sql`${visits.refCode} || coalesce(' · ' || (select u2.handle from users u2 where u2.ref_code = ${visits.refCode}), '')`, sql`${visits.refCode} is not null`), top(sql`split_part(${visits.landing}, '?', 1)`)]);
   const ev = async (kind: string) => (await db.execute<{ k: string; n: number }>(sql`select ${kind === "page" ? sql`split_part(${visitEvents.path}, '?', 1)` : sql`coalesce(${visitEvents.label}, ${visitEvents.path})`} k, count(*)::int n from ${visitEvents} where ${visitEvents.visitId} not in (select id from visits where not (${GUEST})) and ${visitEvents.at} >= ${dayStart(6)} and ${visitEvents.kind} = ${kind} group by 1 order by 2 desc limit 10`)).rows;
   const [pages, clicks] = await Promise.all([ev("page"), ev("click")]);
   const liveList = await liveNow();
   const recent = await db.select({ v: visits, handle: users.handle, internal: users.internal, inviter: sql<string | null>`(select u2.handle from users u2 where u2.ref_code = ${visits.refCode})` }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(GUEST).orderBy(desc(visits.lastAt)).limit(40);
   const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${TZ})::int h`)).rows[0].h);
-  return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, pages, clicks, live: liveList.length, liveList, recent };
+  return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, campaigns, pages, clicks, live: liveList.length, liveList, recent };
 }
 
 /* Who is on the site right now: active in the last 5 minutes, one row per person. A signed in person counts once
    across browsers; an anonymous visitor is one browser (the daily id of IP and browser, or the stored id with consent). */
 export async function liveNow() {
   const rows = (await db.execute<{ id: string; visitor_id: string; user_id: string | null; handle: string | null; is_creator: boolean | null; device: string | null; browser: string | null; os: string | null; city: string | null; country: string | null;
-    ref_code: string | null; referrer: string | null; app: boolean; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; visits_today: number }>(sql`
-    select v.id, v.visitor_id, v.user_id, u.handle, u.is_creator, v.device, v.browser, v.os, v.city, v.country, v.ref_code, v.referrer, v.app, v.started_at, v.last_at, v.pages, v.clicks,
+    ref_code: string | null; referrer: string | null; source: string | null; app: boolean; started_at: string; last_at: string; pages: number; clicks: number; page: string | null; visits_today: number }>(sql`
+    select v.id, v.visitor_id, v.user_id, u.handle, u.is_creator, v.device, v.browser, v.os, v.city, v.country, v.ref_code, v.referrer, v.utm->>'utm_source' as source, v.app, v.started_at, v.last_at, v.pages, v.clicks,
       (select e.path from visit_events e where e.visit_id = v.id and e.kind = 'page' order by e.at desc limit 1) page,
       (select count(*)::int from visits v2 where v2.visitor_id = v.visitor_id and v2.started_at >= ${dayStart(0)}) visits_today
     from ${visits} v left join ${users} u on u.id = v.user_id

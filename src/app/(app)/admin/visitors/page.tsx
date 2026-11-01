@@ -59,7 +59,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
 
     <section className="dz-card"><div className="dz-h"><h3>Visitors per day</h3><span>Last 30 days · hover a day for details</span></div><Days rows={s.daily} signups={su} /></section>
 
-    <div className="dz-ranks"><Rank title="Came from" note="7 days" rows={s.referrers} /><Rank title="Countries" note="7 days" rows={s.countries} /><Rank title="Cities" note="7 days" rows={s.cities} />
+    <div className="dz-ranks"><Rank title="Came from" note="7 days" rows={s.referrers} /><Rank title="Campaigns" note="7 days · utm_source · utm_campaign" rows={s.campaigns} /><Rank title="Countries" note="7 days" rows={s.countries} /><Rank title="Cities" note="7 days" rows={s.cities} />
       <Rank title="Landing pages" note="7 days" rows={s.landings} /><Rank title="Pages opened" note="7 days" rows={s.pages} /><Rank title="Most clicked" note="7 days" rows={s.clicks} />
       <Rank title="Devices" note="7 days" rows={s.devices} /><Rank title="Browser and system" note="7 days" rows={s.browsers} /><Rank title="Invite codes" note="7 days" rows={s.codes} /></div>
 
