@@ -49,7 +49,9 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
   // The home screen app: remember on the account when it was first and last used.
   if (b.app && h.userId && b.k === "page") await db.update(users).set({ appSince: sql`coalesce(${users.appSince}, now())`, appLast: now }).where(eq(users.id, h.userId));
   if (b.k !== "ping") await db.insert(visitEvents).values({ visitId: v.id, kind: b.k, path: b.p.slice(0, 300), label: b.l?.slice(0, 80) ?? null });
-  await db.update(visits).set({ lastAt: now, userId: v.userId ?? h.userId, pages: b.k === "page" ? sql`${visits.pages} + 1` : visits.pages, clicks: b.k === "click" ? sql`${visits.clicks} + 1` : visits.clicks }).where(eq(visits.id, v.id));
+  // An invite code seen later in the visit (?ref= on a page, or the cookie from /r/CODE) still counts for this visit.
+  const later = v.refCode ? null : (new URL(b.p, "https://x").searchParams.get("ref")?.replace(/[^A-Z0-9-]/gi, "").slice(0, 20) || h.refCode);
+  await db.update(visits).set({ lastAt: now, userId: v.userId ?? h.userId, ...(later ? { refCode: later } : {}), pages: b.k === "page" ? sql`${visits.pages} + 1` : visits.pages, clicks: b.k === "click" ? sql`${visits.clicks} + 1` : visits.clicks }).where(eq(visits.id, v.id));
   return v.id;
 }
 
