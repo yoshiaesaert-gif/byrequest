@@ -935,3 +935,19 @@ p{margin:0}
 .an-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 /* Ask for notifications (components/push-ask.tsx), shares the install card look */
 .pa-card{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.pa-ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#F1EFFF;color:#4434E6}
+/* Chat: reply to one message */
+.cx-row{position:relative;transition:transform .15s}
+.cx-rep{position:absolute;top:4px;right:-38px;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);cursor:pointer;opacity:0;transition:opacity .12s}
+.cx-rep svg{width:16px;height:16px;fill:currentColor}
+.cx-row:hover .cx-rep,.cx-rep:focus-visible{opacity:1}
+@media (hover:none){.cx-rep{display:none}}
+.cx-row.me .cx-rep{right:auto;left:-38px}
+.cx-q{display:block;width:100%;text-align:left;margin:0 0 6px;padding:6px 10px;border:0;border-left:3px solid #8B7CF6;border-radius:8px;background:rgba(14,16,19,.06);font:inherit;cursor:pointer;color:inherit}
+.cx-row.me .cx-q{background:rgba(255,255,255,.16);border-left-color:rgba(255,255,255,.8)}
+.cx-q b{display:block;font-size:.75rem}.cx-q span{display:block;font-size:.8125rem;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.cx-row.flash .cx-b{animation:cxFlash 1.4s ease}
+@keyframes cxFlash{0%,60%{box-shadow:0 0 0 3px #8B7CF6}100%{box-shadow:none}}
+.cx-rb{display:flex;align-items:center;gap:10px;margin:0 10px;padding:8px 10px;border-radius:12px 12px 0 0;background:var(--sunk);border-left:3px solid #8B7CF6}
+.cx-rb-i svg{width:16px;height:16px;fill:#8B7CF6;display:block}
+.cx-rb div{flex:1;min-width:0}.cx-rb b{display:block;font-size:.75rem;color:#5B4BE0}.cx-rb span{display:block;font-size:.8125rem;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-rb button{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px}

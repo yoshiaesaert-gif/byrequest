@@ -2779,5 +2779,8 @@ const fr: Record<string, string> = {
   "Know it the moment someone answers": "Sachez-le dès que quelqu'un répond",
   "A short notice on this device, without details on your lock screen.": "Une courte notification sur cet appareil, sans détails sur l'écran verrouillé.",
   "Turn on": "Activer",
+  "Reply": "Répondre",
+  "Replying to {name}": "Réponse à {name}",
+  "Cancel reply": "Annuler la réponse",
 };
 export default fr;

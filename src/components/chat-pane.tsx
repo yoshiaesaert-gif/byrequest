@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { splitReply, withReply, type Quote } from "@/domain/reply";
 import { useLocale, useT } from "@/i18n/client";
 import { myKeys, seal, open } from "./e2e";
 import { Ticks } from "./ui";
@@ -48,6 +49,8 @@ export default function ChatPane(p: Props) {
   const [loaded, setLoaded] = useState(!p.endpoint || p.initial.v !== "");
   const [pending, setPending] = useState<Pending[]>([]);
   const [text, setText] = useState("");
+  const [reply, setReply] = useState<Quote | null>(null);   // the message being answered
+  const swipe = useRef<{ x: number; y: number; id: string; el: HTMLElement } | null>(null);
   const [emoji, setEmoji] = useState(false);
   const [warned, setWarned] = useState(false);
   const [full, setFull] = useState(!!p.fromInbox);
@@ -149,19 +152,20 @@ export default function ChatPane(p: Props) {
     if (p.e2e && !kp) { window.dispatchEvent(new Event("brq:unlock")); return; }
     if (p.guards && !warned && p.guards.some((r) => r.test(v))) { setWarned(true); return; }
     if (p.e2e && !st.otherKey) { toast(t("{name} has not opened ByRequest on a device yet. Try again soon.", { name: p.name }), "err"); return; }
-    setWarned(false); setText(""); setEmoji(false); lastTyping.current = 0;
-    const tmp: Pending = { id: "tmp" + Date.now(), text: v, at: new Date().toISOString() };
+    const full = withReply(v, reply);
+    setWarned(false); setText(""); setEmoji(false); setReply(null); lastTyping.current = 0;
+    const tmp: Pending = { id: "tmp" + Date.now(), text: full, at: new Date().toISOString() };
     setPending((x) => [...x, tmp]); setBusy(true);
     try {
       let r: { ok: boolean; error?: string };
-      if (p.send) r = await p.send(v);
+      if (p.send) r = await p.send(full);
       else {
-        const body = p.e2e && kp && st.otherKey ? seal(v, st.otherKey, kp) : { text: v };
+        const body = p.e2e && kp && st.otherKey ? seal(full, st.otherKey, kp) : { text: full };
         r = await (await fetch(p.endpoint!, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
       }
-      if (!r.ok) { toast(t(r.error ?? "That did not work. Try again."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); }
+      if (!r.ok) { toast(t(r.error ?? "That did not work. Try again."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); setReply(splitReply(full).quote); }
       else { vRef.current = ""; await poll(); }
-    } catch { toast(t("Upload failed. Check your connection."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); }
+    } catch { toast(t("Upload failed. Check your connection."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); setReply(splitReply(full).quote); }
     setBusy(false);
     if (!window.matchMedia("(pointer:coarse)").matches) field.current?.focus();
   };
@@ -182,19 +186,30 @@ export default function ChatPane(p: Props) {
     const prev = items[i - 1], next = items[i + 1];
     const first = !prev || prev.kind === "system" || prev.mine !== m.mine || day(prev.at) !== day(m.at) || new Date(m.at).getTime() - new Date(prev.at).getTime() > 5 * 60_000;
     const last = !next || next.kind === "system" || next.mine !== m.mine || day(next.at) !== day(m.at) || new Date(next.at).getTime() - new Date(m.at).getTime() > 5 * 60_000;
-    const body = m.pending ? m.text : plain(m);
-    const big = !!body && !m.title && EMOJI_ONLY.test(body) && !/\d/.test(body);
-    rows.push(<div key={m.id} className={"cx-row " + (m.mine ? "me" : "them") + (first ? " first" : "") + (last ? " last" : "")}>
-      <div className={"cx-b" + (big ? " big" : "") + (body ? "" : " locked") + (m.pending ? " sending" : "")}>
+    const raw = m.pending ? m.text : plain(m);
+    const { quote, text: body0 } = splitReply(raw);
+    const body = raw == null ? null : body0;
+    const big = !!body && !quote && !m.title && EMOJI_ONLY.test(body) && !/\d/.test(body);
+    const canReply = !!body && !m.pending && !p.readOnly && !m.title;
+    const answer = () => { setReply({ id: m.id, who: m.mine ? t("You") : p.name, text: body ?? "" }); requestAnimationFrame(() => field.current?.focus()); };
+    rows.push(<div key={m.id} id={"m-" + m.id} className={"cx-row " + (m.mine ? "me" : "them") + (first ? " first" : "") + (last ? " last" : "")}
+      onPointerDown={canReply ? (e) => { if (e.pointerType !== "mouse") swipe.current = { x: e.clientX, y: e.clientY, id: m.id, el: e.currentTarget }; } : undefined}
+      onPointerMove={canReply ? (e) => { const s0 = swipe.current; if (!s0 || s0.id !== m.id) return; const dx = e.clientX - s0.x; if (Math.abs(e.clientY - s0.y) > 30) { s0.el.style.transform = ""; swipe.current = null; return; } if (dx > 0) s0.el.style.transform = `translateX(${Math.min(dx, 70)}px)`; } : undefined}
+      onPointerUp={canReply ? (e) => { const s0 = swipe.current; swipe.current = null; if (!s0) return; s0.el.style.transform = ""; if (e.clientX - s0.x > 55) answer(); } : undefined}
+      onPointerCancel={() => { if (swipe.current) { swipe.current.el.style.transform = ""; swipe.current = null; } }}>
+      <div className={"cx-b" + (big ? " big" : "") + (raw ? "" : " locked") + (m.pending ? " sending" : "")}>
         {m.title ? <b className="cx-bt">{m.title}</b> : null}
-        {body ?? (kp ? t("Encrypted on another device") : client ? <button type="button" className="cx-unlock" onClick={() => window.dispatchEvent(new Event("brq:unlock"))}>{t("Locked on this device. Tap to open")}</button> : "…")}
+        {quote ? <button type="button" className="cx-q" onClick={() => { const el = document.getElementById("m-" + quote.id); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("flash"); window.setTimeout(() => el.classList.remove("flash"), 1400); } }}><b>{quote.who}</b><span>{quote.text}</span></button> : null}
+        {raw != null ? body : (kp ? t("Encrypted on another device") : client ? <button type="button" className="cx-unlock" onClick={() => window.dispatchEvent(new Event("brq:unlock"))}>{t("Locked on this device. Tap to open")}</button> : "…")}
       </div>
+      {canReply ? <button type="button" className="cx-rep" onClick={answer} aria-label={t("Reply")} title={t("Reply")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z" /></svg></button> : null}
       {last && client ? <div className="cx-meta"><time dateTime={m.at}>{time(m.at)}</time>{m.mine ? (m.pending ? <svg className="ico tick" aria-hidden="true"><use href="#i-clock" /></svg> : <Ticks read={m.read} t={t} />) : null}</div> : null}
     </div>);
   });
 
   const lastMsg = [...items].reverse().find((m) => m.kind === "e2e");
-  const peek = lastMsg ? (lastMsg.pending ? lastMsg.text : plain(lastMsg)) : null;
+  const peekRaw = lastMsg ? (lastMsg.pending ? lastMsg.text : plain(lastMsg)) : null;
+  const peek = peekRaw == null ? null : splitReply(peekRaw).text;
   const sub = st.typing ? <span className="cx-typing-l">{t("typing…")}</span> : p.lock ? <span><Ico n="lock" c="sm" />{p.lock}</span> : null;
   const disabled = !!p.disabledReason || (p.e2e && !st.otherKey && loaded);
 
@@ -220,15 +235,16 @@ export default function ChatPane(p: Props) {
       {warned ? <p className="cx-warn" role="alert"><Ico n="alert" c="sm" />{t("This looks like contact details, a payment outside ByRequest or a meeting. That is not allowed and removes your protection: no review, no refund, no help. Send anyway only if it is something else.")}</p> : null}
       {p.actions ? <div className="cx-act">{p.actions}</div> : null}
       {p.readOnly ? null : st.closed || p.closedNode ? (p.closedNode ?? <div className="cx-closed">{t("This chat is closed")}</div>)
-        : <form className="cx-bar" onSubmit={(e) => { e.preventDefault(); go(); }}>
+        : <>{reply ? <div className="cx-rb"><span className="cx-rb-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z" /></svg></span><div><b>{t("Replying to {name}", { name: reply.who })}</b><span>{reply.text}</span></div><button type="button" onClick={() => setReply(null)} aria-label={t("Cancel reply")}><Ico n="x" c="sm" /></button></div> : null}
+        <form className="cx-bar" onSubmit={(e) => { e.preventDefault(); go(); }}>
           {emoji ? <div className="cx-emoji" role="listbox" aria-label={t("Emoji")}>{EMOJI.map((em) => <button key={em} type="button" onClick={() => addEmoji(em)} aria-label={em}>{em}</button>)}</div> : null}
           <button type="button" className={"cx-emo" + (emoji ? " on" : "")} onClick={() => setEmoji((x) => !x)} aria-label={t("Emoji")} aria-expanded={emoji} disabled={disabled}>😊</button>
           <textarea ref={field} rows={1} className="cx-in" value={text} onChange={(e) => typed(e.target.value)} enterKeyHint="send"
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer:coarse)").matches) { e.preventDefault(); go(); } }}
+            onKeyDown={(e) => { if (e.key === "Escape" && reply) { setReply(null); return; } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer:coarse)").matches) { e.preventDefault(); go(); } }}
             placeholder={p.placeholder ?? p.disabledReason ?? (p.e2e && !st.otherKey && loaded ? t("The chat opens once {name} signs in on a device", { name: p.name }) : t("Message {name}", { name: p.name }))}
             disabled={disabled} autoComplete="off" aria-label={t("Message")} maxLength={2000} />
           <button className="cx-send" aria-label={t("Send")} disabled={!text.trim() || disabled}><Ico n="send" /></button>
-        </form>}
+        </form></>}
     </div>
   </section>);
 }

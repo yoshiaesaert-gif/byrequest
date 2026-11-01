@@ -2779,5 +2779,8 @@ const nl: Record<string, string> = {
   "Know it the moment someone answers": "Weet het meteen als iemand antwoordt",
   "A short notice on this device, without details on your lock screen.": "Een korte melding op dit toestel, zonder details op je vergrendelscherm.",
   "Turn on": "Aanzetten",
+  "Reply": "Antwoorden",
+  "Replying to {name}": "Antwoord op {name}",
+  "Cancel reply": "Antwoord annuleren",
 };
 export default nl;
