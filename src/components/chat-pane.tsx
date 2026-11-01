@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { splitReply, withReply, type Quote } from "@/domain/reply";
+import { parseReaction, REACTIONS, splitReply, withReaction, withReply, type Quote } from "@/domain/reply";
 import { useLocale, useT } from "@/i18n/client";
 import { myKeys, seal, open } from "./e2e";
 import { Ticks } from "./ui";
@@ -50,6 +50,9 @@ export default function ChatPane(p: Props) {
   const [pending, setPending] = useState<Pending[]>([]);
   const [text, setText] = useState("");
   const [reply, setReply] = useState<Quote | null>(null);   // the message being answered
+  const [react, setReact] = useState<string | null>(null);  // the message whose emoji row is open
+  const hold = useRef<number | null>(null);
+  const seq = useRef(0);
   const swipe = useRef<{ x: number; y: number; id: string; el: HTMLElement } | null>(null);
   const [emoji, setEmoji] = useState(false);
   const [warned, setWarned] = useState(false);
@@ -154,7 +157,12 @@ export default function ChatPane(p: Props) {
     if (p.e2e && !st.otherKey) { toast(t("{name} has not opened ByRequest on a device yet. Try again soon.", { name: p.name }), "err"); return; }
     const full = withReply(v, reply);
     setWarned(false); setText(""); setEmoji(false); setReply(null); lastTyping.current = 0;
-    const tmp: Pending = { id: "tmp" + Date.now(), text: full, at: new Date().toISOString() };
+    await deliver(full, v);
+  };
+  /* Sends one encrypted text (a message, an answer or a reaction) and shows it at once while it travels. */
+  const deliver = async (full: string, v: string | null) => {
+    seq.current += 1;
+    const tmp: Pending = { id: `tmp${seq.current}-${full.length}`, text: full, at: new Date().toISOString() };
     setPending((x) => [...x, tmp]); setBusy(true);
     try {
       let r: { ok: boolean; error?: string };
@@ -163,11 +171,17 @@ export default function ChatPane(p: Props) {
         const body = p.e2e && kp && st.otherKey ? seal(full, st.otherKey, kp) : { text: full };
         r = await (await fetch(p.endpoint!, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
       }
-      if (!r.ok) { toast(t(r.error ?? "That did not work. Try again."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); setReply(splitReply(full).quote); }
+      if (!r.ok) { toast(t(r.error ?? "That did not work. Try again."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); if (v !== null) { setText(v); setReply(splitReply(full).quote); } }
       else { vRef.current = ""; await poll(); }
-    } catch { toast(t("Upload failed. Check your connection."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); setText(v); setReply(splitReply(full).quote); }
+    } catch { toast(t("Upload failed. Check your connection."), "err"); setPending((x) => x.filter((m) => m.id !== tmp.id)); if (v !== null) { setText(v); setReply(splitReply(full).quote); } }
     setBusy(false);
     if (!window.matchMedia("(pointer:coarse)").matches) field.current?.focus();
+  };
+  const sendReaction = (id: string, em: string) => {
+    setReact(null);
+    if (p.e2e && !kp) { window.dispatchEvent(new Event("brq:unlock")); return; }
+    if (p.e2e && !st.otherKey) return;
+    void deliver(withReaction(id, em), null);
   };
   const addEmoji = (em: string) => {
     const f = field.current, a = f?.selectionStart ?? text.length, b = f?.selectionEnd ?? text.length;
@@ -179,11 +193,20 @@ export default function ChatPane(p: Props) {
   const day = (iso: string) => new Date(iso).toDateString();
   const dayLabel = (iso: string) => { const d = new Date(iso), today = new Date(), y = new Date(today); y.setDate(y.getDate() - 1); return day(iso) === today.toDateString() ? t("Today") : day(iso) === y.toDateString() ? t("Yesterday") : d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", ...(d.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}) }); };
 
+  // Reactions are messages too: gather them per message (latest per person wins) and keep them out of the list.
+  const reacts = new Map<string, { mine?: string; theirs?: string }>();
+  const shown = items.filter((m) => {
+    if (m.kind !== "e2e") return true;
+    const r = parseReaction(m.pending ? m.text : plain(m));
+    if (!r) return true;
+    const cur = reacts.get(r.id) ?? {}; if (m.mine) cur.mine = r.emoji; else cur.theirs = r.emoji; reacts.set(r.id, cur);
+    return false;
+  });
   const rows: React.ReactNode[] = [];
-  items.forEach((m, i) => {
-    if (client && (i === 0 || day(items[i - 1].at) !== day(m.at))) rows.push(<div key={"d" + m.id} className="cx-day"><span>{dayLabel(m.at)}</span></div>);
+  shown.forEach((m, i) => {
+    if (client && (i === 0 || day(shown[i - 1].at) !== day(m.at))) rows.push(<div key={"d" + m.id} className="cx-day"><span>{dayLabel(m.at)}</span></div>);
     if (m.kind === "system") { rows.push(<p key={m.id} className="cx-sys">{t(m.text ?? m.body)}{m.id.startsWith("ev:") && client ? <time> · {new Date(m.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time> : null}</p>); return; }
-    const prev = items[i - 1], next = items[i + 1];
+    const prev = shown[i - 1], next = shown[i + 1];
     const first = !prev || prev.kind === "system" || prev.mine !== m.mine || day(prev.at) !== day(m.at) || new Date(m.at).getTime() - new Date(prev.at).getTime() > 5 * 60_000;
     const last = !next || next.kind === "system" || next.mine !== m.mine || day(next.at) !== day(m.at) || new Date(next.at).getTime() - new Date(m.at).getTime() > 5 * 60_000;
     const raw = m.pending ? m.text : plain(m);
@@ -193,21 +216,25 @@ export default function ChatPane(p: Props) {
     const canReply = !!body && !m.pending && !p.readOnly && !m.title;
     const answer = () => { setReply({ id: m.id, who: m.mine ? t("You") : p.name, text: body ?? "" }); requestAnimationFrame(() => field.current?.focus()); };
     rows.push(<div key={m.id} id={"m-" + m.id} className={"cx-row " + (m.mine ? "me" : "them") + (first ? " first" : "") + (last ? " last" : "")}
-      onPointerDown={canReply ? (e) => { if (e.pointerType !== "mouse") swipe.current = { x: e.clientX, y: e.clientY, id: m.id, el: e.currentTarget }; } : undefined}
-      onPointerMove={canReply ? (e) => { const s0 = swipe.current; if (!s0 || s0.id !== m.id) return; const dx = e.clientX - s0.x; if (Math.abs(e.clientY - s0.y) > 30) { s0.el.style.transform = ""; swipe.current = null; return; } if (dx > 0) s0.el.style.transform = `translateX(${Math.min(dx, 70)}px)`; } : undefined}
-      onPointerUp={canReply ? (e) => { const s0 = swipe.current; swipe.current = null; if (!s0) return; s0.el.style.transform = ""; if (e.clientX - s0.x > 55) answer(); } : undefined}
-      onPointerCancel={() => { if (swipe.current) { swipe.current.el.style.transform = ""; swipe.current = null; } }}>
+      onPointerDown={canReply ? (e) => { if (e.pointerType !== "mouse") { swipe.current = { x: e.clientX, y: e.clientY, id: m.id, el: e.currentTarget }; hold.current = window.setTimeout(() => { swipe.current = null; setReact(m.id); }, 450); } } : undefined}
+      onPointerMove={canReply ? (e) => { const s0 = swipe.current; if (!s0 || s0.id !== m.id) return; const dx = e.clientX - s0.x; if (Math.abs(dx) > 8 && hold.current) { clearTimeout(hold.current); hold.current = null; } if (Math.abs(e.clientY - s0.y) > 30) { s0.el.style.transform = ""; swipe.current = null; return; } if (dx > 0) s0.el.style.transform = `translateX(${Math.min(dx, 70)}px)`; } : undefined}
+      onPointerUp={canReply ? (e) => { if (hold.current) { clearTimeout(hold.current); hold.current = null; } const s0 = swipe.current; swipe.current = null; if (!s0) return; s0.el.style.transform = ""; if (e.clientX - s0.x > 55) answer(); } : undefined}
+      onContextMenu={canReply ? (e) => { if (window.matchMedia("(pointer:coarse)").matches) e.preventDefault(); } : undefined}
+      onPointerCancel={() => { if (hold.current) { clearTimeout(hold.current); hold.current = null; } if (swipe.current) { swipe.current.el.style.transform = ""; swipe.current = null; } }}>
       <div className={"cx-b" + (big ? " big" : "") + (raw ? "" : " locked") + (m.pending ? " sending" : "")}>
         {m.title ? <b className="cx-bt">{m.title}</b> : null}
         {quote ? <button type="button" className="cx-q" onClick={() => { const el = document.getElementById("m-" + quote.id); if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("flash"); window.setTimeout(() => el.classList.remove("flash"), 1400); } }}><b>{quote.who}</b><span>{quote.text}</span></button> : null}
         {raw != null ? body : (kp ? t("Encrypted on another device") : client ? <button type="button" className="cx-unlock" onClick={() => window.dispatchEvent(new Event("brq:unlock"))}>{t("Locked on this device. Tap to open")}</button> : "…")}
       </div>
+      {reacts.get(m.id)?.mine || reacts.get(m.id)?.theirs ? <div className="cx-rx">{[reacts.get(m.id)!.theirs, reacts.get(m.id)!.mine].filter(Boolean).map((em, k) => <span key={k}>{em}</span>)}</div> : null}
+      {react === m.id ? <div className="cx-pal" role="menu" aria-label={t("React")}>{REACTIONS.map((em) => <button key={em} type="button" className={reacts.get(m.id)?.mine === em ? "on" : ""} onClick={() => sendReaction(m.id, reacts.get(m.id)?.mine === em ? "" : em)} aria-label={em}>{em}</button>)}<button type="button" className="cx-pal-x" onClick={() => setReact(null)} aria-label={t("Close")}>✕</button></div> : null}
+      {canReply ? <button type="button" className="cx-emo-r" onClick={() => setReact(react === m.id ? null : m.id)} aria-label={t("React")} title={t("React")}>🙂</button> : null}
       {canReply ? <button type="button" className="cx-rep" onClick={answer} aria-label={t("Reply")} title={t("Reply")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z" /></svg></button> : null}
       {last && client ? <div className="cx-meta"><time dateTime={m.at}>{time(m.at)}</time>{m.mine ? (m.pending ? <svg className="ico tick" aria-hidden="true"><use href="#i-clock" /></svg> : <Ticks read={m.read} t={t} />) : null}</div> : null}
     </div>);
   });
 
-  const lastMsg = [...items].reverse().find((m) => m.kind === "e2e");
+  const lastMsg = [...shown].reverse().find((m) => m.kind === "e2e");
   const peekRaw = lastMsg ? (lastMsg.pending ? lastMsg.text : plain(lastMsg)) : null;
   const peek = peekRaw == null ? null : splitReply(peekRaw).text;
   const sub = st.typing ? <span className="cx-typing-l">{t("typing…")}</span> : p.lock ? <span><Ico n="lock" c="sm" />{p.lock}</span> : null;

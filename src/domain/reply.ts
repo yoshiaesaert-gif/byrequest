@@ -13,3 +13,13 @@ export function splitReply(raw: string | null | undefined): { quote: Quote | nul
   if (p.length < 5) return { quote: null, text: raw.replace(new RegExp(M, "g"), "") };
   return { quote: { id: p[1].slice(2), who: p[2], text: p[3] }, text: p.slice(4).join("") };
 }
+
+/* A reaction is a tiny encrypted message too: the marker, the id of the message it reacts to and one emoji.
+   An empty emoji takes the reaction away. Each person keeps at most one reaction per message; the latest wins. */
+export const REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🔥"];
+export const withReaction = (id: string, emoji: string) => `${M}X:${id}${M}${emoji}`;
+export function parseReaction(raw: string | null | undefined): { id: string; emoji: string } | null {
+  if (!raw || !raw.startsWith(M + "X:")) return null;
+  const p = raw.split(M);   // ["", "X:id", emoji]
+  return p.length >= 3 ? { id: p[1].slice(2), emoji: p[2] } : null;
+}

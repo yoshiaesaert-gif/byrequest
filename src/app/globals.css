@@ -951,3 +951,15 @@ p{margin:0}
 .cx-rb-i svg{width:16px;height:16px;fill:#8B7CF6;display:block}
 .cx-rb div{flex:1;min-width:0}.cx-rb b{display:block;font-size:.75rem;color:#5B4BE0}.cx-rb span{display:block;font-size:.8125rem;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cx-rb button{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px}
+/* Chat: emoji reactions */
+.cx-emo-r{position:absolute;top:4px;right:-72px;width:30px;height:30px;border:0;border-radius:50%;display:grid;place-items:center;background:var(--sunk);cursor:pointer;opacity:0;transition:opacity .12s;font-size:.95rem;line-height:1}
+.cx-row:hover .cx-emo-r,.cx-emo-r:focus-visible{opacity:1}
+.cx-row.me .cx-emo-r{right:auto;left:-72px}
+@media (hover:none){.cx-emo-r{display:none}}
+.cx-rx{display:flex;gap:2px;align-self:flex-end;margin:-10px 6px 0 0;z-index:1;padding:2px 6px;border-radius:999px;background:var(--surface);box-shadow:0 1px 3px rgba(14,16,19,.18),0 0 0 2px var(--paper,#fff);font-size:.85rem;line-height:1.3}
+.cx-row.me .cx-rx{align-self:flex-start;margin:-10px 0 0 6px}
+.cx-pal{position:absolute;bottom:calc(100% + 6px);left:0;z-index:5;display:flex;gap:2px;padding:6px 8px;border-radius:999px;background:var(--surface);box-shadow:0 10px 30px rgba(14,16,19,.2),0 0 0 1px var(--line)}
+.cx-row.me .cx-pal{left:auto;right:0}
+.cx-pal button{border:0;background:none;font-size:1.35rem;line-height:1;padding:4px;border-radius:50%;cursor:pointer;transition:transform .12s}.cx-pal button:hover{transform:scale(1.25)}.cx-pal button.on{background:#ECEAFF}
+.cx-pal .cx-pal-x{font-size:.8rem;color:var(--muted);padding:4px 6px}
+@media (prefers-reduced-motion:no-preference){.cx-pal{animation:askIn .16s cubic-bezier(.2,.8,.2,1)}}

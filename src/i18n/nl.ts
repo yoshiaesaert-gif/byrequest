@@ -2782,5 +2782,6 @@ const nl: Record<string, string> = {
   "Reply": "Antwoorden",
   "Replying to {name}": "Antwoord op {name}",
   "Cancel reply": "Antwoord annuleren",
+  "React": "Reageer",
 };
 export default nl;

@@ -2782,5 +2782,6 @@ const fr: Record<string, string> = {
   "Reply": "Répondre",
   "Replying to {name}": "Réponse à {name}",
   "Cancel reply": "Annuler la réponse",
+  "React": "Réagir",
 };
 export default fr;
