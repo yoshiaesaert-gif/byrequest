@@ -395,6 +395,8 @@ export const visits = pgTable("visits", {
   utm: jsonb("utm").$type<Record<string, string>>(),
   refCode: text("ref_code"),                                          // came in through an invite link
   app: boolean("app").notNull().default(false),                       // opened from the home screen app (installed web app)
+  isp: text("isp"),                                                   // network owner of the IP, from the location lookup
+  bot: boolean("bot").notNull().default(false),                       // a data centre or proxy network: kept out of the numbers
   landing: text("landing").notNull(),
   pages: integer("pages").notNull().default(0),
   clicks: integer("clicks").notNull().default(0),

@@ -1,0 +1,2 @@
+ALTER TABLE "visits" ADD COLUMN IF NOT EXISTS "isp" text;
+ALTER TABLE "visits" ADD COLUMN IF NOT EXISTS "bot" boolean NOT NULL DEFAULT false;

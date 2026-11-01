@@ -15,13 +15,17 @@ function parseUa(ua: string) {
   return { device, browser, os };
 }
 
-/* Location from the IP, looked up once per visit in the background. */
+/* Location and network owner from the IP, looked up once per visit in the background. Visits from data centres,
+   cloud hosts and proxy networks are automated (crawlers, ad review, uptime checks): marked, and kept out of the numbers. */
+const HOSTING = /amazon|aws|google|microsoft|azure|digitalocean|ovh|hetzner|linode|akamai|datacamp|atlas network|global transit|m247|choopa|vultr|leaseweb|cloudflare|oracle|alibaba|tencent|contabo|scaleway|fastplanet|zenlayer|cdn77|hosting|datacenter|data center|server|colocation|psychz|quadranet|hostinger|ionos|netcup|upcloud|packet|equinix|cogent|tzulo|performive|clouvider|g-core|gcore|stark industries|iperweb|private layer|servers/i;
 async function locate(id: string, ip: string) {
   if (!ip || /^(127\.|10\.|192\.168\.|::1|fc|fd)/.test(ip)) return;
   try {
-    const r = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,city`, { signal: AbortSignal.timeout(3000) });
-    const j = (await r.json()) as { success?: boolean; country?: string; city?: string };
-    if (j.success) await db.update(visits).set({ country: j.country ?? null, city: j.city ?? null }).where(eq(visits.id, id));
+    const r = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,city,connection`, { signal: AbortSignal.timeout(3000) });
+    const j = (await r.json()) as { success?: boolean; country?: string; city?: string; connection?: { org?: string; isp?: string } };
+    if (!j.success) return;
+    const isp = [j.connection?.org, j.connection?.isp].filter(Boolean).join(" / ").slice(0, 120) || null;
+    await db.update(visits).set({ country: j.country ?? null, city: j.city ?? null, isp, bot: !!isp && HOSTING.test(isp) }).where(eq(visits.id, id));
   } catch { /* location stays unknown */ }
 }
 
@@ -52,8 +56,8 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
 /* ---------- the staff dashboard ---------- */
 const TZ = "Europe/Brussels";
 /* Team browsers stay out of every number: any visitor id that was ever signed in as an internal account. */
-const GUEST = sql`${visits.visitorId} not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)`;
-const GUEST_RAW = "v.visitor_id not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)";
+const GUEST = sql`${visits.bot} = false and ${visits.visitorId} not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)`;
+const GUEST_RAW = "v.bot = false and v.visitor_id not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)";
 const dayStart = (offsetDays: number) => sql`(date_trunc('day', now() at time zone ${TZ}) - (${offsetDays} || ' days')::interval) at time zone ${TZ}`;
 
 async function kpis(from: ReturnType<typeof dayStart>, to: ReturnType<typeof dayStart> | null) {
