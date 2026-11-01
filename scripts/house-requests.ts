@@ -76,6 +76,8 @@ async function main() {
     }
     let u = await db.query.users.findFirst({ where: eq(S.users.handle, handle) });
     if (u && !u.house) continue;                       // never take over a real person's username
+    // A team profile that staff renamed later keeps its email: leave it and its request as they are now.
+    if (!u && await db.query.users.findFirst({ where: eq(S.users.email, `house+${handle.replace(/\W/g, "")}@byrequest.app`) })) continue;
     if (!u) {
       const spec = A.generate({ age: "25 to 34", pres: i % 3 === 0 ? "Woman" : "Man", len: "Surprise me", style: "Casual", facial: "Any", glasses: "Any", skin: -1 });
       [u] = await db.insert(S.users).values({
