@@ -1,9 +1,8 @@
+import { fileStream } from "@/server/webstream";
 import { VIEW_RELEASE_MINUTES } from "@/domain/rules";
 import { BUYER_AGE_CHECK } from "@/config/compliance";
 import { isAgeVerified } from "@/server/onboarding";
-import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { Readable } from "node:stream";
 import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
@@ -42,8 +41,8 @@ export async function GET(req: Request, ctx: RouteContext<"/api/media/[id]">) {
     const start = range[1] ? Number(range[1]) : 0;
     const end = Math.min(range[2] ? Number(range[2]) : start + 2 ** 21, size - 1);
     if (start >= size || start > end) return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
-    const body = Readable.toWeb(createReadStream(p, { start, end })) as ReadableStream;
+    const body = fileStream(p, { start, end });
     return new Response(body, { status: 206, headers: { ...PRIVATE, "Content-Type": m.mime, "Accept-Ranges": "bytes", "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(end - start + 1) } });
   }
-  return new Response(Readable.toWeb(createReadStream(p)) as ReadableStream, { headers: { ...PRIVATE, "Content-Type": m.mime, "Accept-Ranges": "bytes", "Content-Length": String(size) } });
+  return new Response(fileStream(p), { headers: { ...PRIVATE, "Content-Type": m.mime, "Accept-Ranges": "bytes", "Content-Length": String(size) } });
 }

@@ -46,8 +46,9 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
   const [rated, setRated] = useState<number>(() => { try { return Number(sessionStorage.getItem(CHAT + "_rated") ?? 0); } catch { return 0; } });
   const [stars, setStars] = useState(0); const [why, setWhy] = useState("");
   const [team, setTeam] = useState(0);
+  const [teamMsgs, setTeamMsgs] = useState<{ id: string; who: string; text: string; at: string; unread: boolean }[]>([]);
   useEffect(() => {
-    const check = () => fetch("/api/notifications?team=1", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((j) => setTeam(j?.team ?? 0)).catch(() => {});
+    const check = () => fetch("/api/notifications?team=1", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((j) => { setTeam(j?.team ?? 0); setTeamMsgs(j?.msgs ?? []); }).catch(() => {});
     const id0 = window.setTimeout(check, 0); const id = window.setInterval(check, 60000);
     return () => { clearTimeout(id0); clearInterval(id); };
   }, [path]);
@@ -68,6 +69,7 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
     window.addEventListener("brq:problem", on); window.addEventListener("error", e1); window.addEventListener("unhandledrejection", e2); window.addEventListener("brq:toast", e3);
     return () => { window.removeEventListener("brq:problem", on); window.removeEventListener("error", e1); window.removeEventListener("unhandledrejection", e2); window.removeEventListener("brq:toast", e3); };
   }, []);
+  useEffect(() => { if (!open || !team) return; const id = window.setTimeout(() => { fetch("/api/notifications?team=read", { method: "POST" }).then(() => setTeam(0)).catch(() => {}); }, 1500); return () => clearTimeout(id); }, [open, team]);
   useEffect(() => { if (!open) return; const h = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false); window.addEventListener("keydown", h); return () => window.removeEventListener("keydown", h); }, [open]);
   useEffect(() => { const l = list.current; if (l) l.scrollTop = l.scrollHeight; try { sessionStorage.setItem(CHAT, JSON.stringify(turns.slice(-20).map(({ fresh, ...m }) => m))); } catch { /* private mode */ } }, [turns, busy, open]);
 
@@ -99,6 +101,8 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
       {team ? <Link className="hb-team" href="/inbox/byrequest" onClick={() => setOpen(false)}><i />{team === 1 ? t("You have a new message from the ByRequest team") : t("You have {n} new messages from the ByRequest team", { n: team })}<span>{t("Open")} →</span></Link> : null}
       <div className="hb-list" ref={list}>
         <div className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className="hb-b them">{role === "creator" ? t("Hi! You are in creator mode. Ask me about earning, your profile, offers or payouts, or tell me what is not working.") : t("Hi! You are in buyer mode. Ask me about posting requests, choosing creators, paying or your vault, or tell me what is not working.")}</p></div>
+        {teamMsgs.filter((m) => m.who.endsWith("ByRequest support") || m.who === "About your report").map((m) => (
+          <div key={m.id} className="hb-r them"><img className="hb-av" src="/apple-icon.png" alt="" width={28} height={28} /><p className={"hb-b them hb-team-b" + (m.unread ? " new" : "")}><b>{m.who === "About your report" ? "ByRequest support" : m.who}</b><span>{m.text}</span></p></div>))}
         {!turns.length ? <div className="hb-chips">{chips.map((c) => <button key={c} onClick={() => send(c)}>{c}</button>)}</div> : null}
         {turns.map((m, i) => {
           const last = i === turns.length - 1 || turns[i + 1].role !== m.role;

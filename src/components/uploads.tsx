@@ -14,7 +14,7 @@ type Opts<R> = {
   shrink?: { side: number; quality: number; over: number };   // photos bigger than `over` bytes are resized on the device first
   dropDone?: boolean;                     // remove a tile shortly after it finished (the page shows the stored item instead)
 };
-const PIECE = 8 * 1024 * 1024, BIG = 20 * 1024 * 1024;
+const PIECE = 8 * 1024 * 1024, BIG = 8 * 1024 * 1024;   // above 8 MB in pieces: the server takes at most 10 MB per request
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /* Resize a photo on the device before it is sent, like Instagram does: far less data, same look. Falls back to the original. */

@@ -1,3 +1,4 @@
+import { fileStream } from "./webstream";
 import "server-only";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -212,15 +213,13 @@ export async function blockFile(key: string, mime: string, reason: string) {
 export async function streamMedia(key: string, mime: string, req: Request, headers: Record<string, string> = {}) {
   const p = await localFile(key);
   const size = (await stat(p)).size;
-  const { createReadStream } = await import("node:fs");
-  const { Readable } = await import("node:stream");
   const base = { "Content-Type": mime, "Accept-Ranges": "bytes", "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline", ...headers };
   const m = /bytes=(\d*)-(\d*)/.exec(req.headers.get("range") ?? "");
-  if (!m) return new Response(Readable.toWeb(createReadStream(p)) as ReadableStream, { headers: { ...base, "Content-Length": String(size) } });
+  if (!m) return new Response(fileStream(p), { headers: { ...base, "Content-Length": String(size) } });
   const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
   const end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
   if (start >= size || start > end) return new Response(null, { status: 416, headers: { ...base, "Content-Range": `bytes */${size}` } });
-  return new Response(Readable.toWeb(createReadStream(p, { start, end })) as ReadableStream, { status: 206, headers: { ...base, "Content-Length": String(end - start + 1), "Content-Range": `bytes ${start}-${end}/${size}` } });
+  return new Response(fileStream(p, { start, end }), { status: 206, headers: { ...base, "Content-Length": String(end - start + 1), "Content-Range": `bytes ${start}-${end}/${size}` } });
 }
 
 /* Loudness of a stored audio file, for the voice note check. */

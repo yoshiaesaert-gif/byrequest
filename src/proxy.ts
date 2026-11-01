@@ -27,4 +27,5 @@ function gate(req: NextRequest, ok: NextResponse) {
   return new NextResponse("Private demo", { status: 401, headers: { "WWW-Authenticate": 'Basic realm="ByRequest demo", charset="UTF-8"' } });
 }
 
-export const config = { matcher: ["/((?!api/webhooks|api/cron|api/health).*)"] };
+// Pages only: API routes (uploads in particular) skip the proxy, which would cap request bodies at 10 MB.
+export const config = { matcher: ["/((?!api/|_next/|og.png).*)"] };
