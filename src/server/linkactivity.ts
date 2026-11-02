@@ -20,7 +20,7 @@ const count = (xs: (string | null | undefined)[]) => [...xs.filter((x): x is str
 
 export async function linkActivity(days = 30): Promise<Link[]> {
   const since = new Date(Date.now() - days * 86400_000);
-  const evs = await db.select().from(E).where(and(gt(E.createdAt, since), inArray(E.event, ["link_opened", "link_copied", "link_shared", "qr_shown", "code_copied", "signed_up"]))).orderBy(desc(E.createdAt)).limit(3000);
+  const evs = await db.select().from(E).where(and(gt(E.createdAt, since), inArray(E.event, ["link_opened", "link_copied", "link_shared", "qr_shown", "code_copied", "signed_up", "signup_ignored"]))).orderBy(desc(E.createdAt)).limit(3000);
   const codes = [...new Set(evs.map((e) => e.code))];
   if (!codes.length) return [];
   const owners = await db.select({ id: U.id, handle: U.handle, code: U.refCode }).from(U).where(inArray(U.refCode, codes));
@@ -50,6 +50,7 @@ export async function linkActivity(days = 30): Promise<Link[]> {
     for (const e of evs.filter((x) => x.code === code).reverse()) {
       const d = (e.detail ?? {}) as Record<string, string | boolean | null>;
       const ch = (d.ch as string) || null;
+      if (e.event === "signup_ignored") { rows.push({ at: e.createdAt, kind: "signup", who: "owner", text: `Blocked: a new account on ${o.handle}'s own network`, sub: String(d.reason ?? "") }); continue; }
       if (e.event !== "link_opened") {
         const kind = e.event === "link_shared" ? "share" : e.event === "qr_shown" ? "qr" : e.event === "code_copied" ? "code" : e.event === "signed_up" ? "signup" : "copy";
         rows.push({ at: e.createdAt, kind, who: "owner", ch, text: kind === "share" ? `${o.handle} shared the link${ch ? ` via ${CH[ch] ?? ch}` : " with the share button"}` : kind === "qr" ? `${o.handle} showed the QR code` : kind === "code" ? `${o.handle} copied the code` : kind === "signup" ? "Someone signed up with the code" : `${o.handle} copied the link` });

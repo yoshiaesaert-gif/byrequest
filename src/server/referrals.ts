@@ -115,6 +115,11 @@ export async function attach(newUserId: string, codeRaw: string | undefined, int
   const code = normalizeCode(codeRaw);
   const o = await owner(code);
   if (!o || o.id === newUserId) { await event(db, code || "-", "signup_ignored", null, { reason: !o ? "unknown code" : "own code" }); return; }
+  // Self referral: the new account is made on a network the inviter used in the last 60 days. No bonus, no gift, and staff see it.
+  if (device?.ip) {
+    const [same] = await db.select({ x: sql`1` }).from(schema.visits).where(and(eq(schema.visits.userId, o.id), eq(schema.visits.ip, device.ip), gt(schema.visits.startedAt, new Date(Date.now() - 60 * 86400_000)))).limit(1);
+    if (same) { await event(db, code, "signup_ignored", null, { reason: "same network as the inviter", newUserId }); await log(db, "system", "referral.self_blocked", newUserId, { referrer: o.id, code }); return; }
+  }
   const made = await db.transaction(async (tx) => {
     const [r] = await tx.insert(referrals).values({ referrerId: o.id, refereeId: newUserId, code, intent }).onConflictDoNothing().returning();
     if (!r) return false;
