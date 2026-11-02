@@ -115,16 +115,18 @@ export async function attach(newUserId: string, codeRaw: string | undefined, int
   const code = normalizeCode(codeRaw);
   const o = await owner(code);
   if (!o || o.id === newUserId) { await event(db, code || "-", "signup_ignored", null, { reason: !o ? "unknown code" : "own code" }); return; }
-  await db.transaction(async (tx) => {
+  const made = await db.transaction(async (tx) => {
     const [r] = await tx.insert(referrals).values({ referrerId: o.id, refereeId: newUserId, code, intent }).onConflictDoNothing().returning();
-    if (!r) return;
+    if (!r) return false;
     await event(tx, code, "signed_up", r.id, { intent, ...(byDevice ? { matched: "same device and network" } : {}) });
     if (intent === "buy" && (await getConfig()).buyerGift) {
       await tx.update(users).set({ freeFees: sql`${users.freeFees} + 1` }).where(eq(users.id, newUserId));
       await event(tx, code, "fee_gift_granted", r.id, { to: "invited buyer" });
     }
     await log(tx, "system", "referral.signup", newUserId, { referrer: o.id, code, intent });
+    return true;
   });
+  if (made) { const { shareOnSignup } = await import("./sharebonus"); await shareOnSignup(o.id, newUserId, code).catch((e) => console.error("share bonus", e instanceof Error ? e.message : e)); }
 }
 
 /* Called when a deal is paid out to the creator (inside the same transaction). */

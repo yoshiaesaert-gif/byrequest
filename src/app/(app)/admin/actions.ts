@@ -12,6 +12,7 @@ import * as M from "@/server/moderation";
 import * as Ref from "@/server/referrals";
 import * as I from "@/server/issues";
 import * as CR from "@/server/creatorreviews";
+import * as SB from "@/server/sharebonus";
 import type { RefConfig } from "@/domain/referral";
 import { reviewDelivery, resolveDispute } from "@/server/deals";
 import { reviewPhoto } from "@/server/albums";
@@ -54,6 +55,7 @@ export const reqAuto = async (on: boolean) => run((s) => M.setAutoApprove(s, on)
 export const testInbox = async () => run(async (s) => { const { fillTestInbox } = await import("@/server/testdata"); const r = await fillTestInbox(s); if (!r.ok) throw new RuleError(r.error); return r.made; });
 
 export const referralConfig = async (v: Partial<RefConfig>) => run((s) => Ref.setConfig(s, v), "admin");
+export const shareDecide = async (id: string, ok: boolean, note = "") => run((s) => SB.shareDecide(s, id, ok, note), "admin");
 
 export const mailTest = async (kind: string, lang: string) => run(async (staffId) => {
   const L = await import("@/server/lifecycle");

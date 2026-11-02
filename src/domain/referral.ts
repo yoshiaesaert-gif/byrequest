@@ -2,11 +2,12 @@ import { CREATOR_SHARE } from "./rules";
 
 /* The referral programme in numbers. Staff change them in the back office (settings key "referral");
    these are the defaults. The invite page, the payout code and the tests all read the same config. */
-export type RefConfig = { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number };
-export const REF_DEFAULTS: RefConfig = { creatorPct: 10, windowDays: 30, buyerGift: true, feeGiftCapCents: 2000, welcomePct: 10 };   // welcomePct: extra for the invited creator on their first deal
+export type RefConfig = { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number; shareOn: boolean; sharePeople: number; shareCents: number };
+export const REF_DEFAULTS: RefConfig = { creatorPct: 10, windowDays: 30, buyerGift: true, feeGiftCapCents: 2000, welcomePct: 10, shareOn: true, sharePeople: 25, shareCents: 2000 };   // welcomePct: extra for the invited creator on their first deal
 export function cleanConfig(v: Partial<RefConfig> | null | undefined): RefConfig {
   const n = (x: unknown, lo: number, hi: number, d: number) => (typeof x === "number" && Number.isFinite(x) ? Math.min(hi, Math.max(lo, Math.round(x))) : d);
-  return { creatorPct: n(v?.creatorPct, 0, 30, REF_DEFAULTS.creatorPct), windowDays: n(v?.windowDays, 7, 365, REF_DEFAULTS.windowDays), buyerGift: typeof v?.buyerGift === "boolean" ? v.buyerGift : REF_DEFAULTS.buyerGift, feeGiftCapCents: n(v?.feeGiftCapCents, 0, 10000, REF_DEFAULTS.feeGiftCapCents), welcomePct: n(v?.welcomePct, 0, 30, REF_DEFAULTS.welcomePct) };
+  return { creatorPct: n(v?.creatorPct, 0, 30, REF_DEFAULTS.creatorPct), windowDays: n(v?.windowDays, 7, 365, REF_DEFAULTS.windowDays), buyerGift: typeof v?.buyerGift === "boolean" ? v.buyerGift : REF_DEFAULTS.buyerGift, feeGiftCapCents: n(v?.feeGiftCapCents, 0, 10000, REF_DEFAULTS.feeGiftCapCents), welcomePct: n(v?.welcomePct, 0, 30, REF_DEFAULTS.welcomePct),
+    shareOn: typeof v?.shareOn === "boolean" ? v.shareOn : REF_DEFAULTS.shareOn, sharePeople: n(v?.sharePeople, 1, 1000, REF_DEFAULTS.sharePeople), shareCents: n(v?.shareCents, 0, 20000, REF_DEFAULTS.shareCents) };
 }
 export const REF_COOKIE = "brq_ref";
 export const REF_COOKIE_DAYS = 30;

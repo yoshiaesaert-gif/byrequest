@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, redoId, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, mailTest, setInternal, teamSend, teamOfferSend } from "./actions";
+import { reviewD, reviewA, decide, requestInfo, restrict, answer, reveal, removal, block, redoId, staffRole, handleR, supportOrg, houseAccept, houseRate, houseBudget, dropRequest, referralConfig, shareDecide, mailTest, setInternal, teamSend, teamOfferSend } from "./actions";
 import { toast } from "@/components/chrome";
 import { ask } from "@/components/confirm";
 
@@ -115,8 +115,8 @@ export function HouseBudget({ euros }: { euros: number }) {
 }
 
 /* The numbers of the invite programme. Changes count from now on and are logged with before and after. */
-export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number } }) {
-  const [v, setV] = useState({ pct: String(cfg.creatorPct), days: String(cfg.windowDays), gift: cfg.buyerGift, cap: String(cfg.feeGiftCapCents / 100), welcome: String(cfg.welcomePct) });
+export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number; shareOn: boolean; sharePeople: number; shareCents: number } }) {
+  const [v, setV] = useState({ pct: String(cfg.creatorPct), days: String(cfg.windowDays), gift: cfg.buyerGift, cap: String(cfg.feeGiftCapCents / 100), welcome: String(cfg.welcomePct), son: cfg.shareOn, spl: String(cfg.sharePeople), sct: String(cfg.shareCents / 100) });
   const [p, start] = useTransition();
   return <div className="bo-refcfg">
     <label>Creator bonus<span className="bo-inline"><input className="input" inputMode="numeric" value={v.pct} onChange={(e) => setV({ ...v, pct: e.target.value })} aria-label="Creator bonus in percent" /> %</span><small>0 to 30. Share of what the invited creator nets.</small></label>
@@ -124,7 +124,10 @@ export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDay
     <label>Bonus period<span className="bo-inline"><input className="input" inputMode="numeric" value={v.days} onChange={(e) => setV({ ...v, days: e.target.value })} aria-label="Bonus period in days" /> days</span><small>7 to 365, from their first paid deal.</small></label>
     <label>Buyer gift<span className="bo-inline"><input type="checkbox" checked={v.gift} onChange={(e) => setV({ ...v, gift: e.target.checked })} /> free first service fee</span><small>For invited buyers, and one for the inviter.</small></label>
     <label>Gift covers up to<span className="bo-inline">€ <input className="input" inputMode="numeric" value={v.cap} onChange={(e) => setV({ ...v, cap: e.target.value })} aria-label="Gift cap in euros" /></span><small>Per request.</small></label>
-    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await referralConfig({ creatorPct: Number(v.pct), windowDays: Number(v.days), buyerGift: v.gift, feeGiftCapCents: Math.round(Number(v.cap) * 100), welcomePct: Number(v.welcome) }), "Saved. The invite page shows the new numbers now."))}>Save</button>
+    <label>Share bonus<span className="bo-inline"><input type="checkbox" checked={v.son} onChange={(e) => setV({ ...v, son: e.target.checked })} /> on</span><small>Cash per new account once a link reached enough people.</small></label>
+    <label>People to unlock<span className="bo-inline"><input className="input" inputMode="numeric" value={v.spl} onChange={(e) => setV({ ...v, spl: e.target.value })} aria-label="People to unlock" /> people</span><small>Different people who opened the link.</small></label>
+    <label>Per new account<span className="bo-inline">€ <input className="input" inputMode="numeric" value={v.sct} onChange={(e) => setV({ ...v, sct: e.target.value })} aria-label="Share bonus in euros" /></span><small>Paid after verification and your approval.</small></label>
+    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await referralConfig({ creatorPct: Number(v.pct), windowDays: Number(v.days), buyerGift: v.gift, feeGiftCapCents: Math.round(Number(v.cap) * 100), welcomePct: Number(v.welcome), shareOn: v.son, sharePeople: Number(v.spl), shareCents: Math.round(Number(v.sct) * 100) }), "Saved. The invite page shows the new numbers now."))}>Save</button>
   </div>;
 }
 
@@ -144,4 +147,12 @@ export function TeamComposer({ dealId, offerId, as }: { dealId?: string; offerId
   return (<form className="tc-form" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = offerId ? await teamOfferSend(offerId, text) : await teamSend(dealId!, text); if (r.ok) setText(""); else toast(r.error, "err"); }); }}>
     <textarea className="input" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={`Write as ${as}`} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); } }} />
     <button className="btn btn-primary" disabled={p || !text.trim()}>{p ? "Sending…" : "Send"}</button></form>);
+}
+
+export function ShareDecide({ id, ready, amount, who }: { id: string; ready: boolean; amount: string; who: string }) {
+  const [p, start] = useTransition();
+  return <span className="bo-inline">
+    <button className="btn btn-primary btn-sm" disabled={p || !ready} title={ready ? undefined : "Waiting until the new account is verified"} onClick={async () => { if (await ask(`Pay ${amount} to ${who}? It goes to their bonus balance right away.`, { ok: "Pay" })) start(async () => say(await shareDecide(id, true), "Paid to their balance")); }}>Approve</button>
+    <button className="btn btn-secondary btn-sm" disabled={p} onClick={async () => { if (await ask("Reject this share bonus? The inviter gets a short message.", { ok: "Reject", danger: true })) start(async () => say(await shareDecide(id, false), "Rejected")); }}>Reject</button>
+  </span>;
 }

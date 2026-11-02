@@ -1,14 +1,16 @@
 import { adminList, getConfig } from "@/server/referrals";
 import { euros } from "@/domain/rules";
 import { when } from "@/components/ui";
-import { ReferralSettings } from "../parts";
+import { ReferralSettings, ShareDecide } from "../parts";
+import { shareQueue } from "@/server/sharebonus";
+import Link from "next/link";
 import { linkActivity } from "@/server/linkactivity";
 import { LinkActivity } from "./links";
 
 /* The invite programme for staff: is it worth it? Per inviter and per invited person: active or
    not, deals, money moved, what ByRequest kept and what the programme cost. Plus the full trail. */
 export default async function Referrals() {
-  const [{ rows, inviters, events, totals, openBalances }, cfg, links] = await Promise.all([adminList(), getConfig(), linkActivity()]);
+  const [{ rows, inviters, events, totals, openBalances }, cfg, links, queue] = await Promise.all([adminList(), getConfig(), linkActivity(), shareQueue()]);
   const net = totals.revenue - totals.cost;
   const roi = totals.cost ? (totals.revenue / totals.cost).toFixed(1) + "×" : "–";
   return (<div className="wrap bo-page">
@@ -24,6 +26,13 @@ export default async function Referrals() {
         <div><dt>Net result</dt><dd className="num">{euros(net)}</dd><span>return {roi}</span></div>
       </dl>
       <p className="t-xs muted">Open bonus balances (not yet transferred or spent): {euros(openBalances)}.</p></section>
+    <section><h2 className="bo-sh">Share bonus · to approve{queue.filter((q) => q.b.status === "ready").length ? ` (${queue.filter((q) => q.b.status === "ready").length})` : ""}</h2>
+      <p className="t-xs muted">{euros(cfg.shareCents)} per account made through a link that reached {cfg.sharePeople} different people. Verified accounts wait here for your approval; nothing is paid before that.</p>
+      <div className="bo-table"><table><thead><tr><th>Made</th><th>Inviter</th><th>New account</th><th>As</th><th>Status</th><th className="r">Amount</th><th></th></tr></thead>
+        <tbody>{queue.length ? queue.map(({ b, inviter, friend, creator }) => <tr key={b.id}><td>{when(b.createdAt)}</td><td><Link href={`/admin/users/${b.referrerId}`}>{inviter}</Link></td><td><Link href={`/admin/users/${b.refereeId}`}>{friend}</Link></td><td>{creator ? "creator" : "buyer"}</td>
+          <td>{b.status === "waiting" ? "Waiting for verification" : b.status === "ready" ? <b>Verified, approve?</b> : b.status === "approved" ? `Paid ${b.decidedAt ? when(b.decidedAt) : ""}` : "Rejected"}</td><td className="r num">{euros(b.cents)}</td>
+          <td>{b.status === "waiting" || b.status === "ready" ? <ShareDecide id={b.id} ready={b.status === "ready"} amount={euros(b.cents)} who={inviter} /> : null}</td></tr>)
+          : <tr><td colSpan={7} className="muted">No share bonuses yet.</td></tr>}</tbody></table></div></section>
     <section><h2 className="bo-sh">Who shares, who opens</h2><LinkActivity links={links} /></section>
     <section><h2 className="bo-sh">Inviters</h2>
       <div className="bo-table"><table><thead><tr><th>Inviter</th><th className="r">Invited</th><th className="r">Active</th><th className="r">Deals</th><th className="r">Money moved</th><th className="r">Kept</th><th className="r">Cost</th><th className="r">Net</th></tr></thead>

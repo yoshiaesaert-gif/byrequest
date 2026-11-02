@@ -7,6 +7,9 @@ import { overview } from "@/server/referrals";
 import { I } from "@/components/ui";
 import { euros } from "@/domain/rules";
 import { ShareBox, Withdraw } from "./share";
+import Live from "./live";
+import { shareProgress } from "@/server/sharebonus";
+import type React from "react";
 
 /* Invite friends, as simple as a banking app: one random code and link, a bonus balance and a
    statement. Discreet by design: nothing here says who joined, when, or what anyone earned. The
@@ -15,6 +18,7 @@ export default async function Invite() {
   const u = await requireUser();
   const { t, locale } = await getT();
   const o = await overview(u.id);
+  const sb = await shareProgress(u.id, o.code);
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "byrequest.me";
   const url = `${h.get("x-forwarded-proto") ?? "https"}://${host}/r/${o.code}`;
@@ -23,7 +27,7 @@ export default async function Invite() {
   const tag = locale === "nl" ? "nl-BE" : locale === "fr" ? "fr-BE" : "en-GB";
   const day = (d: Date, o2: Intl.DateTimeFormatOptions = { day: "numeric", month: "long" }) => new Date(d).toLocaleDateString(tag, o2);
   const eur2 = (c: number) => (c < 0 ? "−" : "+") + "€" + (Math.abs(c) / 100).toFixed(2).replace(".", locale === "en" ? "." : ",");
-  const line = (l: (typeof o.lines)[number]) => l.kind === "welcome_bonus" ? t("Welcome bonus · your first deal") : l.kind === "week_bonus" ? t("Week bonus · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
+  const line = (l: (typeof o.lines)[number]) => l.kind === "welcome_bonus" ? t("Welcome bonus · your first deal") : l.kind === "share_bonus" ? t("Share bonus · a new account through your link") : l.kind === "week_bonus" ? t("Week bonus · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
     : l.kind === "free_fee" ? t("Free service fee · week of {date}", { date: day(l.weekOf ?? l.createdAt) })
     : l.kind === "withdrawal" ? t("Transferred to your account") : l.kind === "spent" ? t("Used for a request") : t("Back from a refunded request");
   return (<div className="wrap inv">
@@ -35,11 +39,29 @@ export default async function Invite() {
       </div>
       <ShareBox url={url} display={`${host}/r/${o.code}`} code={o.code} qr={qr} />
     </section>
-    {o.joined || o.opens ? (<section className="inv-live" aria-label={t("Your link in action")}>
-      <span className="inv-live-k"><i aria-hidden="true">🚀</i>{t("Your link in action")}</span>
-      <div><b className="num">{o.joined}</b><small>{o.joined === 1 ? t("sign up through your link") : t("sign ups through your link")}</small></div>
-      <div><b className="num">{o.opens}</b><small>{t("times opened")}</small></div>
-      <p>{t("Anonymous: nobody sees who invited them, and you never see who joined.")}</p>
+    {sb.on ? (<section className={"inv-sb" + (sb.unlocked ? " open" : "")} aria-label={t("Share bonus")}>
+      <Live />
+      <div className="inv-sb-top">
+        <span className="inv-sb-k">{sb.unlocked ? t("🔓 Unlocked") : t("💸 Share bonus")}</span>
+        <h2><b>{euros(sb.cents)}</b> <span>{t("cash for every new account through your link")}</span></h2>
+        <p>{sb.unlocked ? t("You did it. Every account made through your link now earns you {amount}. Keep sharing, there is no limit.", { amount: euros(sb.cents) })
+          : t("Share your link until {goal} different people opened it. From then on, every new account through your link earns you {amount}.", { goal: sb.goal, amount: euros(sb.cents) })}</p>
+      </div>
+      <div className="inv-sb-bar" role="progressbar" aria-valuemin={0} aria-valuemax={sb.goal} aria-valuenow={Math.min(sb.people, sb.goal)}>
+        <div className="inv-sb-fill" style={{ "--w": `${Math.min(100, Math.round((sb.people / sb.goal) * 100))}%` } as React.CSSProperties} />
+      </div>
+      <div className="inv-sb-row">
+        <span><b className="num">{Math.min(sb.people, sb.goal)}</b> / {sb.goal} {t("people reached")}</span>
+        <span className="inv-sb-left">{sb.unlocked ? t("Bonus active") : sb.goal - sb.people === 1 ? t("Just 1 more person!") : t("{n} more to go", { n: sb.goal - sb.people })}</span>
+      </div>
+      <dl className="inv-sb-k4">
+        <div><dt>{t("New accounts")}</dt><dd className="num">{o.joined}</dd></div>
+        <div><dt>{t("Times opened")}</dt><dd className="num">{o.opens}</dd></div>
+        <div><dt>{t("Being verified")}</dt><dd className="num">{sb.waiting + sb.ready}</dd></div>
+        <div><dt>{t("Earned")}</dt><dd className="num">{euros(sb.paidCents)}</dd></div>
+      </dl>
+      <a className="inv-sb-cta" href={`https://wa.me/?text=${encodeURIComponent(t("Join me on ByRequest. Use my code {code} when you sign up.", { code: o.code ?? "" }) + " " + url + "?c=wa")}`} target="_blank" rel="noopener noreferrer">{t("Share now on WhatsApp")} →</a>
+      <p className="inv-sb-fine">{t("Counted: different people who open your link, never yourself. 100% anonymous: nobody sees who invited them. The bonus is paid after the new account is verified and checked by our team.")}</p>
     </section>) : null}
 
     <div className="inv-offers">

@@ -323,12 +323,28 @@ export const referralRewards = pgTable("referral_rewards", {
 export const walletEntries = pgTable("wallet_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  kind: text("kind").$type<"week_bonus" | "free_fee" | "welcome_bonus" | "withdrawal" | "spent" | "spent_back">().notNull(),
+  kind: text("kind").$type<"week_bonus" | "free_fee" | "welcome_bonus" | "share_bonus" | "withdrawal" | "spent" | "spent_back">().notNull(),
   cents: integer("cents").notNull(),               // plus adds to the balance, minus takes from it
   weekOf: timestamp("week_of", { withTimezone: true }),
   ref: text("ref"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index("wallet_user").on(t.userId, t.createdAt)]);
+
+/* Share bonus: a fixed amount for every account made through someone's link once that link reached enough different people.
+   waiting: the new account is not verified yet; ready: verified, waiting for staff; approved: on the inviter's balance; rejected. */
+export const shareBonuses = pgTable("share_bonuses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  referrerId: uuid("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  refereeId: uuid("referee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  cents: integer("cents").notNull(),
+  status: text("status").$type<"waiting" | "ready" | "approved" | "rejected">().notNull().default("waiting"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  readyAt: timestamp("ready_at", { withTimezone: true }),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decidedBy: text("decided_by"),
+  note: text("note"),
+}, (t) => [uniqueIndex("share_bonuses_referee").on(t.refereeId), index("share_bonuses_referrer").on(t.referrerId, t.createdAt)]);
 
 /* Every automatic email sent, once per kind per person, so nobody gets the same email twice. */
 export const emailLog = pgTable("email_log", {
