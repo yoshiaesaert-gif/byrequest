@@ -2859,5 +2859,16 @@ const nl: Record<string, string> = {
   "With {goal} people reached you would already have {amount} from your {n} new accounts": "Met {goal} mensen bereikt had je nu al {amount} verdiend aan je {n} nieuwe accounts",
   "Reach {left} more people and earn {amount} per new account": "Bereik nog {left} mensen en verdien {amount} per nieuw account",
   "Hide for today": "Vandaag verbergen",
+  "per new account, active now": "per nieuw account, nu actief",
+  "you are missing right now": "loop je nu mis",
+  "per new account, still locked": "per nieuw account, nog vergrendeld",
+  "Level {n}": "Niveau {n}",
+  "Unlocked! Every account through your link pays {amount}": "Vrijgespeeld! Elk account via jouw link levert {amount} op",
+  "{n} people signed up through you. With {goal} people reached that was {amount}": "{n} mensen meldden zich via jou aan. Met {goal} mensen bereikt was dat {amount} geweest",
+  "{left} more people and every new account pays {amount}": "Nog {left} mensen en elk nieuw account levert {amount} op",
+  "1 more to the next level": "nog 1 tot het volgende niveau",
+  "{n} more to the next level": "nog {n} tot het volgende niveau",
+  "Share on WhatsApp": "Deel via WhatsApp",
+  "All ways to share": "Alle manieren om te delen",
 };
 export default nl;

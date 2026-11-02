@@ -122,5 +122,5 @@ export async function barData(userId: string) {
   const p = await shareProgress(userId, u?.refCode ?? null);
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.referrals).where(eq(schema.referrals.referrerId, userId));
   const extra = Number(((await db.query.settings.findFirst({ where: eq(schema.settings.key, "ref_display_extra") }))?.value as Record<string, number> | undefined)?.[userId] ?? 0) || 0;
-  return { ...p, joined: n + extra };
+  return { ...p, joined: n + extra, code: u?.refCode ?? null };
 }

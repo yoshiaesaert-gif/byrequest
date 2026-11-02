@@ -61,7 +61,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {inboxBtn}
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
       </header>
-      <main className="main" id="main"><ShareBar />{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
+      <main className="main" id="main"><ShareBar handle={u.handle} />{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
       {hasKey ? null : <PasskeyPrompt />}
       <KeySync uid={u.id} accountPub={u.publicKey} passkeys={keys.length} locked={keys.some((k) => !!k.locked)} />
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>

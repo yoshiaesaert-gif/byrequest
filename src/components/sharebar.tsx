@@ -7,8 +7,7 @@ import { useT } from "@/i18n/client";
 
 /* A slim bar at the top of every page: how far your invite link got and what it would already have paid.
    Tapping it opens the invite page. It hides in chats and on the invite page itself, and can be closed for a day. */
-type D = { on: boolean; goal: number; people: number; cents: number; unlocked: boolean; joined: number; paidCents: number };
-const HIDE = /^\/(for-you|invite|deals\/[^/]+|inbox\/[^/]+|requests\/[^/]+\/(talk|offers\/[^/]+)|admin|onboarding)/;
+type D = { on: boolean; goal: number; people: number; cents: number; unlocked: boolean; joined: number; paidCents: number; code: string | null };
 const KEY = "brq_sharebar";
 const eur = (c: number) => "€" + Math.round(c / 100);
 
@@ -35,25 +34,45 @@ export function InviteButton({ compact, label }: { compact?: boolean; label: str
     <svg className={"ico" + (compact ? "" : " sm")} aria-hidden="true"><use href="#i-gift" /></svg>{prog}</Link>;
 }
 
-export default function ShareBar() {
+/* Only on the home page and your own profile pages: a game you can see moving, with the money you are missing. */
+export default function ShareBar({ handle }: { handle: string }) {
   const t = useT();
   const path = usePathname() ?? "";
   const d = useShare();
   const [off, setOff] = useState(() => { if (typeof window === "undefined") return true; try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < 86400_000; } catch { return false; } });
-  if (!d?.on || off || HIDE.test(path)) return null;
-  const pct = Math.min(100, Math.round((d.people / d.goal) * 100));
-  const left = Math.max(0, d.goal - d.people);
+  const show = path === "/" || path === "/settings" || path === "/studio" || path === `/c/${handle}`;
+  if (!d?.on || off || !show) return null;
+  const goal = d.goal, have = Math.min(d.people, goal), left = Math.max(0, goal - d.people);
+  const steps = [0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.round(goal * f));
+  const level = steps.filter((x) => have >= x).length;
+  const next = steps.find((x) => have < x) ?? goal;
+  const pct = Math.min(100, Math.round((have / goal) * 100));
   const missed = d.joined * d.cents;
-  const msg = d.unlocked ? t("{amount} for every new account through your link. Share it now", { amount: eur(d.cents) })
-    : missed > 0 ? t("With {goal} people reached you would already have {amount} from your {n} new accounts", { goal: d.goal, amount: eur(missed), n: d.joined })
-    : t("Reach {left} more people and earn {amount} per new account", { left, amount: eur(d.cents) });
-  return (<div className={"sbar" + (d.unlocked ? " open" : "")}>
-    <Link href="/invite" className="sbar-in">
-      <span className="sbar-k">{d.unlocked ? "🔓" : "🎯"} <b className="num">{Math.min(d.people, d.goal)}/{d.goal}</b></span>
-      <span className="sbar-track" aria-hidden="true"><i style={{ "--w": `${pct}%`, width: "var(--w)" } as React.CSSProperties} /></span>
-      <span className="sbar-t">{msg}</span>
-      <span className="sbar-go" aria-hidden="true">→</span>
-    </Link>
+  const link = typeof window === "undefined" || !d.code ? "" : `${location.origin}/r/${d.code}`;
+  const wa = `https://wa.me/?text=${encodeURIComponent(t("Join me on ByRequest. Use my code {code} when you sign up.", { code: d.code ?? "" }) + " " + link + "?c=wa")}`;
+  return (<section className={"sbar" + (d.unlocked ? " open" : "")} aria-label={t("Share bonus")}>
+    <div className="sbar-in">
+      <div className="sbar-money">
+        {d.unlocked ? <><b>{eur(d.cents)}</b><small>{t("per new account, active now")}</small></>
+          : missed > 0 ? <><b>{eur(missed)}</b><small>{t("you are missing right now")}</small></>
+          : <><b>{eur(d.cents)}</b><small>{t("per new account, still locked")}</small></>}
+      </div>
+      <div className="sbar-game">
+        <div className="sbar-top"><span className="sbar-lvl">{t("Level {n}", { n: level })}</span>
+          <span className="sbar-t">{d.unlocked ? t("Unlocked! Every account through your link pays {amount}", { amount: eur(d.cents) })
+            : missed > 0 ? t("{n} people signed up through you. With {goal} people reached that was {amount}", { n: d.joined, goal, amount: eur(missed) })
+            : t("{left} more people and every new account pays {amount}", { left, amount: eur(d.cents) })}</span></div>
+        <div className="sbar-track" role="progressbar" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={have}>
+          <i style={{ "--w": `${pct}%`, width: "var(--w)" } as React.CSSProperties} />
+          {steps.map((x) => <span key={x} className={"sbar-dot" + (have >= x ? " on" : "")} style={{ left: `${(x / goal) * 100}%` }}><em>{x}</em></span>)}
+        </div>
+        <div className="sbar-sub"><b className="num">{have}/{goal}</b> {t("people reached")}{!d.unlocked ? <> · {next - have === 1 ? t("1 more to the next level") : t("{n} more to the next level", { n: next - have })}</> : null}</div>
+      </div>
+      <div className="sbar-cta">
+        <a className="sbar-wa" href={wa} target="_blank" rel="noopener noreferrer">{t("Share on WhatsApp")}</a>
+        <Link className="sbar-more" href="/invite">{t("All ways to share")} →</Link>
+      </div>
+    </div>
     <button type="button" className="sbar-x" aria-label={t("Hide for today")} onClick={() => { try { localStorage.setItem(KEY, String(Date.now())); } catch { /* fine */ } setOff(true); }}>×</button>
-  </div>);
+  </section>);
 }

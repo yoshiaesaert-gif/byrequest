@@ -2859,5 +2859,16 @@ const fr: Record<string, string> = {
   "With {goal} people reached you would already have {amount} from your {n} new accounts": "Avec {goal} personnes atteintes, tu aurais déjà gagné {amount} avec tes {n} nouveaux comptes",
   "Reach {left} more people and earn {amount} per new account": "Atteins encore {left} personnes et gagne {amount} par nouveau compte",
   "Hide for today": "Masquer aujourd'hui",
+  "per new account, active now": "par nouveau compte, actif",
+  "you are missing right now": "que tu rates en ce moment",
+  "per new account, still locked": "par nouveau compte, encore verrouillé",
+  "Level {n}": "Niveau {n}",
+  "Unlocked! Every account through your link pays {amount}": "Débloqué ! Chaque compte via ton lien rapporte {amount}",
+  "{n} people signed up through you. With {goal} people reached that was {amount}": "{n} personnes se sont inscrites via toi. Avec {goal} personnes atteintes, ça faisait {amount}",
+  "{left} more people and every new account pays {amount}": "Encore {left} personnes et chaque nouveau compte rapporte {amount}",
+  "1 more to the next level": "plus qu'1 jusqu'au niveau suivant",
+  "{n} more to the next level": "encore {n} jusqu'au niveau suivant",
+  "Share on WhatsApp": "Partager sur WhatsApp",
+  "All ways to share": "Toutes les façons de partager",
 };
 export default fr;
