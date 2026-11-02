@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { acceptDocs, ensure } from "@/server/onboarding";
 import { BUYER_COUNTRIES } from "@/config/compliance";
 import { RuleError } from "@/domain/rules";
@@ -76,7 +76,9 @@ export async function createAccount(prev: AuthState, f: FormData): Promise<AuthS
   await acceptDocs(u.id, ["terms", "privacy"]);
   // Invited: the code from the invite link (cookie) or typed in at sign up ties the account to a friend.
   const jar = await cookies();
-  await attach(u.id, String(f.get("ref") ?? "").trim() || jar.get(REF_COOKIE)?.value, p.data.intent).catch((e) => console.error("referral attach failed", e instanceof Error ? e.message : e));
+  const h = await headers();
+  const ip = (h.get("cf-connecting-ip") || h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "").trim();
+  await attach(u.id, String(f.get("ref") ?? "").trim() || jar.get(REF_COOKIE)?.value, p.data.intent, { ip, ua: h.get("user-agent") ?? "" }).catch((e) => console.error("referral attach failed", e instanceof Error ? e.message : e));
   jar.delete(REF_COOKIE);
   await clearVerified();
   await startSession(u.id);

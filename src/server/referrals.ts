@@ -91,7 +91,26 @@ export async function linkAction(userId: string, kind: "copy" | "share" | "qr" |
 
 /* At sign up: tie the new account to the code. Only new accounts, never yourself. An invited buyer
    gets their first service fee as a gift right away. */
-export async function attach(newUserId: string, codeRaw: string | undefined, intent: "buy" | "earn") {
+/* No code in the browser at sign up: often the link was opened in a chat app's own browser, which keeps its cookies apart.
+   Then the invite still counts when the same device and network opened an invite link in the last 7 days. */
+export async function codeByDevice(ip: string, ua: string): Promise<string | null> {
+  if (!ip) return null;
+  const { os, browser } = parseUa(ua);
+  const since = new Date(Date.now() - 7 * 86400_000);
+  const V = schema.visits, VE = schema.visitEvents;
+  const [hit] = await db.select({ code: sql<string | null>`coalesce(${V.refCode}, substring(${VE.path} from 'ref=([A-Za-z0-9-]+)'))` }).from(V).leftJoin(VE, and(eq(VE.visitId, V.id), sql`${VE.path} like '%ref=%'`))
+    .where(and(eq(V.ip, ip), eq(V.os, os), gt(V.startedAt, since), sql`(${V.refCode} is not null or ${VE.path} is not null)`)).orderBy(desc(V.startedAt)).limit(1);
+  if (hit?.code) return hit.code;
+  const net = netId(ip);
+  const [e] = await db.select({ code: referralEvents.code }).from(referralEvents).where(and(eq(referralEvents.event, "link_opened"), gt(referralEvents.createdAt, since),
+    sql`${referralEvents.detail}->>'net' = ${net}`, sql`${referralEvents.detail}->>'who' = 'person'`, sql`coalesce(${referralEvents.detail}->>'os','') = ${os ?? ""}`)).orderBy(desc(referralEvents.createdAt)).limit(1);
+  void browser;
+  return e?.code ?? null;
+}
+
+export async function attach(newUserId: string, codeRaw: string | undefined, intent: "buy" | "earn", device?: { ip: string; ua: string }) {
+  const byDevice = !codeRaw && device ? await codeByDevice(device.ip, device.ua).catch(() => null) : null;
+  codeRaw = codeRaw || byDevice || undefined;
   if (!codeRaw) return;
   const code = normalizeCode(codeRaw);
   const o = await owner(code);
@@ -99,7 +118,7 @@ export async function attach(newUserId: string, codeRaw: string | undefined, int
   await db.transaction(async (tx) => {
     const [r] = await tx.insert(referrals).values({ referrerId: o.id, refereeId: newUserId, code, intent }).onConflictDoNothing().returning();
     if (!r) return;
-    await event(tx, code, "signed_up", r.id, { intent });
+    await event(tx, code, "signed_up", r.id, { intent, ...(byDevice ? { matched: "same device and network" } : {}) });
     if (intent === "buy" && (await getConfig()).buyerGift) {
       await tx.update(users).set({ freeFees: sql`${users.freeFees} + 1` }).where(eq(users.id, newUserId));
       await event(tx, code, "fee_gift_granted", r.id, { to: "invited buyer" });
