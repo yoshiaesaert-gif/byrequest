@@ -24,9 +24,8 @@ export default function ConsentBanner() {
   if (!show) return null;
   const pick = (v: "all" | "necessary") => { setConsent(v); setShow(false); };
   return (<div className="ck" role="dialog" aria-modal="false" aria-label={t("Cookies")}>
-    <div className="ck-tx"><b>{t("Cookies, your choice")}</b>
-      <p>{t("We use necessary cookies to keep you signed in and safe. To run and protect ByRequest we measure visits without cookies: IP address for an estimated location, pages, clicks and time on site. With your permission we also recognise you when you return and record sessions to improve the site. Never shared, never sold.")} <Link href="/legal/privacy">{t("Privacy statement")}</Link></p></div>
-    <div className="ck-btns"><button type="button" className="btn btn-secondary" onClick={() => pick("necessary")}>{t("Only necessary")}</button><button type="button" className="btn btn-primary" onClick={() => pick("all")}>{t("Accept all")}</button></div>
+    <p className="ck-tx">{t("We use cookies to make the site work and better.")} <Link href="/legal/privacy">{t("More info")}</Link></p>
+    <div className="ck-btns"><button type="button" className="ck-no" onClick={() => pick("necessary")}>{t("Decline")}</button><button type="button" className="btn btn-primary ck-ok" onClick={() => pick("all")}>{t("Accept")}</button></div>
   </div>);
 }
 

@@ -2829,5 +2829,7 @@ const fr: Record<string, string> = {
   "Anonymous: nobody sees who invited them, and you never see who joined.": "Anonyme : personne ne voit qui l'a invité, et tu ne vois jamais qui s'est inscrit.",
   "Share through": "Partager via",
   "Link copied. Paste it in your {app} story or bio.": "Lien copié. Colle-le dans ta story ou ta bio {app}.",
+  "We use cookies to make the site work and better.": "Nous utilisons des cookies pour faire fonctionner et améliorer le site.",
+  "More info": "En savoir plus",
 };
 export default fr;

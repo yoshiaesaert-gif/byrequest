@@ -2829,5 +2829,7 @@ const nl: Record<string, string> = {
   "Anonymous: nobody sees who invited them, and you never see who joined.": "Anoniem: niemand ziet wie hem uitnodigde, en jij ziet nooit wie zich aanmeldde.",
   "Share through": "Delen via",
   "Link copied. Paste it in your {app} story or bio.": "Link gekopieerd. Plak hem in je {app} story of bio.",
+  "We use cookies to make the site work and better.": "We gebruiken cookies om de site te laten werken en beter te maken.",
+  "More info": "Meer info",
 };
 export default nl;
