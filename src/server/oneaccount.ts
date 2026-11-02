@@ -43,10 +43,10 @@ async function say(userId: string, text: string) {
   await db.insert(schema.notifications).values({ userId, title: "ByRequest", body: translator(DICTS[isLocale(lang) ? lang : "en"])(text), href: TEAM_HREF });
 }
 
-/* A blocked attempt: logged for staff, and the existing account hears it (at most once an hour). */
+/* A blocked attempt: logged for staff, and the existing account hears it (at most once every 5 minutes). */
 export async function blockedAttempt(existing: { id: string; handle: string; how: string }, email: string) {
   await db.insert(schema.audit).values({ actor: "system", action: "signup.second_account_blocked", subjectUserId: existing.id, detail: { how: existing.how, emailDomain: email.split("@")[1] ?? "" } });
-  const [recent] = await db.select({ x: sql`1` }).from(schema.audit).where(and(eq(schema.audit.subjectUserId, existing.id), eq(schema.audit.action, "signup.second_account_notice"), gt(schema.audit.at, new Date(Date.now() - 3600_000)))).limit(1);
+  const [recent] = await db.select({ x: sql`1` }).from(schema.audit).where(and(eq(schema.audit.subjectUserId, existing.id), eq(schema.audit.action, "signup.second_account_notice"), gt(schema.audit.at, new Date(Date.now() - 300_000)))).limit(1);
   if (recent) return;
   await db.insert(schema.audit).values({ actor: "system", action: "signup.second_account_notice", subjectUserId: existing.id, detail: {} });
   await say(existing.id, "We noticed an attempt to make a second ByRequest account on your phone. Only one account per person is allowed, so it was stopped. Keep using your own account. Want to earn more? Share your link with other people: every real new person counts.");
