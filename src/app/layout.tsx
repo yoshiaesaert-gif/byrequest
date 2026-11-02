@@ -9,8 +9,6 @@ import { getLocale } from "@/i18n/server";
 import { I18nProvider } from "@/i18n/client";
 import Tracker from "@/components/tracker";
 import ConsentBanner from "@/components/consent-banner";
-import AgeGate from "@/components/age-gate";
-import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.SITE_URL || "https://byrequest.me"),
@@ -27,8 +25,6 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
-  const jar = await cookies();
-  const gate = !jar.get("brq_18") && !jar.get("brq_s");   // signed in members already confirmed their age
   return (
     <html lang={locale} className={GeistSans.variable}>
       <head>
@@ -39,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <div dangerouslySetInnerHTML={{ __html: SPRITE }} />
-        <I18nProvider locale={locale}>{children}{gate ? <AgeGate /> : <ConsentBanner />}</I18nProvider>
+        <I18nProvider locale={locale}>{children}<ConsentBanner /></I18nProvider>
         <Tracker />
       </body>
     </html>
