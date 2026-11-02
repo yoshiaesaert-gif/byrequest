@@ -46,7 +46,7 @@ export async function checkCode(prev: AuthState, f: FormData): Promise<AuthState
   }
   if (u) { await startSession(u.id); redirect("/"); }
   // One account per person: this phone already belongs to an account.
-  const ex = await accountOnDevice();
+  const ex = await accountOnDevice({ email, ref: String(f.get("ref") ?? "") });
   if (ex) { await blockedAttempt(ex, email); return { step: "email", error: "There is already a ByRequest account on this phone. Only one account per person is allowed. Log in with your own account." }; }
   await markVerified(email);
   return { step: "profile", email };
@@ -66,7 +66,7 @@ const Profile = z.object({
 export async function createAccount(prev: AuthState, f: FormData): Promise<AuthState> {
   const email = await verifiedEmail();
   if (!email) return { step: "profile", error: "Your code expired. Start again." };
-  const ex = await accountOnDevice();
+  const ex = await accountOnDevice({ email, ref: String(f.get("ref") ?? "") });
   if (ex) { await blockedAttempt(ex, email); return { step: "email", error: "There is already a ByRequest account on this phone. Only one account per person is allowed. Log in with your own account." }; }
   const p = Profile.safeParse(Object.fromEntries(f));
   if (!p.success) return { ...prev, error: p.error.issues[0].message };

@@ -20,7 +20,7 @@ export async function rememberDevice(userId: string) {
 }
 
 /* The existing account on this device, if any. Team accounts never block (staff test on their own phones). */
-export async function accountOnDevice(): Promise<{ id: string; handle: string; how: string } | null> {
+export async function accountOnDevice(opts?: { email?: string; ref?: string }): Promise<{ id: string; handle: string; how: string } | null> {
   const jar = await cookies();
   const h = await headers();
   const dev = jar.get(DEVICE_COOKIE)?.value;
@@ -30,6 +30,22 @@ export async function accountOnDevice(): Promise<{ id: string; handle: string; h
   }
   const ip = (h.get("cf-connecting-ip") || h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "").trim();
   if (!ip) return null;
+  // Signing up with an invite code of someone who uses this same network: that is the inviter making a second account.
+  const ref = (jar.get("brq_ref")?.value ?? opts?.ref ?? "").toUpperCase();
+  if (ref) {
+    const [o] = await db.select({ id: U.id, handle: U.handle }).from(U).innerJoin(V, eq(V.userId, U.id))
+      .where(and(eq(U.refCode, ref), eq(V.ip, ip), gt(V.startedAt, new Date(Date.now() - 60 * 86400_000)), eq(U.internal, false))).limit(1);
+    if (o) return { ...o, how: "own invite link on own network" };
+  }
+  // The same mailbox name as an existing account (kim.x@gmail.com and kimx@hotmail.com).
+  if (opts?.email) {
+    const local = opts.email.split("@")[0].split("+")[0].replace(/\./g, "").toLowerCase();
+    if (local.length >= 5) {
+      const [m] = await db.select({ id: U.id, handle: U.handle }).from(U)
+        .where(and(sql`replace(split_part(split_part(lower(${U.email}), '@', 1), '+', 1), '.', '') = ${local}`, isNull(U.deletedAt), eq(U.internal, false), eq(U.house, false))).limit(1);
+      if (m) return { ...m, how: "same mailbox name as an existing account" };
+    }
+  }
   const { device, os, browser } = parseUa(h.get("user-agent") ?? "");
   const [v] = await db.select({ id: U.id, handle: U.handle }).from(V).innerJoin(U, eq(U.id, V.userId))
     .where(and(eq(V.ip, ip), eq(V.os, os), eq(V.browser, browser), eq(V.device, device), gt(V.startedAt, new Date(Date.now() - 30 * 86400_000)), isNull(U.deletedAt), eq(U.internal, false), eq(U.house, false)))
