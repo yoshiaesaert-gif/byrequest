@@ -35,6 +35,12 @@ export default async function Invite() {
       </div>
       <ShareBox url={url} display={`${host}/r/${o.code}`} code={o.code} qr={qr} />
     </section>
+    {o.joined || o.opens ? (<section className="inv-live" aria-label={t("Your link in action")}>
+      <span className="inv-live-k"><i aria-hidden="true">🚀</i>{t("Your link in action")}</span>
+      <div><b className="num">{o.joined}</b><small>{o.joined === 1 ? t("sign up through your link") : t("sign ups through your link")}</small></div>
+      <div><b className="num">{o.opens}</b><small>{t("times opened")}</small></div>
+      <p>{t("Anonymous: nobody sees who invited them, and you never see who joined.")}</p>
+    </section>) : null}
 
     <div className="inv-offers">
       <section className="inv-offer inv-offer-c">

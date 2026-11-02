@@ -2822,5 +2822,10 @@ const nl: Record<string, string> = {
   "New on ByRequest": "Nieuw op ByRequest",
   "Request something made just for you. You agree on the budget first, your payment is held until delivery, and it arrives privately in your vault.": "Vraag iets aan dat speciaal voor jou gemaakt wordt. Jullie spreken eerst het budget af, je betaling staat vast tot de levering, en het komt privé in je kluis.",
   "Request something from {name}": "Vraag iets aan {name}",
+  "Your link in action": "Je link in actie",
+  "sign up through your link": "aanmelding via jouw link",
+  "sign ups through your link": "aanmeldingen via jouw link",
+  "times opened": "keer geopend",
+  "Anonymous: nobody sees who invited them, and you never see who joined.": "Anoniem: niemand ziet wie hem uitnodigde, en jij ziet nooit wie zich aanmeldde.",
 };
 export default nl;

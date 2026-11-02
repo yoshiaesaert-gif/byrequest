@@ -2822,5 +2822,10 @@ const fr: Record<string, string> = {
   "New on ByRequest": "Nouveau sur ByRequest",
   "Request something made just for you. You agree on the budget first, your payment is held until delivery, and it arrives privately in your vault.": "Demandez quelque chose fait rien que pour vous. Vous convenez d'abord du budget, votre paiement est bloqué jusqu'à la livraison, et il arrive en privé dans votre coffre.",
   "Request something from {name}": "Demander quelque chose à {name}",
+  "Your link in action": "Ton lien en action",
+  "sign up through your link": "inscription via ton lien",
+  "sign ups through your link": "inscriptions via ton lien",
+  "times opened": "fois ouvert",
+  "Anonymous: nobody sees who invited them, and you never see who joined.": "Anonyme : personne ne voit qui l'a invité, et tu ne vois jamais qui s'est inscrit.",
 };
 export default fr;
