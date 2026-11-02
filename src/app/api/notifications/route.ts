@@ -1,7 +1,12 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, or, like } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { currentUser } from "@/server/auth";
 import { TEAM_HREF } from "@/server/queries";
+
+/* Only answers from support belong in the help chat. Other messages from the team (news, a personal note) stay in the inbox only,
+   and opening the help chat never marks those as read. */
+const N = schema.notifications;
+const SUPPORT = or(like(N.title, "%ByRequest support"), eq(N.title, "About your report"));
 
 export async function GET(req: Request) {
   const u = await currentUser();
@@ -9,7 +14,7 @@ export async function GET(req: Request) {
   if (new URL(req.url).searchParams.get("team") && u) {
     // The last answers from the team as well, so the help chat shows them where the question was asked.
     const rows = await db.select({ id: schema.notifications.id, title: schema.notifications.title, body: schema.notifications.body, at: schema.notifications.createdAt, readAt: schema.notifications.readAt })
-      .from(schema.notifications).where(and(eq(schema.notifications.userId, u.id), eq(schema.notifications.href, TEAM_HREF))).orderBy(desc(schema.notifications.createdAt)).limit(5);
+      .from(schema.notifications).where(and(eq(schema.notifications.userId, u.id), eq(schema.notifications.href, TEAM_HREF), SUPPORT)).orderBy(desc(schema.notifications.createdAt)).limit(5);
     return Response.json({ team: rows.filter((r) => !r.readAt).length, msgs: rows.reverse().map((r) => ({ id: r.id, who: r.title, text: r.body, at: r.at, unread: !r.readAt })) }, { headers: { "Cache-Control": "no-store" } });
   }
   if (!u) return Response.json({ latest: null }, { status: 401 });
@@ -23,6 +28,6 @@ export async function POST(req: Request) {
   const u = await currentUser();
   if (!u) return Response.json({ ok: false }, { status: 401 });
   if (new URL(req.url).searchParams.get("team") === "read")
-    await db.update(schema.notifications).set({ readAt: new Date() }).where(and(eq(schema.notifications.userId, u.id), eq(schema.notifications.href, TEAM_HREF), isNull(schema.notifications.readAt)));
+    await db.update(schema.notifications).set({ readAt: new Date() }).where(and(eq(schema.notifications.userId, u.id), eq(schema.notifications.href, TEAM_HREF), SUPPORT, isNull(schema.notifications.readAt)));
   return Response.json({ ok: true });
 }
