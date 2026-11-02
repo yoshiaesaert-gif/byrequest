@@ -2827,5 +2827,7 @@ const fr: Record<string, string> = {
   "sign ups through your link": "inscriptions via ton lien",
   "times opened": "fois ouvert",
   "Anonymous: nobody sees who invited them, and you never see who joined.": "Anonyme : personne ne voit qui l'a invité, et tu ne vois jamais qui s'est inscrit.",
+  "Share through": "Partager via",
+  "Link copied. Paste it in your {app} story or bio.": "Lien copié. Colle-le dans ta story ou ta bio {app}.",
 };
 export default fr;

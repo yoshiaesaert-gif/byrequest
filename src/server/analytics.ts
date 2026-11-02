@@ -8,7 +8,7 @@ const BOT = /bot|crawl|spider|slurp|preview|monitor|curl|wget|headless|lighthous
 
 export type Beat = { v: string; s?: string; k: "page" | "click" | "ping"; p: string; l?: string; r?: string; lang?: string; app?: boolean };
 
-function parseUa(ua: string) {
+export function parseUa(ua: string) {
   const device = /ipad|tablet/i.test(ua) ? "tablet" : /mobi|iphone|android/i.test(ua) ? "mobile" : "desktop";
   const browser = /edg\//i.test(ua) ? "Edge" : /opr\//i.test(ua) ? "Opera" : /samsungbrowser/i.test(ua) ? "Samsung" : /firefox|fxios/i.test(ua) ? "Firefox" : /chrome|crios/i.test(ua) ? "Chrome" : /safari/i.test(ua) ? "Safari" : "Other";
   const os = /iphone|ipad|ios/i.test(ua) ? "iOS" : /android/i.test(ua) ? "Android" : /mac os/i.test(ua) ? "macOS" : /windows/i.test(ua) ? "Windows" : /linux/i.test(ua) ? "Linux" : "Other";

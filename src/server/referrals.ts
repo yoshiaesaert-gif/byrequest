@@ -1,5 +1,7 @@
 import "server-only";
-import { and, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { parseUa } from "./analytics";
 import { db, schema, type Tx } from "@/db";
 import { makeCode, normalizeCode, validCode, creatorReward, windowEnd, cleanConfig, weekStart, nextPayout, WITHDRAW_MIN_CENTS, type RefConfig } from "@/domain/referral";
 import { RuleError } from "@/domain/rules";
@@ -54,10 +56,37 @@ export async function owner(codeRaw: string) {
   return db.query.users.findFirst({ where: and(eq(users.refCode, c), isNull(users.bannedAt), isNull(users.deletedAt)), columns: { id: true } });
 }
 
-export async function linkOpened(codeRaw: string) {
+/* Apps that fetch a link to draw a preview in a chat. Such a fetch is not a person. */
+const PREVIEW: [RegExp, string][] = [[/whatsapp/i, "WhatsApp"], [/telegrambot/i, "Telegram"], [/facebookexternalhit|facebot|meta-externalagent/i, "Facebook, Instagram or iMessage"],
+  [/twitterbot/i, "X or iMessage"], [/slackbot/i, "Slack"], [/discordbot/i, "Discord"], [/linkedinbot/i, "LinkedIn"], [/snapchat/i, "Snapchat"], [/skypeuripreview/i, "Skype or Teams"],
+  [/googlebot|google-inspectiontool|bingbot|applebot/i, "a search engine"], [/bot|crawl|spider|preview|curl|wget|headless/i, "an automatic link preview"]];
+export const netId = (ip: string) => ip ? createHash("sha256").update(ip + (process.env.SESSION_SECRET ?? "")).digest("hex").slice(0, 10) : "";
+
+/* In app browsers say which app the link was tapped in. */
+const INAPP: [RegExp, string][] = [[/instagram/i, "ig"], [/fban|fbav|fb_iab/i, "fb"], [/snapchat/i, "sc"], [/musical_ly|bytedance|tiktok/i, "tt"], [/linkedinapp/i, "li"], [/telegram/i, "tg"], [/\bline\//i, "line"], [/twitter/i, "x"]];
+
+export async function linkOpened(codeRaw: string, who?: { ua: string; ip: string; userId: string | null; ch?: string | null }) {
   const o = await owner(codeRaw);
-  if (o) await event(db, normalizeCode(codeRaw), "link_opened", null);
+  if (o) {
+    let detail: Record<string, unknown> = {};
+    if (who) {
+      const app = PREVIEW.find(([r]) => r.test(who.ua))?.[1];
+      const net = netId(who.ip);
+      // The owner: signed in as the owner, or on a network the owner used in the last 30 days.
+      const self = who.userId === o.id || (!!who.ip && !!(await db.select({ x: sql`1` }).from(schema.visits).where(and(eq(schema.visits.userId, o.id), eq(schema.visits.ip, who.ip), gt(schema.visits.startedAt, new Date(Date.now() - 30 * 86400_000)))).limit(1)).length);
+      const { device, browser, os } = parseUa(who.ua);
+      const ch = (who.ch ?? "").replace(/[^a-z]/g, "").slice(0, 8) || INAPP.find(([r]) => r.test(who.ua))?.[1] || null;
+      detail = app ? { who: "preview", app, ch } : { who: self ? "owner" : "person", device, browser, os, net, ch, signedIn: !!who.userId && who.userId !== o.id };
+    }
+    await event(db, normalizeCode(codeRaw), "link_opened", null, detail);
+  }
   return o;
+}
+
+/* The owner copied, shared or showed their link: counted so staff see the effort, not only the result. */
+export async function linkAction(userId: string, kind: "copy" | "share" | "qr" | "code", ch?: string) {
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { refCode: true } });
+  if (u?.refCode) await event(db, u.refCode, kind === "share" ? "link_shared" : kind === "qr" ? "qr_shown" : kind === "code" ? "code_copied" : "link_copied", null, ch ? { ch } : {});
 }
 
 /* At sign up: tie the new account to the code. Only new accounts, never yourself. An invited buyer

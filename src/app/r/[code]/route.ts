@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { linkOpened } from "@/server/referrals";
+import { currentUser } from "@/server/auth";
 import { REF_COOKIE, REF_COOKIE_DAYS, normalizeCode } from "@/domain/referral";
 
 /* Invite link: byrequest.me/r/CODE. Remembers the code for 30 days and opens sign up on the right
@@ -7,7 +8,9 @@ import { REF_COOKIE, REF_COOKIE_DAYS, normalizeCode } from "@/domain/referral";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   const as = req.nextUrl.searchParams.get("as") === "buy" ? "buy" : "earn";
-  const o = await linkOpened(code).catch(() => null);
+  const ip = (req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("x-real-ip") || "").trim();
+  const me = await currentUser().catch(() => null);
+  const o = await linkOpened(code, { ua: req.headers.get("user-agent") ?? "", ip, userId: me?.id ?? null, ch: req.nextUrl.searchParams.get("c") }).catch(() => null);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
   const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
   // Creators land on the creator page first (what it is, live budgets, real reviews); buyers go straight to sign up.

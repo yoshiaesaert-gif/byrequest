@@ -2827,5 +2827,7 @@ const nl: Record<string, string> = {
   "sign ups through your link": "aanmeldingen via jouw link",
   "times opened": "keer geopend",
   "Anonymous: nobody sees who invited them, and you never see who joined.": "Anoniem: niemand ziet wie hem uitnodigde, en jij ziet nooit wie zich aanmeldde.",
+  "Share through": "Delen via",
+  "Link copied. Paste it in your {app} story or bio.": "Link gekopieerd. Plak hem in je {app} story of bio.",
 };
 export default nl;
