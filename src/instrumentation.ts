@@ -7,6 +7,8 @@ export async function register() {
     if (busy) return; busy = true;
     try { await dispatchPush(); } catch (e) { console.error("push loop", e instanceof Error ? e.message : e); } finally { busy = false; }
   }, 5000);
+  // One account per person: fingerprints for accounts verified before they existed.
+  setTimeout(() => { import("./server/oneaccount").then((m) => m.backfillFingerprints()).then((n) => n && console.log(`fingerprints added: ${n}`)).catch((e) => console.error("fingerprint backfill", e instanceof Error ? e.message : e)); }, 15_000);
   // Share bonus: verified friends move to the approval queue, and inviters hear how far their link got.
   const { shareSweep } = await import("./server/sharebonus");
   let sweeping = false;

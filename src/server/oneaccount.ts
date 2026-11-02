@@ -57,3 +57,23 @@ export function idFingerprint(name?: string, dob?: string) {
   if (!name || !dob) return null;
   return createHash("sha256").update(`${norm(name)}|${dob.slice(0, 10)}|${process.env.SESSION_SECRET ?? ""}`).digest("hex").slice(0, 40);
 }
+
+/* Accounts verified before fingerprints existed: compute them once from the sealed identity (runs at start, only for
+   accounts that have none yet). Two existing accounts with the same person are only reported to staff, never closed here. */
+export async function backfillFingerprints() {
+  const { unseal } = await import("./seal-core");
+  const CI = schema.confidentialIdentity;
+  const rows = await db.select({ userId: CI.userId, sealed: CI.sealed }).from(CI).innerJoin(U, eq(U.id, CI.userId)).where(isNull(U.idFingerprint)).limit(500);
+  let n = 0;
+  for (const r of rows) {
+    try {
+      const p = unseal<{ legalName?: string; dateOfBirth?: string }>(r.sealed);
+      const fp = idFingerprint(p.legalName, p.dateOfBirth);
+      if (!fp) continue;
+      const other = await db.query.users.findFirst({ where: and(eq(U.idFingerprint, fp), isNull(U.deletedAt)), columns: { id: true } });
+      if (other && other.id !== r.userId) await db.insert(schema.audit).values({ actor: "system", action: "identity.duplicate_existing", subjectUserId: r.userId, detail: { firstAccount: other.id } });
+      await db.update(U).set({ idFingerprint: fp }).where(eq(U.id, r.userId)); n++;
+    } catch (e) { console.error("fingerprint backfill", r.userId, e instanceof Error ? e.message : e); }
+  }
+  return n;
+}
