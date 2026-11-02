@@ -115,3 +115,12 @@ export async function shareDecide(staffId: string, id: string, ok: boolean, note
   if (ok) await say(b.referrerId, "💸 {amount} is on your balance! Thanks for spreading ByRequest. Every new account through your link brings you another {amount}.", { amount: euros(b.cents) });
   else await say(b.referrerId, "A share bonus could not be given for one of the accounts made through your link. Questions? Just reply here.");
 }
+
+/* The slim bar on every page: how far the link got, and what it would have paid already. */
+export async function barData(userId: string) {
+  const u = await db.query.users.findFirst({ where: eq(U.id, userId), columns: { refCode: true } });
+  const p = await shareProgress(userId, u?.refCode ?? null);
+  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.referrals).where(eq(schema.referrals.referrerId, userId));
+  const extra = Number(((await db.query.settings.findFirst({ where: eq(schema.settings.key, "ref_display_extra") }))?.value as Record<string, number> | undefined)?.[userId] ?? 0) || 0;
+  return { ...p, joined: n + extra };
+}

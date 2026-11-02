@@ -2855,5 +2855,9 @@ const nl: Record<string, string> = {
   "🚀 Your link reached {n} different people! {left} more to unlock {amount} cash for every new account. Keep it going!": "🚀 Je link bereikte {n} verschillende mensen! Nog {left} om {amount} cash per nieuw account vrij te spelen. Ga zo door!",
   "💸 {amount} is on your balance! Thanks for spreading ByRequest. Every new account through your link brings you another {amount}.": "💸 {amount} staat op je saldo! Bedankt om ByRequest te verspreiden. Elk nieuw account via jouw link brengt je opnieuw {amount} op.",
   "A share bonus could not be given for one of the accounts made through your link. Questions? Just reply here.": "Voor een van de accounts via jouw link kon geen deelbonus worden toegekend. Vragen? Antwoord gerust hier.",
+  "{amount} for every new account through your link. Share it now": "{amount} voor elk nieuw account via jouw link. Deel hem nu",
+  "With {goal} people reached you would already have {amount} from your {n} new accounts": "Met {goal} mensen bereikt had je nu al {amount} verdiend aan je {n} nieuwe accounts",
+  "Reach {left} more people and earn {amount} per new account": "Bereik nog {left} mensen en verdien {amount} per nieuw account",
+  "Hide for today": "Vandaag verbergen",
 };
 export default nl;

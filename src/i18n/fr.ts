@@ -2855,5 +2855,9 @@ const fr: Record<string, string> = {
   "🚀 Your link reached {n} different people! {left} more to unlock {amount} cash for every new account. Keep it going!": "🚀 Ton lien a atteint {n} personnes différentes ! Encore {left} pour débloquer {amount} en cash par nouveau compte. Continue !",
   "💸 {amount} is on your balance! Thanks for spreading ByRequest. Every new account through your link brings you another {amount}.": "💸 {amount} sont sur ton solde ! Merci de faire connaître ByRequest. Chaque nouveau compte via ton lien te rapporte encore {amount}.",
   "A share bonus could not be given for one of the accounts made through your link. Questions? Just reply here.": "Un bonus de partage n'a pas pu être accordé pour l'un des comptes créés via ton lien. Des questions ? Réponds simplement ici.",
+  "{amount} for every new account through your link. Share it now": "{amount} pour chaque nouveau compte via ton lien. Partage-le maintenant",
+  "With {goal} people reached you would already have {amount} from your {n} new accounts": "Avec {goal} personnes atteintes, tu aurais déjà gagné {amount} avec tes {n} nouveaux comptes",
+  "Reach {left} more people and earn {amount} per new account": "Atteins encore {left} personnes et gagne {amount} par nouveau compte",
+  "Hide for today": "Masquer aujourd'hui",
 };
 export default fr;

@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { Av, I } from "@/components/ui";
 import { MenuButton, HideButton, Live } from "@/components/chrome";
 import { AskHost } from "@/components/confirm";
+import ShareBar, { InviteButton } from "@/components/sharebar";
 import NavLinks from "@/components/navlinks";
 import Footer from "@/components/footer";
 import ConsentGate from "@/components/consent-gate";
@@ -48,19 +49,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="navright">
           <SearchToggle />
           {buy ? <Link href="/post" className="btn btn-primary btn-sm"><I n="plus" c="sm" />{t("Post a request")}</Link> : <span className="mode-pill">{t("Creating")}</span>}
-          <Link href="/invite" className="invite-pill" aria-label={t("Invite friends")}><I n="gift" c="sm" /><span>{t("Invite")}</span></Link>
+          <InviteButton label={t("Invite friends")} />
           {inboxBtn}
           <MenuButton handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
         </div>
       </div></header>
       <header className="mtop">
         <Link href="/" className="wordmark" aria-label="ByRequest home"><img className="lg-g" src="/logo.png" alt="byrequest" /><img className="lg-w" src="/logo_white.png" alt="" /></Link>
-        <Link href="/invite" className="icon-btn invite-ic" aria-label={t("Invite friends")}><I n="gift" /></Link>
+        <InviteButton compact label={t("Invite friends")} />
         <HideButton />
         {inboxBtn}
         <MenuButton compact handle={u.handle} avatar={<Av a={u.avatar} name={u.handle} size={30} />} big={<Av a={u.avatar} name={u.handle} size={44} />} mode={mode} isCreator={u.isCreator} verified={active} staff={!!staff && staff.role !== "none"} />
       </header>
-      <main className="main" id="main">{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
+      <main className="main" id="main"><ShareBar />{u.sensitiveConsentAt ? children : <ConsentGate />}<Footer /></main>
       {hasKey ? null : <PasskeyPrompt />}
       <KeySync uid={u.id} accountPub={u.publicKey} passkeys={keys.length} locked={keys.some((k) => !!k.locked)} />
       <nav className="tabbar" aria-label="Tabs"><NavLinks tabs items={tabs} /></nav>
