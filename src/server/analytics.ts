@@ -123,7 +123,11 @@ export async function visitDetail(id: string) {
   if (!v[0]) return null;
   const events = await db.select().from(visitEvents).where(eq(visitEvents.visitId, id)).orderBy(visitEvents.at).limit(500);
   const others = await db.select({ id: visits.id, startedAt: visits.startedAt, pages: visits.pages }).from(visits).where(eq(visits.visitorId, v[0].v.visitorId)).orderBy(desc(visits.startedAt)).limit(20);
-  return { ...v[0], events, others };
+  // Accounts seen on the same network (IP) in the last 30 days: a visitor who is not signed in is often one of them.
+  const sameNet = v[0].v.ip ? await db.selectDistinct({ id: users.id, handle: users.handle }).from(visits).innerJoin(users, eq(users.id, visits.userId))
+    .where(and(eq(visits.ip, v[0].v.ip), gt(visits.startedAt, new Date(Date.now() - 30 * 86400_000)))).limit(10) : [];
+  const inviterId = v[0].v.refCode ? (await db.query.users.findFirst({ where: eq(users.refCode, v[0].v.refCode), columns: { id: true } }))?.id ?? null : null;
+  return { ...v[0], events, others, sameNet, inviterId };
 }
 
 /* Raw visits are kept 13 months, then removed. */

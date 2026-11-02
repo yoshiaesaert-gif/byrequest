@@ -12,7 +12,7 @@ const { referralEvents: E, users: U, visits: V, visitEvents: VE } = schema;
 export const CH: Record<string, string> = { wa: "WhatsApp", tg: "Telegram", sms: "SMS", sc: "Snapchat", ig: "Instagram", tt: "TikTok", x: "X", mail: "E-mail", fb: "Facebook", li: "LinkedIn", line: "LINE" };
 export type Step = "opened" | "creator page" | "entered" | "sign in page" | "account" ;
 export type Row = { at: Date; kind: "copy" | "share" | "qr" | "code" | "preview" | "open" | "signup"; text: string; sub?: string; who: "owner" | "person" | "preview" | "unknown"; person?: string; ch?: string | null;
-  device?: string; place?: string; reached?: string; secs?: number; handle?: string };
+  device?: string; place?: string; reached?: string; secs?: number; handle?: string; vid?: string; uid?: string };
 export type Link = { code: string; owner: string; ownerId: string; rows: Row[]; k: { copies: number; shares: number; byCh: [string, number][]; previews: number; previewApps: [string, number][];
   opens: number; ownOpens: number; people: number; peopleCh: [string, number][]; places: [string, number][]; devices: [string, number][]; reachedCreator: number; entered: number; signups: number; firstOpen: Date | null; lastOpen: Date | null } };
 
@@ -70,7 +70,7 @@ export async function linkActivity(days = 30): Promise<Link[]> {
       const acct = v?.userId && v.userId !== o.id ? accounts.get(v.userId) : undefined;
       const reached = acct ? `Created an account: ${acct.handle}` : steps.some((s) => s.path.startsWith("/signin")) && steps.some((s) => s.path.startsWith("/creators")) ? "Went on to sign up"
         : steps.some((s) => s.kind === "click" && /18 or older|enter/i.test(s.label ?? "")) ? "Confirmed 18+ and looked around" : steps.some((s) => s.path.startsWith("/creators")) ? "Saw the creator page, then left" : v ? "Opened, then left" : "No page view: closed right away or a preview";
-      rows.push({ at: e.createdAt, kind: "open", who: self ? "owner" : v || d.net ? "person" : "unknown", person, ch, device: dev, place: [v?.city, v?.country].filter(Boolean).join(", ") || undefined, reached, handle: acct?.handle,
+      rows.push({ at: e.createdAt, kind: "open", who: self ? "owner" : v || d.net ? "person" : "unknown", person, ch, device: dev, place: [v?.city, v?.country].filter(Boolean).join(", ") || undefined, reached, handle: acct?.handle, vid: v?.id, uid: acct?.id,
         secs: v ? Math.round((+v.lastAt - +v.startedAt) / 1000) : undefined,
         text: self ? `${o.handle} opened their own link` : person ? `${person} opened the link${ch ? ` from ${CH[ch] ?? ch}` : ""}` : "The link was opened" });
     }
