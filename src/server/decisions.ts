@@ -9,6 +9,7 @@ export type Decision = { userId: string; action: string; ground: "illegal_conten
 
 export const ACTION_LABEL: Record<string, string> = {
   account_blocked: "Your account was closed",
+  duplicate_account: "Second account closed",
   account_unblocked: "Your account was reopened",
   creator_restricted: "Your creator account was restricted",
   creator_suspended: "Your creator account was suspended",

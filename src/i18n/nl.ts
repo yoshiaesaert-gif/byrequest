@@ -2870,5 +2870,9 @@ const nl: Record<string, string> = {
   "{n} more to the next level": "nog {n} tot het volgende niveau",
   "Share on WhatsApp": "Deel via WhatsApp",
   "All ways to share": "Alle manieren om te delen",
+  "There is already a ByRequest account on this phone. Only one account per person is allowed. Log in with your own account.": "Er is al een ByRequest account op deze telefoon. Per persoon is maar één account toegestaan. Log in met je eigen account.",
+  "We noticed an attempt to make a second ByRequest account on your phone. Only one account per person is allowed, so it was stopped. Keep using your own account. Want to earn more? Share your link with other people: every real new person counts.": "We zagen een poging om een tweede ByRequest account aan te maken op jouw telefoon. Per persoon is maar één account toegestaan, dus die poging is gestopt. Blijf gewoon je eigen account gebruiken. Meer verdienen? Deel je link met andere mensen: elke echte nieuwe persoon telt mee.",
+  "Second account closed": "Tweede account gesloten",
+  "The ID check shows that you already have a ByRequest account. Only one account per person is allowed, so this second account was closed. Your first account is not affected.": "De ID check toont dat je al een ByRequest account hebt. Per persoon is maar één account toegestaan, daarom is dit tweede account gesloten. Je eerste account blijft gewoon werken.",
 };
 export default nl;

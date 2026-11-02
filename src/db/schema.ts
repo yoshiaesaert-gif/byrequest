@@ -43,6 +43,7 @@ export const users = pgTable("users", {
   appSince: timestamp("app_since", { withTimezone: true }),          // first opened from the home screen app
   appLast: timestamp("app_last", { withTimezone: true }),            // last opened from the home screen app
   ageVerifiedAt: timestamp("age_verified_at", { withTimezone: true }), // buyer age check passed at the provider
+  idFingerprint: text("id_fingerprint"),                              // one way hash of the verified name and birth date: one account per person, no data kept
   sensitiveConsentAt: timestamp("sensitive_consent_at", { withTimezone: true }), // explicit consent, GDPR art. 9
   supportOrg: text("support_org"),
   house: boolean("house").notNull().default(false),                  // a ByRequest team profile: real budget, labelled "by ByRequest"                                    // name of a recognised support organisation, set by staff

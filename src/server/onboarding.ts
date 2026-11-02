@@ -1,6 +1,7 @@
 import "server-only";
+import { idFingerprint } from "./oneaccount";
 import { issueDecision } from "./decisions";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db, schema, type Tx } from "@/db";
 import type { DocKind } from "@/db/compliance";
 import { capabilities, creatorStatus, identityOutcome, missing, shouldApply, type Areas, type Check } from "@/domain/creator";
@@ -141,6 +142,21 @@ export async function applyIdentityEvent(provider: string, e: IdentityEvent) {
       return "applied" as const;
     }
     const userId = chk.userId!;
+    // One account per person: the verified name and birth date must not belong to another account.
+    if (out.status === "approved") {
+      const fp = idFingerprint(e.person?.legalName, e.person?.dateOfBirth);
+      if (fp) {
+        const other = await tx.query.users.findFirst({ where: and(eq(users.idFingerprint, fp), ne(users.id, userId), isNull(users.deletedAt)), columns: { id: true, handle: true } });
+        if (other) {
+          await tx.update(users).set({ bannedAt: new Date(), banReason: "Second account of the same person" }).where(eq(users.id, userId));
+          await tx.delete(sessions).where(eq(sessions.userId, userId));
+          await issueDecision(tx, { userId, action: "duplicate_account", ground: "terms", facts: "The ID check shows that you already have a ByRequest account. Only one account per person is allowed, so this second account was closed. Your first account is not affected.", scope: "This account.", automated: true, decidedBy: "system" });
+          await log(tx, `provider:${provider}`, "identity.duplicate", userId, { firstAccount: other.id, purpose: chk.purpose });
+          return "applied" as const;
+        }
+        await tx.update(users).set({ idFingerprint: fp }).where(eq(users.id, userId));
+      }
+    }
     if (chk.purpose === "buyer_age") {
       // Data minimisation: keep the outcome only. A confirmed minor is closed at once.
       if (out.status === "approved" && e.over18 === true) await tx.update(users).set({ ageVerifiedAt: new Date() }).where(eq(users.id, userId));

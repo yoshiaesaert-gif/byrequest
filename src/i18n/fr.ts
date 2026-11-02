@@ -2870,5 +2870,9 @@ const fr: Record<string, string> = {
   "{n} more to the next level": "encore {n} jusqu'au niveau suivant",
   "Share on WhatsApp": "Partager sur WhatsApp",
   "All ways to share": "Toutes les façons de partager",
+  "There is already a ByRequest account on this phone. Only one account per person is allowed. Log in with your own account.": "Il existe déjà un compte ByRequest sur ce téléphone. Un seul compte par personne est autorisé. Connecte-toi avec ton propre compte.",
+  "We noticed an attempt to make a second ByRequest account on your phone. Only one account per person is allowed, so it was stopped. Keep using your own account. Want to earn more? Share your link with other people: every real new person counts.": "Nous avons vu une tentative de créer un deuxième compte ByRequest sur ton téléphone. Un seul compte par personne est autorisé, la tentative a donc été bloquée. Continue avec ton propre compte. Envie de gagner plus ? Partage ton lien avec d'autres personnes : chaque vraie nouvelle personne compte.",
+  "Second account closed": "Deuxième compte fermé",
+  "The ID check shows that you already have a ByRequest account. Only one account per person is allowed, so this second account was closed. Your first account is not affected.": "La vérification d'identité montre que tu as déjà un compte ByRequest. Un seul compte par personne est autorisé, ce deuxième compte a donc été fermé. Ton premier compte n'est pas concerné.",
 };
 export default fr;

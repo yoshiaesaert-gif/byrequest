@@ -71,6 +71,8 @@ export async function startSession(userId: string) {
   const expiresAt = new Date(Date.now() + DAYS * 86400_000);
   await db.insert(schema.sessions).values({ tokenHash: sha(token), userId, expiresAt });
   (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires: expiresAt });
+  // Remember which account uses this browser: one account per person (see server/oneaccount).
+  (await cookies()).set("brq_dev", userId, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 2 * 365 * 86400 });
 }
 
 export async function endSession() {
