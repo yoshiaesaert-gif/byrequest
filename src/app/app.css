@@ -2102,3 +2102,5 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .la-r small{display:block;font-size:.78rem;color:#6B6676;margin-top:2px}.la-r em{display:block;font-style:normal;font-weight:600;color:#3D2A6B;margin-top:2px}
 .la-r.w-person i{color:#2E9E5B}.la-r.w-person b{color:#14121C}.la-r.w-owner b{color:#6B6676}.la-r.k-preview b{color:#8A7FA6}.la-r.k-share i,.la-r.k-copy i{color:#E07A1F}.la-r.k-signup b{color:#2E9E5B}
 @media (max-width:640px){.la-r{grid-template-columns:1fr;gap:2px}.la-r i{display:none}}
+
+@media (max-width:820px){.hb-launch.in-chat{display:none}}

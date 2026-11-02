@@ -2,6 +2,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+
+/* Chat screens: on a phone the help button would sit on top of the send button, so it hides there. */
+const CHAT_PAGE = /^\/deals\/[^/]+$|^\/requests\/[^/]+\/(talk|offers\/[^/]+)$|^\/inbox\/[^/]+$|^\/admin\/(offer-)?chat\/[^/]+$/;
 import { useT } from "@/i18n/client";
 
 const KEY = "brq_errs";
@@ -95,7 +98,7 @@ export default function ProblemSheet({ role }: { role: "creator" | "buyer" }) {
 
   const chips = [t("My photo upload does not work"), t("Something does not save"), t("I have a question about a deal")];
   return (<>
-    {!open ? <button className="hb-launch" onClick={() => setOpen(true)} aria-label={team ? t("Help, {n} new message from the team", { n: team }) : t("Help")}><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg><span>{t("Help")}</span>{team ? <i className="hb-badge">{team}</i> : null}</button> : null}
+    {!open ? <button className={"hb-launch" + (CHAT_PAGE.test(path ?? "") ? " in-chat" : "")} onClick={() => setOpen(true)} aria-label={team ? t("Help, {n} new message from the team", { n: team }) : t("Help")}><svg className="ico" aria-hidden="true"><use href="#i-inbox" /></svg><span>{t("Help")}</span>{team ? <i className="hb-badge">{team}</i> : null}</button> : null}
     {open ? (<div className="hb" role="dialog" aria-label={t("Help assistant")}>
       <header><span className="hb-logo"><img src="/apple-icon.png" alt="" width={36} height={36} /><i /></span><div><b>{t("ByRequest help")}</b><small>{t("AI assistant, 24/7")}</small></div><div className="hb-gear"><button onClick={() => setGear((g) => !g)} aria-label={t("Settings")} aria-expanded={gear}><svg className="ico" aria-hidden="true"><use href="#i-gear" /></svg></button>{gear ? <div className="hb-gm" role="menu"><Link role="menuitem" href="/help" onClick={() => { setGear(false); setOpen(false); }}><b>{t("Help centre and FAQ")}</b><span>{t("Browse every question and answer")}</span></Link><button role="menuitem" onClick={() => { setGear(false); setReport(true); window.setTimeout(() => field.current?.focus(), 50); }}><b>{t("Report a malfunction")}</b><span>{t("Goes straight to the team")}</span></button><button role="menuitem" onClick={() => { setGear(false); setTurns([]); setErr(""); setRetry(""); setReport(false); setRated(0); setStars(0); setWhy(""); try { sessionStorage.removeItem(CHAT); sessionStorage.removeItem(CHAT + "_rated"); } catch { /* private mode */ } }}><b>{t("Clear chat history")}</b><span>{t("Starts a fresh conversation")}</span></button></div> : null}</div><button onClick={() => setOpen(false)} aria-label={t("Close")}><svg className="ico" aria-hidden="true"><use href="#i-x" /></svg></button></header>
       {team ? <Link className="hb-team" href="/inbox/byrequest" onClick={() => setOpen(false)}><i />{team === 1 ? t("You have a new message from the ByRequest team") : t("You have {n} new messages from the ByRequest team", { n: team })}<span>{t("Open")} →</span></Link> : null}
