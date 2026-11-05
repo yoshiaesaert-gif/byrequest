@@ -254,11 +254,10 @@ export async function overview(userId: string, now = new Date()) {
   const [code, cfg, bal] = await Promise.all([codeFor(userId), getConfig(), balance(userId)]);
   const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { freeFees: true } });
   const lines = await db.select().from(walletEntries).where(eq(walletEntries.userId, userId)).orderBy(desc(walletEntries.createdAt)).limit(30);
-  // How the link is doing: opens and sign ups as plain numbers, never who. Staff can add to the shown sign ups per account (settings key ref_display_extra).
+  // How the link is doing: opens and sign ups as plain numbers, never who.
   const [{ n: joined }] = await db.select({ n: sql<number>`count(*)::int` }).from(referrals).where(eq(referrals.referrerId, userId));
   const [{ n: opens }] = code ? await db.select({ n: sql<number>`count(*)::int` }).from(referralEvents).where(and(eq(referralEvents.code, code), eq(referralEvents.event, "link_opened"))) : [{ n: 0 }];
-  const extra = Number(((await db.query.settings.findFirst({ where: eq(settings.key, "ref_display_extra") }))?.value as Record<string, number> | undefined)?.[userId] ?? 0) || 0;
-  return { joined: joined + extra, opens: Math.max(opens, joined + extra), code, cfg, balance: bal, freeFees: u?.freeFees ?? 0, lines, payoutsReady: (await access(userId)).caps.receivePayouts, nextCredit: nextPayout(now), minWithdraw: WITHDRAW_MIN_CENTS };
+  return { joined, opens: Math.max(opens, joined), code, cfg, balance: bal, freeFees: u?.freeFees ?? 0, lines, payoutsReady: (await access(userId)).caps.receivePayouts, nextCredit: nextPayout(now), minWithdraw: WITHDRAW_MIN_CENTS };
 }
 
 /* Back office: what the programme brings in. Per invited person: active or not, deals, money moved,

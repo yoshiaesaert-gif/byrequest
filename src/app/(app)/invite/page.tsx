@@ -18,7 +18,7 @@ export default async function Invite() {
   const u = await requireUser();
   const { t, locale } = await getT();
   const o = await overview(u.id);
-  const sb = await shareProgress(u.id, o.code);
+  const sb = await shareProgress(u.id);
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "byrequest.me";
   const url = `${h.get("x-forwarded-proto") ?? "https"}://${host}/r/${o.code}`;
@@ -39,29 +39,29 @@ export default async function Invite() {
       </div>
       <ShareBox url={url} display={`${host}/r/${o.code}`} code={o.code} qr={qr} />
     </section>
-    {sb.on ? (<section className={"inv-sb" + (sb.unlocked ? " open" : "")} aria-label={t("Share bonus")}>
+    {sb.on ? (<section className={"inv-sb" + (sb.verified ? " open" : "")} aria-label={t("Share bonus")}>
       <Live />
       <div className="inv-sb-top">
-        <span className="inv-sb-k">{sb.unlocked ? t("🔓 Unlocked") : t("💸 Share bonus")}</span>
-        <h2><b>{euros(sb.cents)}</b> <span>{t("cash for every new account through your link")}</span></h2>
-        <p>{sb.unlocked ? t("You did it. Every account made through your link now earns you {amount}. Keep sharing, there is no limit.", { amount: euros(sb.cents) })
-          : t("Share your link until {goal} different people opened it. From then on, every new account through your link earns you {amount}.", { goal: sb.goal, amount: euros(sb.cents) })}</p>
+        <span className="inv-sb-k">{t("💸 Share bonus")} · {t("Level {n}", { n: sb.level })}</span>
+        <h2><b>{euros(sb.cents)}</b> <span>{t("cash for every verified new member through your link")}</span></h2>
+        <p>{sb.pending ? t("{n} people joined through you but are not verified yet: {amount} is waiting for you. Ask them to do their ID check, it takes two minutes.", { n: sb.pending, amount: euros(sb.pending * sb.cents) })
+          : t("Someone joins through your link and passes the ID check: {amount} for you. No limit, every verified member counts.", { amount: euros(sb.cents) })}</p>
       </div>
-      <div className="inv-sb-bar" role="progressbar" aria-valuemin={0} aria-valuemax={sb.goal} aria-valuenow={Math.min(sb.people, sb.goal)}>
-        <div className="inv-sb-fill" style={{ "--w": `${Math.min(100, Math.round((sb.people / sb.goal) * 100))}%` } as React.CSSProperties} />
+      <div className="inv-sb-bar" role="progressbar" aria-valuemin={0} aria-valuemax={sb.next} aria-valuenow={sb.verified}>
+        <div className="inv-sb-fill" style={{ "--w": `${Math.min(100, Math.round((sb.verified / sb.next) * 100))}%` } as React.CSSProperties} />
       </div>
       <div className="inv-sb-row">
-        <span><b className="num">{Math.min(sb.people, sb.goal)}</b> / {sb.goal} {t("people reached")}</span>
-        <span className="inv-sb-left">{sb.unlocked ? t("Bonus active") : sb.goal - sb.people === 1 ? t("Just 1 more person!") : t("{n} more to go", { n: sb.goal - sb.people })}</span>
+        <span><b className="num">{sb.verified}</b> / {sb.next} {t("verified members")}</span>
+        <span className="inv-sb-left">{sb.next - sb.verified === 1 ? t("1 more to the next level") : t("{n} more to the next level", { n: sb.next - sb.verified })}</span>
       </div>
       <dl className="inv-sb-k4">
-        <div><dt>{t("New accounts")}</dt><dd className="num">{o.joined}</dd></div>
-        <div><dt>{t("Times opened")}</dt><dd className="num">{o.opens}</dd></div>
-        <div><dt>{t("Being verified")}</dt><dd className="num">{sb.waiting + sb.ready}</dd></div>
+        <div><dt>{t("Verified")}</dt><dd className="num">{sb.verified}</dd></div>
+        <div><dt>{t("Waiting for ID check")}</dt><dd className="num">{sb.pending}</dd></div>
+        <div><dt>{t("Being confirmed")}</dt><dd className="num">{sb.ready}</dd></div>
         <div><dt>{t("Earned")}</dt><dd className="num">{euros(sb.paidCents)}</dd></div>
       </dl>
       <a className="inv-sb-cta" href={`https://wa.me/?text=${encodeURIComponent(t("Join me on ByRequest. Use my code {code} when you sign up.", { code: o.code ?? "" }) + " " + url + "?c=wa")}`} target="_blank" rel="noopener noreferrer">{t("Share now on WhatsApp")} →</a>
-      <p className="inv-sb-fine">{t("Counted: different people who open your link, never yourself. 100% anonymous: nobody sees who invited them. The bonus is paid after the new account is verified and checked by our team.")}</p>
+      <p className="inv-sb-fine">{t("Only verified members count: one ID is one person, so second accounts never count. 100% anonymous: nobody sees who invited them. The bonus is paid after our team checked it.")}</p>
     </section>) : null}
 
     <div className="inv-offers">

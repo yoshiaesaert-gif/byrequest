@@ -1,32 +1,19 @@
 import "server-only";
-import { and, desc, eq, gt, inArray, isNotNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { DICTS } from "@/i18n/dicts";
 import { isLocale, translator } from "@/i18n/config";
 import { RuleError } from "@/domain/rules";
 import { euros } from "@/domain/rules";
-import { getConfig, netId } from "./referrals";
-import { parseUa } from "./analytics";
+import { getConfig } from "./referrals";
 import { log } from "./onboarding";
 import { TEAM_HREF } from "./queries";
 
-/* Share bonus. Once someone's invite link was opened by enough different people (25 by default), every account
-   made through that link earns them a fixed amount (€20). It is paid only after the new account is verified
-   (ID check for a creator, age check for a buyer) AND a staff member approves it. Every step lands as a message in
-   the inviter's ByRequest inbox, so they feel it move. */
-const { shareBonuses: SB, users: U, visits: V, visitEvents: VE, referralEvents: E, walletEntries: W, notifications: N } = schema;
-
-/* Different people who opened the link: by network and device, never counting the owner. */
-export async function peopleReached(code: string, ownerId: string) {
-  const mine = new Set((await db.selectDistinct({ ip: V.ip }).from(V).where(and(eq(V.userId, ownerId), isNotNull(V.ip)))).map((r) => r.ip!));
-  const keys = new Set<string>();
-  const vs = await db.selectDistinct({ ip: V.ip, os: V.os, browser: V.browser, userId: V.userId }).from(V).leftJoin(VE, eq(VE.visitId, V.id))
-    .where(and(eq(V.bot, false), sql`(${V.refCode} = ${code} or ${VE.path} like ${"%ref=" + code + "%"})`));
-  for (const v of vs) if (v.ip && !mine.has(v.ip) && v.userId !== ownerId) keys.add(`${netId(v.ip)}|${v.os}|${v.browser}`);
-  const evs = await db.select({ d: E.detail }).from(E).where(and(eq(E.code, code), eq(E.event, "link_opened"), sql`${E.detail}->>'who' = 'person'`));
-  for (const e of evs) { const d = e.d as Record<string, string>; if (d.net) keys.add(`${d.net}|${d.os}|${d.browser}`); }
-  return keys.size;
-}
+/* Share bonus. Every new member who joins through someone's link AND passes the ID check (creator) or age check
+   (buyer) earns the inviter a fixed amount (€20), after a staff member approves it. Only verified people count: one
+   ID is one person, so second accounts, VPNs and fake profiles never add up. Every step lands in the inviter's inbox. */
+const { shareBonuses: SB, users: U, referralEvents: E, walletEntries: W, notifications: N } = schema;
+export const LEVELS = [1, 3, 5, 10, 25, 50];
 
 async function say(userId: string, text: string, vars?: Record<string, string | number>) {
   const u = await db.query.users.findFirst({ where: eq(U.id, userId), columns: { lang: true } });
@@ -35,62 +22,53 @@ async function say(userId: string, text: string, vars?: Record<string, string | 
   await db.insert(N).values({ userId, title: "ByRequest", body: t(text, vars), href: TEAM_HREF });
 }
 
-async function verified(userId: string) {
-  const u = await db.query.users.findFirst({ where: eq(U.id, userId), columns: { ageVerifiedAt: true } });
-  if (u?.ageVerifiedAt) return true;
-  const [c] = await db.select({ x: sql`1` }).from(schema.identityChecks).where(and(eq(schema.identityChecks.userId, userId), eq(schema.identityChecks.status, "approved"), ne(schema.identityChecks.provider, "sandbox"))).limit(1);
-  return !!c;
+/* Verified and still open, and not the same person as the inviter. */
+async function counts(refereeId: string, referrerId: string) {
+  const [u, r] = await Promise.all([
+    db.query.users.findFirst({ where: eq(U.id, refereeId), columns: { ageVerifiedAt: true, bannedAt: true, deletedAt: true, idFingerprint: true } }),
+    db.query.users.findFirst({ where: eq(U.id, referrerId), columns: { idFingerprint: true } }),
+  ]);
+  if (!u || u.bannedAt || u.deletedAt) return "closed" as const;
+  if (u.idFingerprint && r?.idFingerprint && u.idFingerprint === r.idFingerprint) return "closed" as const;
+  if (u.ageVerifiedAt) return "verified" as const;
+  const [c] = await db.select({ x: sql`1` }).from(schema.identityChecks).where(and(eq(schema.identityChecks.userId, refereeId), eq(schema.identityChecks.status, "approved"), ne(schema.identityChecks.provider, "sandbox"))).limit(1);
+  return c ? "verified" as const : "pending" as const;
 }
 
-/* Everything the invite page shows about the bonus. */
-export async function shareProgress(userId: string, code: string | null) {
+/* Everything the invite page and the bar show. */
+export async function shareProgress(userId: string) {
   const cfg = await getConfig();
-  const people = code ? await peopleReached(code, userId) : 0;
+  const refs = await db.select({ id: schema.referrals.refereeId }).from(schema.referrals).where(eq(schema.referrals.referrerId, userId));
+  let verified = 0, pending = 0;
+  for (const r of refs) { const c = await counts(r.id, userId); if (c === "verified") verified++; else if (c === "pending") pending++; }
   const rows = await db.select({ status: SB.status, cents: SB.cents }).from(SB).where(eq(SB.referrerId, userId));
-  const sum = (s: string) => rows.filter((r) => r.status === s);
-  return { on: cfg.shareOn, goal: cfg.sharePeople, cents: cfg.shareCents, people, unlocked: people >= cfg.sharePeople,
-    waiting: sum("waiting").length, ready: sum("ready").length, paid: sum("approved").length, paidCents: sum("approved").reduce((n, r) => n + r.cents, 0) };
+  const paid = rows.filter((r) => r.status === "approved");
+  const level = LEVELS.filter((x) => verified >= x).length;
+  return { on: cfg.shareOn, cents: cfg.shareCents, verified, pending, level, next: LEVELS.find((x) => verified < x) ?? verified + 10,
+    ready: rows.filter((r) => r.status === "ready").length, paidCents: paid.reduce((n, r) => n + r.cents, 0) };
 }
 
 /* A new account came in through a link (called right after the referral is made). */
 export async function shareOnSignup(referrerId: string, refereeId: string, code: string) {
   const cfg = await getConfig();
   if (!cfg.shareOn) return;
-  const people = await peopleReached(code, referrerId);
-  if (people >= cfg.sharePeople) {
-    const [b] = await db.insert(SB).values({ referrerId, refereeId, code, cents: cfg.shareCents }).onConflictDoNothing().returning({ id: SB.id });
-    if (b) await say(referrerId, "🎉 Ka-ching! A new account was made through your link. Your {amount} is reserved and comes your way as soon as they verify their account.", { amount: euros(cfg.shareCents) });
-  } else {
-    await say(referrerId, "🎉 A new account was made through your link! Reach {left} more people and every new account earns you {amount} cash.", { left: cfg.sharePeople - people, amount: euros(cfg.shareCents) });
-  }
+  const [b] = await db.insert(SB).values({ referrerId, refereeId, code, cents: cfg.shareCents }).onConflictDoNothing().returning({ id: SB.id });
+  if (b) await say(referrerId, "🎉 A new member joined through your link! As soon as they pass their ID check, {amount} is yours. Tip: tell them it takes two minutes.", { amount: euros(cfg.shareCents) });
 }
 
-const MILESTONES = [5, 10, 15, 20];
-
-/* Runs every minute: moves verified accounts to the approval queue and tells inviters how far their link got. */
+/* Runs every minute: a verified new member moves to the approval queue; a closed one drops out. Level ups get a message. */
 export async function shareSweep() {
-  const cfg = await getConfig();
   for (const b of await db.select().from(SB).where(eq(SB.status, "waiting")).limit(200)) {
-    if (!(await verified(b.refereeId))) continue;
+    const c = await counts(b.refereeId, b.referrerId);
+    if (c === "closed") { await db.update(SB).set({ status: "rejected", decidedAt: new Date(), decidedBy: "system", note: "Account closed or the same person" }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))); continue; }
+    if (c !== "verified") continue;
     const [moved] = await db.update(SB).set({ status: "ready", readyAt: new Date() }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))).returning({ id: SB.id });
-    if (moved) await say(b.referrerId, "✅ The account you brought in is verified. Our team is confirming your {amount} now, you will see it on your balance soon.", { amount: euros(b.cents) });
-  }
-  if (!cfg.shareOn) return;
-  // Links opened in the last two days: did they pass a milestone or the goal?
-  const recent = await db.selectDistinct({ code: E.code }).from(E).where(and(eq(E.event, "link_opened"), gt(E.createdAt, new Date(Date.now() - 2 * 86400_000))));
-  if (!recent.length) return;
-  const owners = await db.select({ id: U.id, code: U.refCode }).from(U).where(inArray(U.refCode, recent.map((r) => r.code)));
-  for (const o of owners) {
-    const people = await peopleReached(o.code!, o.id);
-    const done = new Set((await db.select({ d: E.detail }).from(E).where(and(eq(E.code, o.code!), eq(E.event, "share_milestone")))).map((r) => Number((r.d as { n: number }).n)));
-    const goal = cfg.sharePeople;
-    const hit = [...MILESTONES.filter((m) => m < goal), goal - 1, goal].filter((m, i, a) => m > 0 && a.indexOf(m) === i && people >= m && !done.has(m));
-    if (!hit.length) continue;
-    const top = Math.max(...hit);
-    await db.insert(E).values(hit.map((n) => ({ code: o.code!, event: "share_milestone", detail: { n, people } })));
-    if (top >= goal) await say(o.id, "🔓 UNLOCKED! Your link reached {goal} different people. From now on, every new account made through your link earns you {amount} cash. Keep sharing!", { goal, amount: euros(cfg.shareCents) });
-    else if (top === goal - 1) await say(o.id, "🔥 Just 1 more person! Your link reached {n} people. One more and every new account earns you {amount} cash.", { n: people, amount: euros(cfg.shareCents) });
-    else await say(o.id, "🚀 Your link reached {n} different people! {left} more to unlock {amount} cash for every new account. Keep it going!", { n: people, left: goal - people, amount: euros(cfg.shareCents) });
+    if (!moved) continue;
+    const p = await shareProgress(b.referrerId);
+    const done = new Set((await db.select({ d: E.detail }).from(E).where(and(eq(E.code, b.code), eq(E.event, "share_level")))).map((r) => Number((r.d as { n: number }).n)));
+    const hit = LEVELS.filter((x) => p.verified >= x && !done.has(x));
+    if (hit.length) await db.insert(E).values(hit.map((n) => ({ code: b.code, event: "share_level", detail: { n } })));
+    await say(b.referrerId, hit.length ? "🏆 Level {level}! {n} verified members through your link. Our team is confirming your {amount} now." : "✅ A member you brought in is verified. Our team is confirming your {amount} now.", { level: p.level, n: p.verified, amount: euros(b.cents) });
   }
 }
 
@@ -116,11 +94,8 @@ export async function shareDecide(staffId: string, id: string, ok: boolean, note
   else await say(b.referrerId, "A share bonus could not be given for one of the accounts made through your link. Questions? Just reply here.");
 }
 
-/* The slim bar on every page: how far the link got, and what it would have paid already. */
+/* The bar and the header button. */
 export async function barData(userId: string) {
   const u = await db.query.users.findFirst({ where: eq(U.id, userId), columns: { refCode: true } });
-  const p = await shareProgress(userId, u?.refCode ?? null);
-  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.referrals).where(eq(schema.referrals.referrerId, userId));
-  const extra = Number(((await db.query.settings.findFirst({ where: eq(schema.settings.key, "ref_display_extra") }))?.value as Record<string, number> | undefined)?.[userId] ?? 0) || 0;
-  return { ...p, joined: n + extra, code: u?.refCode ?? null };
+  return { ...(await shareProgress(userId)), code: u?.refCode ?? null };
 }
