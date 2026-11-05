@@ -58,6 +58,12 @@ export async function shareOnSignup(referrerId: string, refereeId: string, code:
 
 /* Runs every minute: a verified new member moves to the approval queue; a closed one drops out. Level ups get a message. */
 export async function shareSweep() {
+  // Members who joined through a link before every sign up got a bonus line: add theirs, quietly.
+  const cfg = await getConfig();
+  if (cfg.shareOn) await db.execute(sql`insert into share_bonuses (referrer_id, referee_id, code, cents)
+    select r.referrer_id, r.referee_id, r.code, ${cfg.shareCents} from referrals r
+    where r.created_at > '2026-11-02' and not exists (select 1 from share_bonuses b where b.referee_id = r.referee_id)
+    on conflict do nothing`);
   for (const b of await db.select().from(SB).where(eq(SB.status, "waiting")).limit(200)) {
     const c = await counts(b.refereeId, b.referrerId);
     if (c === "closed") { await db.update(SB).set({ status: "rejected", decidedAt: new Date(), decidedBy: "system", note: "Account closed or the same person" }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))); continue; }
