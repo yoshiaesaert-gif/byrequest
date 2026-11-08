@@ -44,10 +44,12 @@ export async function refillBoard(now = new Date(), force = false) {
       bool_or(r.status in ('open', 'in_review', 'matched') and r.closes_at > now()) over (partition by r.title) as live
     from requests r join users u on u.id = r.buyer_id where u.house and r.status <> 'rejected' order by r.title, r.created_at desc`);
   const seen = new Map(past.rows.map((r) => [r.title, r]));
+  const planTitles = new Set(PLAN.map((p) => p.title));
   const pause = now.getTime() - BOARD.pauseDays * 86400_000;
   const pool: Item[] = [
     ...PLAN.filter((p) => !seen.has(p.title)).map((p) => ({ ...p, fresh: true })),
-    ...past.rows.filter((r) => !r.live && new Date(r.last).getTime() < pause).map((r) => ({ title: r.title, details: r.details, category: r.category, amount: r.amount, dealCents: r.deal_cents, who: r.who, ageMin: r.age_min, ageMax: r.age_max, face: r.face, minVault: r.min_vault, dueHours: r.due_hours, cover: r.cover, lang: r.lang, author: r.handle, fresh: false })),
+    // Reposts only for ideas still on the plan: removed ideas and old test texts never come back.
+    ...past.rows.filter((r) => planTitles.has(r.title) && !r.live && new Date(r.last).getTime() < pause).map((r) => ({ title: r.title, details: r.details, category: r.category, amount: r.amount, dealCents: r.deal_cents, who: r.who, ageMin: r.age_min, ageMax: r.age_max, face: r.face, minVault: r.min_vault, dueHours: r.due_hours, cover: r.cover, lang: r.lang, author: r.handle, fresh: false })),
   ];
   if (!pool.length) return null;
   // New ones first, then the longest resting; a little chance keeps the order unpredictable.
