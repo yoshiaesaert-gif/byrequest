@@ -13,6 +13,7 @@ import { applicationsOf, offerUnread } from "@/server/teamchat";
 import { journey } from "@/server/journey";
 import { complianceOf } from "@/server/compliance-status";
 import Journey from "./journey";
+import IdPanel from "./idpanel";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,6 +48,7 @@ export default async function Account({ params }: { params: Promise<{ id: string
       <div><dt>Earned</dt><dd className="num">{euros(earned)}</dd></div>
     </dl>
 
+    {role === "admin" ? <IdPanel userId={id} /> : null}
     {jr ? <Journey sessions={jr.sessions} summary={jr} /> : null}
 
     <div className="bo-cols">

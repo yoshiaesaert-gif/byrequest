@@ -2161,3 +2161,10 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 .va-down{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#FFF4E5;color:#7A3E00;font-weight:600;font-size:.9rem}
 .sbar-dot.paid{border-color:#FFD66B}.sbar-dot.paid em{color:#FFD66B;font-weight:800}
 .inv-sb-wait{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:rgba(255,214,107,.12);color:#FFD66B;font-weight:600;font-size:.9rem}
+.idp{margin:20px 0;padding:18px 20px;border-radius:18px;background:#fff;border:1px solid #E6E2DA}
+.idp-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.idp-lock{font-size:.72rem;font-weight:600;color:#B42318;margin-left:8px}
+.idp-r{margin-top:14px;padding-top:14px;border-top:1px solid #EEEAE3}.idp-meta{margin:0 0 10px;font-size:.85rem}
+.idp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.idp-grid dl{margin:0;background:#F7F5F1;border-radius:12px;padding:12px 14px}
+.idp-grid h3{margin:0 0 8px;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:#6B6676}.idp-grid dl div{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:3px 0}
+.idp-grid dt{color:#6B6676}.idp-grid dd{margin:0;font-weight:600;text-align:right}
+.idp-imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:14px}.idp-imgs figure{margin:0}.idp-imgs img{width:100%;border-radius:10px;background:#F1EEE8;object-fit:contain;max-height:240px}.idp-imgs figcaption{font-size:.75rem;color:#6B6676;margin-top:4px}
