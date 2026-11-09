@@ -166,6 +166,17 @@ export async function applyIdentityEvent(provider: string, e: IdentityEvent) {
         await issueDecision(tx, { userId, action: "age_closed", ground: "terms", facts: "The verification partner reported that you are under 18. ByRequest is for adults only.", scope: "Whole account.", automated: true, decidedBy: `provider:${provider}` });
       }
       await log(tx, `provider:${provider}`, "age_check.result", userId, { status: out.status, over18: e.over18 ?? null, env: chk.env, closed: out.suspend });
+      // The same partner check (ID, live selfie, face match) also verifies a creator: no second check, no second cost.
+      const who = await tx.query.users.findFirst({ where: eq(users.id, userId), columns: { isCreator: true } });
+      const ob = who?.isCreator ? await tx.query.onboarding.findFirst({ where: eq(onboarding.userId, userId), columns: { identity: true } }) : null;
+      if (out.status === "approved" && e.person && ob && ob.identity !== "approved") {
+        await tx.update(onboarding).set({ identity: "approved", updatedAt: new Date() }).where(eq(onboarding.userId, userId));
+        const retain = new Date(); retain.setFullYear(retain.getFullYear() + RETENTION.confidentialIdentityYears);
+        const sealed = seal(e.person);
+        await tx.insert(confidentialIdentity).values({ userId, sealed, source: provider, retainUntil: retain }).onConflictDoUpdate({ target: confidentialIdentity.userId, set: { sealed, source: provider, retainUntil: retain } });
+        await log(tx, `provider:${provider}`, "identity.result", userId, { status: "approved", env: chk.env, via: "age_check" });
+        await tx.insert(schema.notifications).values({ userId, title: "Verification update", body: "There is an update on your creator setup.", href: "/onboarding" });
+      }
       return "applied" as const;
     }
     await tx.update(onboarding).set({ identity: out.status, updatedAt: new Date() }).where(eq(onboarding.userId, userId));
