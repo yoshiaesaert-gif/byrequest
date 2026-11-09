@@ -2906,5 +2906,7 @@ const nl: Record<string, string> = {
   "🔓 UNLOCKED! {n} verified members through your link. From now on every new verified member earns you {amount}, up to number {max}.": "🔓 VRIJGESPEELD! {n} geverifieerde leden via jouw link. Vanaf nu levert elk nieuw geverifieerd lid je {amount} op, tot nummer {max}.",
   "💸 Member number {n} is verified: {amount} for you. Our team is confirming it now. Still {slots} paid places left.": "💸 Lid nummer {n} is geverifieerd: {amount} voor jou. Ons team bevestigt het nu. Nog {slots} betaalde plaatsen.",
   "🏆 {n} verified members through your link. You used every paid place. Thank you for growing ByRequest!": "🏆 {n} geverifieerde leden via jouw link. Je hebt alle betaalde plaatsen gebruikt. Bedankt om ByRequest te laten groeien!",
+  "Did you not finish the ID scan and selfie, or did you close the window? Then continue here: it takes two minutes.": "Heb je de ID scan en selfie niet afgemaakt, of het venster gesloten? Ga dan hier verder: het duurt twee minuten.",
+  "Finish my verification": "Mijn verificatie afmaken",
 };
 export default nl;

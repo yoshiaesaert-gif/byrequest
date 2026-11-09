@@ -83,7 +83,10 @@ function Identity({ p, next }: { p: Props; next: () => void }) {
       <li><Ico n="check" c="sm" />{t("Your legal name, date of birth and country come from the check itself. You do not type them twice.")}</li>
     </ul>
     {s === "approved" ? <><p className="t-sm">{t("Your identity is verified.")}</p><button className="btn btn-primary btn-lg" onClick={next}>{t("Continue")}</button></>
-      : s === "pending" ? <><b>{t("Your verification is being reviewed.")}</b><p className="t-sm muted">{t("This can take from a few minutes to a day. You get a notification when it is done. You can leave this page.")}</p><button className="btn btn-secondary" onClick={() => location.reload()}>{t("Check again")}</button></>
+      : s === "pending" ? <><b>{t("Your verification is being reviewed.")}</b><p className="t-sm muted">{t("This can take from a few minutes to a day. You get a notification when it is done. You can leave this page.")}</p>
+        <p className="t-sm">{t("Did you not finish the ID scan and selfie, or did you close the window? Then continue here: it takes two minutes.")}</p>
+        <div className="sh-btns"><button className="btn btn-primary" disabled={pending} onClick={() => start(async () => { const r = await startIdentity(); if (r && !r.ok) toast(t(r.error), "err"); })}>{pending ? t("Opening…") : t("Finish my verification")}</button>
+        <button className="btn btn-secondary" onClick={() => location.reload()}>{t("Check again")}</button></div></>
       : !p.identity.provider ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{t("Identity verification is not available yet. We will notify you.")}</span></div>
       : (<>
         {s === "rejected" || s === "expired" || s === "action_required" ? <div className="upwarn"><Ico n="alert" c="sm" /><span>{s === "expired" ? "Your verification expired. Please verify again." : s === "action_required" ? "The provider needs another try, for example a clearer photo." : `Your verification was not approved${p.identity.reason ? `: ${p.identity.reason}` : ""}.`}</span></div> : null}

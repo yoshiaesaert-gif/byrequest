@@ -2906,5 +2906,7 @@ const fr: Record<string, string> = {
   "🔓 UNLOCKED! {n} verified members through your link. From now on every new verified member earns you {amount}, up to number {max}.": "🔓 DÉBLOQUÉ ! {n} membres vérifiés via ton lien. Désormais chaque nouveau membre vérifié te rapporte {amount}, jusqu'au numéro {max}.",
   "💸 Member number {n} is verified: {amount} for you. Our team is confirming it now. Still {slots} paid places left.": "💸 Le membre numéro {n} est vérifié : {amount} pour toi. Notre équipe le confirme. Encore {slots} places payées.",
   "🏆 {n} verified members through your link. You used every paid place. Thank you for growing ByRequest!": "🏆 {n} membres vérifiés via ton lien. Tu as utilisé toutes les places payées. Merci de faire grandir ByRequest !",
+  "Did you not finish the ID scan and selfie, or did you close the window? Then continue here: it takes two minutes.": "Tu n'as pas terminé le scan de ta pièce d'identité et le selfie, ou tu as fermé la fenêtre ? Continue ici : ça prend deux minutes.",
+  "Finish my verification": "Terminer ma vérification",
 };
 export default fr;
