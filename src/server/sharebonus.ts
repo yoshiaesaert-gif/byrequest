@@ -9,11 +9,12 @@ import { getConfig } from "./referrals";
 import { log } from "./onboarding";
 import { TEAM_HREF } from "./queries";
 
-/* Share bonus. Every new member who joins through someone's link AND passes the ID check (creator) or age check
-   (buyer) earns the inviter a fixed amount (€20), after a staff member approves it. Only verified people count: one
-   ID is one person, so second accounts, VPNs and fake profiles never add up. Every step lands in the inviter's inbox. */
+/* Share bonus. A member counts once they joined through someone's link AND passed the ID check (creator) or age
+   check (buyer); one ID is one person. The first 20 verified members only count (the threshold). Members 21 to 30
+   each earn the inviter €20, after a staff member approves it. Both numbers are settings. Every step lands in the
+   inviter's inbox. */
 const { shareBonuses: SB, users: U, referralEvents: E, walletEntries: W, notifications: N } = schema;
-export const LEVELS = [1, 3, 5, 10, 25, 50];
+export const LEVELS = [5, 10, 15, 20, 25, 30];
 
 async function say(userId: string, text: string, vars?: Record<string, string | number>) {
   const u = await db.query.users.findFirst({ where: eq(U.id, userId), columns: { lang: true } });
@@ -38,14 +39,14 @@ async function counts(refereeId: string, referrerId: string) {
 /* Everything the invite page and the bar show. */
 export async function shareProgress(userId: string) {
   const cfg = await getConfig();
-  const refs = await db.select({ id: schema.referrals.refereeId }).from(schema.referrals).where(eq(schema.referrals.referrerId, userId));
-  let verified = 0, pending = 0;
-  for (const r of refs) { const c = await counts(r.id, userId); if (c === "verified") verified++; else if (c === "pending") pending++; }
   const rows = await db.select({ status: SB.status, cents: SB.cents }).from(SB).where(eq(SB.referrerId, userId));
+  const verified = rows.filter((r) => r.status === "counted" || r.status === "ready" || r.status === "approved").length;
+  const pending = rows.filter((r) => r.status === "waiting").length;
+  const free = cfg.sharePeople, max = cfg.shareMax;
   const paid = rows.filter((r) => r.status === "approved");
-  const level = LEVELS.filter((x) => verified >= x).length;
-  return { on: cfg.shareOn, cents: cfg.shareCents, verified, pending, level, next: LEVELS.find((x) => verified < x) ?? verified + 10,
-    ready: rows.filter((r) => r.status === "ready").length, paidCents: paid.reduce((n, r) => n + r.cents, 0) };
+  return { on: cfg.shareOn, cents: cfg.shareCents, free, max, verified, pending, unlocked: verified >= free, left: Math.max(0, free - verified),
+    slots: Math.max(0, max - Math.max(verified, free)), ready: rows.filter((r) => r.status === "ready").length, paidCents: paid.reduce((n, r) => n + r.cents, 0),
+    level: LEVELS.filter((x) => verified >= x).length, next: LEVELS.find((x) => verified < x) ?? max };
 }
 
 /* A new account came in through a link (called right after the referral is made). */
@@ -53,29 +54,49 @@ export async function shareOnSignup(referrerId: string, refereeId: string, code:
   const cfg = await getConfig();
   if (!cfg.shareOn) return;
   const [b] = await db.insert(SB).values({ referrerId, refereeId, code, cents: cfg.shareCents }).onConflictDoNothing().returning({ id: SB.id });
-  if (b) await say(referrerId, "🎉 A new member joined through your link! As soon as they pass their ID check, {amount} is yours. Tip: tell them it takes two minutes.", { amount: euros(cfg.shareCents) });
+  if (b) await say(referrerId, "🎉 A new member joined through your link! As soon as they pass their ID check, they count for your bonus. Tip: tell them it takes two minutes.");
 }
 
-/* Runs every minute: a verified new member moves to the approval queue; a closed one drops out. Level ups get a message. */
+/* Puts every verified member of one inviter in order and decides which ones pay: numbers above the threshold up to the cap.
+   Approved and rejected lines never change. Returns how many verified members there are. */
+async function rank(referrerId: string) {
+  const cfg = await getConfig();
+  const rows = await db.select().from(SB).where(and(eq(SB.referrerId, referrerId), ne(SB.status, "rejected"))).orderBy(SB.readyAt, SB.createdAt);
+  let n = 0;
+  for (const b of rows) {
+    if (b.status === "waiting") continue;
+    n++;
+    if (b.status === "approved") continue;
+    const want = n > cfg.sharePeople && n <= cfg.shareMax ? "ready" : "counted";
+    if (b.status !== want) await db.update(SB).set({ status: want }).where(eq(SB.id, b.id));
+  }
+  return { n };
+}
+
+/* Runs every minute: a verified member gets their number; a closed one drops out. Every step gets a message. */
 export async function shareSweep() {
-  // Members who joined through a link before every sign up got a bonus line: add theirs, quietly.
   const cfg = await getConfig();
   if (cfg.shareOn) await db.execute(sql`insert into share_bonuses (referrer_id, referee_id, code, cents)
     select r.referrer_id, r.referee_id, r.code, ${cfg.shareCents} from referrals r
     where r.created_at > '2026-11-02' and not exists (select 1 from share_bonuses b where b.referee_id = r.referee_id)
     on conflict do nothing`);
+  const touched = new Set<string>();
   for (const b of await db.select().from(SB).where(eq(SB.status, "waiting")).limit(200)) {
     const c = await counts(b.refereeId, b.referrerId);
     if (c === "closed") { await db.update(SB).set({ status: "rejected", decidedAt: new Date(), decidedBy: "system", note: "Account closed or the same person" }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))); continue; }
     if (c !== "verified") continue;
-    const [moved] = await db.update(SB).set({ status: "ready", readyAt: new Date() }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))).returning({ id: SB.id });
+    const [moved] = await db.update(SB).set({ status: "counted", readyAt: new Date() }).where(and(eq(SB.id, b.id), eq(SB.status, "waiting"))).returning({ id: SB.id });
     if (!moved) continue;
-    const p = await shareProgress(b.referrerId);
-    const done = new Set((await db.select({ d: E.detail }).from(E).where(and(eq(E.code, b.code), eq(E.event, "share_level")))).map((r) => Number((r.d as { n: number }).n)));
-    const hit = LEVELS.filter((x) => p.verified >= x && !done.has(x));
-    if (hit.length) await db.insert(E).values(hit.map((n) => ({ code: b.code, event: "share_level", detail: { n } })));
-    await say(b.referrerId, hit.length ? "🏆 Level {level}! {n} verified members through your link. Our team is confirming your {amount} now." : "✅ A member you brought in is verified. Our team is confirming your {amount} now.", { level: p.level, n: p.verified, amount: euros(b.cents) });
+    const { n } = await rank(b.referrerId); touched.add(b.referrerId);
+    const amount = euros(cfg.shareCents);
+    if (n < cfg.sharePeople) await say(b.referrerId, "✅ {n} of {free} verified members through your link. {left} more and from number {start} on, every verified member earns you {amount}.", { n, free: cfg.sharePeople, left: cfg.sharePeople - n, start: cfg.sharePeople + 1, amount });
+    else if (n === cfg.sharePeople) await say(b.referrerId, "🔓 UNLOCKED! {n} verified members through your link. From now on every new verified member earns you {amount}, up to number {max}.", { n, amount, max: cfg.shareMax });
+    else if (n <= cfg.shareMax) await say(b.referrerId, "💸 Member number {n} is verified: {amount} for you. Our team is confirming it now. Still {slots} paid places left.", { n, amount, slots: cfg.shareMax - n });
+    else await say(b.referrerId, "🏆 {n} verified members through your link. You used every paid place. Thank you for growing ByRequest!", { n });
   }
+  // Settings or older lines: keep every inviter's order right.
+  const others = await db.selectDistinct({ id: SB.referrerId }).from(SB).where(sql`${SB.status} in ('ready', 'counted')`);
+  for (const o of others) if (!touched.has(o.id)) await rank(o.id);
 }
 
 /* Staff: the queue, and the decision. Approving puts the money on the inviter's balance. */

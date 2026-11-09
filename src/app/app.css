@@ -2159,3 +2159,5 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 @media (max-width:760px){.sbar-in{grid-template-columns:1fr;gap:10px}.sbar-money{flex-direction:row;align-items:baseline;gap:10px}.sbar-money small{margin:0}.sbar-top{flex-wrap:wrap;gap:6px}.sbar-track{margin:12px 0 18px}}
 
 .va-down{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#FFF4E5;color:#7A3E00;font-weight:600;font-size:.9rem}
+.sbar-dot.paid{border-color:#FFD66B}.sbar-dot.paid em{color:#FFD66B;font-weight:800}
+.inv-sb-wait{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:rgba(255,214,107,.12);color:#FFD66B;font-weight:600;font-size:.9rem}

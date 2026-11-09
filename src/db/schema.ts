@@ -339,7 +339,7 @@ export const shareBonuses = pgTable("share_bonuses", {
   refereeId: uuid("referee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   code: text("code").notNull(),
   cents: integer("cents").notNull(),
-  status: text("status").$type<"waiting" | "ready" | "approved" | "rejected">().notNull().default("waiting"),
+  status: text("status").$type<"waiting" | "counted" | "ready" | "approved" | "rejected">().notNull().default("waiting"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   readyAt: timestamp("ready_at", { withTimezone: true }),
   decidedAt: timestamp("decided_at", { withTimezone: true }),

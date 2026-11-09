@@ -39,20 +39,21 @@ export default async function Invite() {
       </div>
       <ShareBox url={url} display={`${host}/r/${o.code}`} code={o.code} qr={qr} />
     </section>
-    {sb.on ? (<section className={"inv-sb" + (sb.verified ? " open" : "")} aria-label={t("Share bonus")}>
+    {sb.on ? (<section className={"inv-sb" + (sb.unlocked ? " open" : "")} aria-label={t("Share bonus")}>
       <Live />
       <div className="inv-sb-top">
-        <span className="inv-sb-k">{t("💸 Share bonus")} · {t("Level {n}", { n: sb.level })}</span>
-        <h2><b>{euros(sb.cents)}</b> <span>{t("cash for every verified new member through your link")}</span></h2>
-        <p>{sb.pending ? t("{n} people joined through you but are not verified yet: {amount} is waiting for you. Ask them to do their ID check, it takes two minutes.", { n: sb.pending, amount: euros(sb.pending * sb.cents) })
-          : t("Someone joins through your link and passes the ID check: {amount} for you. No limit, every verified member counts.", { amount: euros(sb.cents) })}</p>
+        <span className="inv-sb-k">{sb.unlocked ? t("🔓 Unlocked") : t("💸 Share bonus")} · {t("Level {n}", { n: sb.level })}</span>
+        <h2><b>{euros((sb.max - sb.free) * sb.cents)}</b> <span>{t("to earn by bringing in verified members")}</span></h2>
+        <p>{sb.unlocked ? t("You reached {free} verified members. Every new verified member now earns you {amount}, up to number {max}. Still {slots} paid places.", { free: sb.free, amount: euros(sb.cents), max: sb.max, slots: sb.slots })
+          : t("Bring in {free} verified members through your link. From number {start} on, every verified member earns you {amount}, up to number {max}.", { free: sb.free, start: sb.free + 1, amount: euros(sb.cents), max: sb.max })}</p>
+        {sb.pending ? <p className="inv-sb-wait">{t("{n} people joined through you but did not do their ID check yet. Ask them: it takes two minutes and then they count.", { n: sb.pending })}</p> : null}
       </div>
-      <div className="inv-sb-bar" role="progressbar" aria-valuemin={0} aria-valuemax={sb.next} aria-valuenow={sb.verified}>
-        <div className="inv-sb-fill" style={{ "--w": `${Math.min(100, Math.round((sb.verified / sb.next) * 100))}%` } as React.CSSProperties} />
+      <div className="inv-sb-bar" role="progressbar" aria-valuemin={0} aria-valuemax={sb.unlocked ? sb.max : sb.free} aria-valuenow={sb.verified}>
+        <div className="inv-sb-fill" style={{ "--w": `${Math.min(100, Math.round((sb.verified / (sb.unlocked ? sb.max : sb.free)) * 100))}%` } as React.CSSProperties} />
       </div>
       <div className="inv-sb-row">
-        <span><b className="num">{sb.verified}</b> / {sb.next} {t("verified members")}</span>
-        <span className="inv-sb-left">{sb.next - sb.verified === 1 ? t("1 more to the next level") : t("{n} more to the next level", { n: sb.next - sb.verified })}</span>
+        <span><b className="num">{sb.verified}</b> / {sb.unlocked ? sb.max : sb.free} {t("verified members")}</span>
+        <span className="inv-sb-left">{sb.unlocked ? t("{n} paid places left", { n: sb.slots }) : sb.left === 1 ? t("Just 1 more to unlock!") : t("{n} more to unlock", { n: sb.left })}</span>
       </div>
       <dl className="inv-sb-k4">
         <div><dt>{t("Verified")}</dt><dd className="num">{sb.verified}</dd></div>

@@ -27,10 +27,10 @@ export default async function Referrals() {
       </dl>
       <p className="t-xs muted">Open bonus balances (not yet transferred or spent): {euros(openBalances)}.</p></section>
     <section><h2 className="bo-sh">Share bonus · to approve{queue.filter((q) => q.b.status === "ready").length ? ` (${queue.filter((q) => q.b.status === "ready").length})` : ""}</h2>
-      <p className="t-xs muted">{euros(cfg.shareCents)} per new member through a link who passed the ID or age check. One ID counts once. Verified members wait here for your approval; nothing is paid before that.</p>
+      <p className="t-xs muted">The first {cfg.sharePeople} verified members of an inviter only count. Members {cfg.sharePeople + 1} to {cfg.shareMax} each earn {euros(cfg.shareCents)}, after your approval. One ID counts once.</p>
       <div className="bo-table"><table><thead><tr><th>Made</th><th>Inviter</th><th>New account</th><th>As</th><th>Status</th><th className="r">Amount</th><th></th></tr></thead>
         <tbody>{queue.length ? queue.map(({ b, inviter, friend, creator }) => <tr key={b.id}><td>{when(b.createdAt)}</td><td><Link href={`/admin/users/${b.referrerId}`}>{inviter}</Link></td><td><Link href={`/admin/users/${b.refereeId}`}>{friend}</Link></td><td>{creator ? "creator" : "buyer"}</td>
-          <td>{b.status === "waiting" ? "Waiting for verification" : b.status === "ready" ? <b>Verified, approve?</b> : b.status === "approved" ? `Paid ${b.decidedAt ? when(b.decidedAt) : ""}` : "Rejected"}</td><td className="r num">{euros(b.cents)}</td>
+          <td>{b.status === "waiting" ? "Waiting for verification" : b.status === "ready" ? <b>Verified, approve?</b> : b.status === "approved" ? `Paid ${b.decidedAt ? when(b.decidedAt) : ""}` : b.status === "counted" ? "Verified, counts (no bonus)" : "Rejected"}</td><td className="r num">{euros(b.cents)}</td>
           <td>{b.status === "waiting" || b.status === "ready" ? <ShareDecide id={b.id} ready={b.status === "ready"} amount={euros(b.cents)} who={inviter} /> : null}</td></tr>)
           : <tr><td colSpan={7} className="muted">No share bonuses yet.</td></tr>}</tbody></table></div></section>
     <section><h2 className="bo-sh">Who shares, who opens</h2><LinkActivity links={links} /></section>

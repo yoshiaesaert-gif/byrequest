@@ -115,8 +115,8 @@ export function HouseBudget({ euros }: { euros: number }) {
 }
 
 /* The numbers of the invite programme. Changes count from now on and are logged with before and after. */
-export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number; shareOn: boolean; sharePeople: number; shareCents: number } }) {
-  const [v, setV] = useState({ pct: String(cfg.creatorPct), days: String(cfg.windowDays), gift: cfg.buyerGift, cap: String(cfg.feeGiftCapCents / 100), welcome: String(cfg.welcomePct), son: cfg.shareOn, spl: String(cfg.sharePeople), sct: String(cfg.shareCents / 100) });
+export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDays: number; buyerGift: boolean; feeGiftCapCents: number; welcomePct: number; shareOn: boolean; sharePeople: number; shareMax: number; shareCents: number } }) {
+  const [v, setV] = useState({ pct: String(cfg.creatorPct), days: String(cfg.windowDays), gift: cfg.buyerGift, cap: String(cfg.feeGiftCapCents / 100), welcome: String(cfg.welcomePct), son: cfg.shareOn, spl: String(cfg.sharePeople), smx: String(cfg.shareMax), sct: String(cfg.shareCents / 100) });
   const [p, start] = useTransition();
   return <div className="bo-refcfg">
     <label>Creator bonus<span className="bo-inline"><input className="input" inputMode="numeric" value={v.pct} onChange={(e) => setV({ ...v, pct: e.target.value })} aria-label="Creator bonus in percent" /> %</span><small>0 to 30. Share of what the invited creator nets.</small></label>
@@ -124,9 +124,11 @@ export function ReferralSettings({ cfg }: { cfg: { creatorPct: number; windowDay
     <label>Bonus period<span className="bo-inline"><input className="input" inputMode="numeric" value={v.days} onChange={(e) => setV({ ...v, days: e.target.value })} aria-label="Bonus period in days" /> days</span><small>7 to 365, from their first paid deal.</small></label>
     <label>Buyer gift<span className="bo-inline"><input type="checkbox" checked={v.gift} onChange={(e) => setV({ ...v, gift: e.target.checked })} /> free first service fee</span><small>For invited buyers, and one for the inviter.</small></label>
     <label>Gift covers up to<span className="bo-inline">€ <input className="input" inputMode="numeric" value={v.cap} onChange={(e) => setV({ ...v, cap: e.target.value })} aria-label="Gift cap in euros" /></span><small>Per request.</small></label>
-    <label>Share bonus<span className="bo-inline"><input type="checkbox" checked={v.son} onChange={(e) => setV({ ...v, son: e.target.checked })} /> on</span><small>Cash per verified new member through a link.</small></label>
+    <label>Share bonus<span className="bo-inline"><input type="checkbox" checked={v.son} onChange={(e) => setV({ ...v, son: e.target.checked })} /> on</span><small>Cash per verified member above the threshold.</small></label>
+    <label>Free first<span className="bo-inline"><input className="input" inputMode="numeric" value={v.spl} onChange={(e) => setV({ ...v, spl: e.target.value })} aria-label="Verified members that only count" /> members</span><small>Verified members that only count, no bonus.</small></label>
+    <label>Pays up to<span className="bo-inline">member <input className="input" inputMode="numeric" value={v.smx} onChange={(e) => setV({ ...v, smx: e.target.value })} aria-label="Last member that pays" /></span><small>From the next one after "free first" up to this number.</small></label>
     <label>Per new account<span className="bo-inline">€ <input className="input" inputMode="numeric" value={v.sct} onChange={(e) => setV({ ...v, sct: e.target.value })} aria-label="Share bonus in euros" /></span><small>Paid after verification and your approval.</small></label>
-    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await referralConfig({ creatorPct: Number(v.pct), windowDays: Number(v.days), buyerGift: v.gift, feeGiftCapCents: Math.round(Number(v.cap) * 100), welcomePct: Number(v.welcome), shareOn: v.son, sharePeople: Number(v.spl), shareCents: Math.round(Number(v.sct) * 100) }), "Saved. The invite page shows the new numbers now."))}>Save</button>
+    <button className="btn btn-primary btn-sm" disabled={p} onClick={() => start(async () => say(await referralConfig({ creatorPct: Number(v.pct), windowDays: Number(v.days), buyerGift: v.gift, feeGiftCapCents: Math.round(Number(v.cap) * 100), welcomePct: Number(v.welcome), shareOn: v.son, sharePeople: Number(v.spl), shareMax: Number(v.smx), shareCents: Math.round(Number(v.sct) * 100) }), "Saved. The invite page shows the new numbers now."))}>Save</button>
   </div>;
 }
 
