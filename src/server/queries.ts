@@ -115,7 +115,9 @@ export async function profileFor(handle: string, viewerId: string) {
     .innerJoin(users, eq(users.id, deals.buyerId)).where(and(eq(deals.creatorId, u.id), sql`${deals.buyerRating} is not null`)).orderBy(sql`coalesce(${deals.settledAt}, ${deals.deliveredAt}) desc nulls last`).limit(12);
   const [{ n }] = await db.select({ n: count() }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.status, "released")));
   // Intimate details only for the creator, a buyer they applied to, or a buyer they have a deal with.
-  const intimate = u.id === viewerId || !!offerId || !!(await db.select({ id: deals.id }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.buyerId, viewerId))).limit(1))[0];
+  // Intimate details: the creator, a buyer they applied to or worked with, and the team (staff) see them; nobody else.
+  const staffViewer = viewerId ? await db.query.staff.findFirst({ where: eq(schema.staff.userId, viewerId), columns: { role: true } }) : null;
+  const intimate = u.id === viewerId || !!offerId || (!!staffViewer && staffViewer.role !== "none") || !!(await db.select({ id: deals.id }).from(deals).where(and(eq(deals.creatorId, u.id), eq(deals.buyerId, viewerId))).limit(1))[0];
   const detail = intimate ? (p.detail ?? {}) : { gender: p.detail?.gender };
   return { hidden: false as const, blocked: false as const, ...publicProfile(u, p), reason, offerId, album, previewsLeft, reviews, dealsDone: n, detail, intimate };
 }
