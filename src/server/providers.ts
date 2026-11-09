@@ -116,7 +116,12 @@ const diditIdentity: IdentityAdapter = {
       headers: { "content-type": "application/json", "x-api-key": process.env.DIDIT_API_KEY ?? "" },
       body: JSON.stringify({ workflow_id: process.env.DIDIT_WORKFLOW_ID, vendor_data: subject, callback: returnUrl }),
     });
-    if (r.status !== 201 && r.status !== 200) throw new Error(`didit session ${r.status}`);
+    if (r.status !== 201 && r.status !== 200) {
+      // Keep what Didit said: without it a broken setting (workflow, key, plan) stays invisible.
+      const why = (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 400);
+      console.error(`didit session ${r.status}: ${why}`);
+      throw new Error(`didit session ${r.status}: ${why}`);
+    }
     const j = (await r.json()) as { session_id: string; url: string };
     return { externalRef: j.session_id, redirectUrl: j.url };
   },
