@@ -3,6 +3,7 @@ import { db, schema } from "@/db";
 import { requireStaff } from "@/server/admin";
 import AdminNav from "./nav";
 
+import TzSync from "@/components/tzsync";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireStaff();
   const [[a], [b], [c], [d], [e], [f]] = await Promise.all([
@@ -13,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     db.select({ n: count() }).from(schema.requests).where(eq(schema.requests.status, "in_review")),
     db.select({ n: count() }).from(schema.techIssues).where(inArray(schema.techIssues.status, ["open", "handling"])),
   ]);
-  return (<div className="bo">
+  return (<div className="bo"><TzSync />
     <div className="bo-top"><div className="wrap bo-top-in">
       <div className="bo-brand"><b>Back office</b></div>
       <AdminNav counts={{ "/admin/review": a.n + b.n + c.n + d.n, "/admin/requests": e.n, "/admin/problems": f.n }} />

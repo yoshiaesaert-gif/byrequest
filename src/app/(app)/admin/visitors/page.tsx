@@ -8,10 +8,11 @@ import AutoRefresh from "./autorefresh";
 import MetricsLink from "./metrics-link";
 import { metricsLink } from "@/server/growth";
 
+import { currentTz } from "@/lib/tz";
 export const dynamic = "force-dynamic";
 
 const fmtDur = (s: number) => (s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`);
-const time = (d: Date) => d.toLocaleString("nl-BE", { timeZone: "Europe/Brussels", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const time = (d: Date) => d.toLocaleString("nl-BE", { timeZone: currentTz(), day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 function Rank({ title, rows, note }: { title: string; rows: { k: string; n: number }[]; note?: string }) {
   const total = rows.reduce((t, r) => t + r.n, 0) || 1;
   return (<section className="dz-card dz-rank"><header><h3>{title}</h3>{note ? <span>{note}</span> : null}</header>
@@ -29,7 +30,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
       <div className="bo-h"><Link href="/admin/visitors" className="back">All visitors</Link><h1>Visit {time(x.startedAt)}</h1></div>
       <div className="vz-facts card">{([["IP", x.ip ?? "?"], ["Location", [x.city, x.country].filter(Boolean).join(", ") || "Unknown"], ["Device", `${x.device} · ${x.browser} · ${x.os}`], ["Language", x.lang ?? "?"], ["Invite", x.refCode ? <><Link href={`/admin/referrals#${x.refCode}`}>{x.refCode}</Link>{d.inviter ? <> · from {d.inviterId ? <Link href={`/admin/users/${d.inviterId}`}>{d.inviter}</Link> : d.inviter}</> : null}</> : "No invite"], ["Account", d.handle && x.userId ? <Link href={`/admin/users/${x.userId}`}>{d.handle}</Link> : "Not signed in"], ["Came from", x.referrer ?? "Direct"], ["UTM", x.utm ? Object.entries(x.utm).map(([a, b]) => `${a}=${b}`).join(" ") : "None"], ["Landing", x.landing], ["Time on site", fmtDur(Math.round((x.lastAt.getTime() - x.startedAt.getTime()) / 1000))], ["Pages / clicks", `${x.pages} / ${x.clicks}`]] as [string, React.ReactNode][]).map(([k, val]) => <div key={k}><span>{k}</span><b>{val}</b></div>)}</div>
       {d.sameNet.length ? <div className="card"><b>Accounts on the same network</b><p className="t-xs muted">Seen on this IP in the last 30 days. A visitor who is not signed in is often one of them, or someone in the same house.</p>{d.sameNet.map((u) => <Link key={u.id} className="vz-row link" href={`/admin/users/${u.id}`}><b>{u.handle}</b><span>open profile and journey</span></Link>)}</div> : null}
-      <div className="card"><b>What they did</b><ol className="vz-tl">{d.events.map((e) => <li key={e.id} className={e.kind}><time>{e.at.toLocaleTimeString("nl-BE", { timeZone: "Europe/Brussels" })}</time><span>{e.kind === "page" ? "Opened" : "Clicked"}</span><b>{e.kind === "page" ? e.path : e.label}</b>{e.kind === "click" ? <em>{e.path}</em> : null}</li>)}</ol></div>
+      <div className="card"><b>What they did</b><ol className="vz-tl">{d.events.map((e) => <li key={e.id} className={e.kind}><time>{e.at.toLocaleTimeString("nl-BE", { timeZone: currentTz() })}</time><span>{e.kind === "page" ? "Opened" : "Clicked"}</span><b>{e.kind === "page" ? e.path : e.label}</b>{e.kind === "click" ? <em>{e.path}</em> : null}</li>)}</ol></div>
       {d.others.length > 1 ? <div className="card"><b>Other visits from this browser</b>{d.others.map((o) => <Link key={o.id} className="vz-row link" href={`/admin/visitors?v=${o.id}`}><span>{time(o.startedAt)}</span><b>{o.pages} pages</b></Link>)}</div> : null}
     </div>);
   }
@@ -46,7 +47,7 @@ export default async function Visitors({ searchParams }: { searchParams: Promise
     { l: "New accounts", v: String(s.today.signups), a: s.today.signups, b: s.yesterday.signups, c: s.lastWeek.signups, sp: s.daily.map((r) => ({ d: r.d, v: su[r.d] ?? 0 })) },
     { l: "Visits via invite", v: String(s.today.referred), a: s.today.referred, b: s.yesterday.referred, c: s.lastWeek.referred, sp: spark((r) => r.r) },
   ];
-  const now = new Date().toLocaleString("en-GB", { timeZone: "Europe/Brussels", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const now = new Date().toLocaleString("en-GB", { timeZone: currentTz(), weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
   return (<div className="wrap bo-page dz">
     <div className="dz-top"><div><h1>Visitors</h1><p>{now} · Brussels time · compared up to the same time · <AutoRefresh /></p></div><LiveNow people={s.liveList.map((p) => ({ ...p, started_at: new Date(p.started_at).toISOString(), last_at: new Date(p.last_at).toISOString() }))} /></div>
 

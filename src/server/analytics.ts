@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, gt, gte, lt, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 
+import { currentTz } from "@/lib/tz";
 const { visits, visitEvents, users } = schema;
 const IDLE_MS = 30 * 60_000;                       // a visit ends after 30 minutes without activity
 const BOT = /bot|crawl|spider|slurp|preview|monitor|curl|wget|headless|lighthouse|render/i;
@@ -56,11 +57,10 @@ export async function beat(b: Beat, h: { ip: string; ua: string; userId: string 
 }
 
 /* ---------- the staff dashboard ---------- */
-const TZ = "Europe/Brussels";
 /* Team browsers stay out of every number: any visitor id that was ever signed in as an internal account. */
 const GUEST = sql`${visits.bot} = false and ${visits.visitorId} not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)`;
 const GUEST_RAW = "v.bot = false and v.visitor_id not in (select t.visitor_id from visits t join users tu on tu.id = t.user_id where tu.internal)";
-const dayStart = (offsetDays: number) => sql`(date_trunc('day', now() at time zone ${TZ}) - (${offsetDays} || ' days')::interval) at time zone ${TZ}`;
+const dayStart = (offsetDays: number) => sql`(date_trunc('day', now() at time zone ${currentTz()}) - (${offsetDays} || ' days')::interval) at time zone ${currentTz()}`;
 
 async function kpis(from: ReturnType<typeof dayStart>, to: ReturnType<typeof dayStart> | null) {
   const w = and(GUEST, to ? and(gte(visits.startedAt, from), lt(visits.startedAt, to)) : gte(visits.startedAt, from));
@@ -80,15 +80,15 @@ export async function dashboard() {
   // Fair comparisons: today so far against yesterday and the same weekday last week up to the same clock time.
   const sofar = (n: number) => sql`${dayStart(n)} + (now() - ${dayStart(0)})`;
   const [today, yesterday, lastWeek, d7, prev7] = await Promise.all([kpis(dayStart(0), null), kpis(dayStart(1), sofar(1)), kpis(dayStart(7), sofar(7)), kpis(dayStart(6), null), kpis(dayStart(13), dayStart(6))]);
-  const hourly = async (o: number) => (await db.execute<{ h: number; v: number; u: number }>(sql`select extract(hour from ${visits.startedAt} at time zone ${TZ})::int h, count(*)::int v, count(distinct ${visits.visitorId})::int u from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(o)} and ${visits.startedAt} < ${dayStart(o - 1)} group by 1`)).rows;
+  const hourly = async (o: number) => (await db.execute<{ h: number; v: number; u: number }>(sql`select extract(hour from ${visits.startedAt} at time zone ${currentTz()})::int h, count(*)::int v, count(distinct ${visits.visitorId})::int u from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(o)} and ${visits.startedAt} < ${dayStart(o - 1)} group by 1`)).rows;
   const [hToday, hYesterday, hLastWeek] = await Promise.all([hourly(0), hourly(1), hourly(7)]);
   const daily = (await db.execute<{ d: string; v: number; u: number; p: number; s: number; b: number; r: number }>(sql`
-    with days as (select to_char(g, 'YYYY-MM-DD') d from generate_series((now() at time zone ${TZ})::date - 29, (now() at time zone ${TZ})::date, interval '1 day') g),
-    v as (select to_char(${visits.startedAt} at time zone ${TZ}, 'YYYY-MM-DD') d, count(*)::int v, count(distinct ${visits.visitorId})::int u, coalesce(sum(${visits.pages}),0)::int p,
+    with days as (select to_char(g, 'YYYY-MM-DD') d from generate_series((now() at time zone ${currentTz()})::date - 29, (now() at time zone ${currentTz()})::date, interval '1 day') g),
+    v as (select to_char(${visits.startedAt} at time zone ${currentTz()}, 'YYYY-MM-DD') d, count(*)::int v, count(distinct ${visits.visitorId})::int u, coalesce(sum(${visits.pages}),0)::int p,
       coalesce(avg(extract(epoch from ${visits.lastAt} - ${visits.startedAt})),0)::int s, coalesce(avg(case when ${visits.pages} <= 1 and ${visits.clicks} = 0 then 1 else 0 end),0)::float b, count(*) filter (where ${visits.refCode} is not null)::int r
       from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(29)} group by 1)
     select days.d, coalesce(v.v,0) v, coalesce(v.u,0) u, coalesce(v.p,0) p, coalesce(v.s,0) s, coalesce(v.b,0) b, coalesce(v.r,0) r from days left join v on v.d = days.d order by 1`)).rows;
-  const signupsDaily = (await db.execute<{ d: string; n: number }>(sql`select to_char(${users.createdAt} at time zone ${TZ}, 'YYYY-MM-DD') d, count(*)::int n from ${users} where ${users.createdAt} >= ${dayStart(29)} and ${users.internal} = false group by 1`)).rows;
+  const signupsDaily = (await db.execute<{ d: string; n: number }>(sql`select to_char(${users.createdAt} at time zone ${currentTz()}, 'YYYY-MM-DD') d, count(*)::int n from ${users} where ${users.createdAt} >= ${dayStart(29)} and ${users.internal} = false group by 1`)).rows;
   const top = async (col: ReturnType<typeof sql>, where = sql`true`, n = 8) => (await db.execute<{ k: string; n: number }>(sql`select ${col} k, count(*)::int n from ${visits} where ${GUEST} and ${visits.startedAt} >= ${dayStart(6)} and ${where} group by 1 order by 2 desc limit ${n}`)).rows;
   const campaigns = await top(sql`coalesce(${visits.utm}->>'utm_source', '?') || coalesce(' · ' || (${visits.utm}->>'utm_campaign'), '')`, sql`${visits.utm} is not null`);
   const [countries, cities, devices, browsers, referrers, codes, landings] = await Promise.all([
@@ -98,7 +98,7 @@ export async function dashboard() {
   const [pages, clicks] = await Promise.all([ev("page"), ev("click")]);
   const liveList = await liveNow();
   const recent = await db.select({ v: visits, handle: users.handle, internal: users.internal, inviter: sql<string | null>`(select u2.handle from users u2 where u2.ref_code = ${visits.refCode})` }).from(visits).leftJoin(users, eq(users.id, visits.userId)).where(GUEST).orderBy(desc(visits.lastAt)).limit(40);
-  const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${TZ})::int h`)).rows[0].h);
+  const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${currentTz()})::int h`)).rows[0].h);
   return { today, yesterday, lastWeek, d7, prev7, hToday, hYesterday, hLastWeek, hour, daily, signupsDaily, countries, cities, devices, browsers, referrers, codes, landings, campaigns, pages, clicks, live: liveList.length, liveList, recent };
 }
 

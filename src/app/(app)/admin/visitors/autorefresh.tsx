@@ -7,7 +7,7 @@ export default function AutoRefresh({ every = 10 }: { every?: number }) {
   const router = useRouter();
   const [at, setAt] = useState("");
   useEffect(() => {
-    const go = () => { if (document.visibilityState === "visible") { router.refresh(); setAt(new Date().toLocaleTimeString("nl-BE", { timeZone: "Europe/Brussels", hour: "2-digit", minute: "2-digit", second: "2-digit" })); } };
+    const go = () => { if (document.visibilityState === "visible") { router.refresh(); setAt(new Date().toLocaleTimeString("nl-BE", { timeZone: undefined, hour: "2-digit", minute: "2-digit", second: "2-digit" })); } };
     const id = window.setInterval(go, every * 1000);
     const vis = () => document.visibilityState === "visible" && go();
     document.addEventListener("visibilitychange", vis);

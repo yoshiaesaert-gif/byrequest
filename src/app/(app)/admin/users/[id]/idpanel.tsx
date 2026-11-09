@@ -16,7 +16,7 @@ export default function IdPanel({ userId }: { userId: string }) {
         : <button className="btn btn-secondary btn-sm" onClick={() => setRecs(null)}>Hide</button>}</div>
     {err ? <p className="muted t-sm">{err}</p> : null}
     {recs?.map((r, i) => (<div key={i} className="idp-r">
-      <p className="idp-meta"><b>{r.purpose === "buyer_age" ? "Age check" : "Creator ID check"}</b> · {new Date(r.when).toLocaleString("nl-BE", { timeZone: "Europe/Brussels" })} · {r.status}</p>
+      <p className="idp-meta"><b>{r.purpose === "buyer_age" ? "Age check" : "Creator ID check"}</b> · {new Date(r.when).toLocaleString("nl-BE", { timeZone: undefined })} · {r.status}</p>
       <div className="idp-grid">
         <dl><h3>Person</h3>{row("Full name", r.person.name)}{row("Date of birth", r.person.birth)}{row("Age", r.person.age)}{row("Gender", r.person.gender)}{row("Nationality", r.person.nationality)}{row("Place of birth", r.person.birthplace)}</dl>
         <dl><h3>Document</h3>{row("Type", r.doc.type)}{row("Number", r.doc.number)}{row("Country", r.doc.country)}{row("Issued", r.doc.issued)}{row("Expires", r.doc.expires)}</dl>

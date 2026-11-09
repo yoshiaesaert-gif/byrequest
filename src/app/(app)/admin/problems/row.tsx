@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } fro
 import { toast } from "@/components/chrome";
 import { issueAnswer, issueAssign, issueNote, issueStatus, issuesStatus } from "../actions";
 
+import { currentTz } from "@/lib/tz";
 type Ctx = { answers?: { at: string; by: string; text: string }[]; ua?: string; viewport?: string; net?: string | null; online?: boolean; errors?: { at: string; msg: string }[]; conversation?: string };
 type Entry = { at: string; kind: "reply" | "note" | "event" | "customer"; by?: string; text: string; readAt: string | null };
 type Who = { isCreator: boolean | null; joined: string | null; identity: string | null; lastSeen: string | null; tickets: number; banned: boolean };
@@ -60,7 +61,7 @@ export default function IssueList({ rows }: { rows: Row[] }) {
   </div>);
 }
 
-const fmt = (iso: string) => new Date(iso).toLocaleString("en-GB", { timeZone: "Europe/Brussels", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const fmt = (iso: string) => new Date(iso).toLocaleString("en-GB", { timeZone: currentTz(), day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const span = (a: string, b: string) => { const m = Math.max(0, Math.round((+new Date(b) - +new Date(a)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.round(m / 1440)} d`; };
 
 function Item({ r, open, picked, onPick, onToggle, age, now }: { r: Row; open: boolean; picked: boolean; onPick: () => void; onToggle: () => void; age: string; now: number }) {

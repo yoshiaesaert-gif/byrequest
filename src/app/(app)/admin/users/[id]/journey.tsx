@@ -3,12 +3,12 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Session, Step } from "@/server/journey";
 
+import { currentTz } from "@/lib/tz";
 /* The account's journey for staff: one card per visit, newest first, every page, click and action in order.
    A filter shows only what matters right now. */
 type Filter = "all" | "page" | "click" | "action";
-const TZ = "Europe/Brussels";
-const time = (d: Date) => new Date(d).toLocaleTimeString("nl-BE", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-const day = (d: Date) => new Date(d).toLocaleDateString("nl-BE", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" });
+const time = (d: Date) => new Date(d).toLocaleTimeString("nl-BE", { timeZone: currentTz(), hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const day = (d: Date) => new Date(d).toLocaleDateString("nl-BE", { timeZone: currentTz(), weekday: "short", day: "numeric", month: "short" });
 const dur = (s: number) => s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
 const KIND: Record<Step["kind"], string> = { page: "Page", click: "Click", action: "Action", signup: "Sign up" };
 

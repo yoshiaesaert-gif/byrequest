@@ -8,11 +8,15 @@ import { issueDecision } from "./decisions";
 import { unseal } from "./seal";
 import { RuleError } from "@/domain/rules";
 
+import { cookies } from "next/headers";
+import { setRequestTz, TZ_COOKIE } from "@/lib/tz";
 const S = schema;
 
 export async function requireStaff(min: "support" | "admin" = "support") {
   const u = await requireUser();
   const s = await db.query.staff.findFirst({ where: eq(S.staff.userId, u.id) });
+  // Back office times follow the staff member's own computer.
+  setRequestTz((await cookies()).get(TZ_COOKIE)?.value ? decodeURIComponent((await cookies()).get(TZ_COOKIE)!.value) : null);
   // Say why instead of silently sending someone home.
   if (!s || s.role === "none") redirect("/staff-only");
   if (min === "admin" && s.role !== "admin") redirect("/admin?need=admin");

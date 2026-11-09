@@ -2,11 +2,11 @@ import "server-only";
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 
+import { currentTz } from "@/lib/tz";
 /* Real outside activity only: accounts that are neither internal nor team profiles. Every figure
    compares today so far with yesterday and the same weekday last week up to the same clock time. */
-const TZ = "Europe/Brussels";
 const EXT = (a: string) => sql.raw(`not (${a}.internal or ${a}.house)`);
-const day = (n: number) => sql`((date_trunc('day', now() at time zone ${TZ}) - (${n} || ' days')::interval) at time zone ${TZ})`;
+const day = (n: number) => sql`((date_trunc('day', now() at time zone ${currentTz()}) - (${n} || ' days')::interval) at time zone ${currentTz()})`;
 const sofar = (n: number) => sql`(${day(n)} + (now() - ${day(0)}))`;
 
 // Each source yields (at, k): when it happened and what to count once (a row id, or a person for "active").
@@ -31,13 +31,13 @@ async function series(src: SQL) {
     count(distinct k) filter (where at >= ${day(13)} and at < ${day(6)})::int p7,
     count(distinct k)::int total from e`)).rows;
   const daily = (await db.execute<{ d: string; v: number }>(sql`with e as (${src}),
-    days as (select to_char(g, 'YYYY-MM-DD') d from generate_series((now() at time zone ${TZ})::date - 29, (now() at time zone ${TZ})::date, interval '1 day') g),
-    c as (select to_char(at at time zone ${TZ}, 'YYYY-MM-DD') d, count(distinct k)::int v from e where at >= ${day(29)} group by 1)
+    days as (select to_char(g, 'YYYY-MM-DD') d from generate_series((now() at time zone ${currentTz()})::date - 29, (now() at time zone ${currentTz()})::date, interval '1 day') g),
+    c as (select to_char(at at time zone ${currentTz()}, 'YYYY-MM-DD') d, count(distinct k)::int v from e where at >= ${day(29)} group by 1)
     select days.d, coalesce(c.v, 0)::int v from days left join c on c.d = days.d order by 1`)).rows;
   // Hour by hour for today, yesterday and the same weekday last week (Brussels time).
   const hrs = (await db.execute<{ w: number; h: number; v: number }>(sql`with e as (${src}) select
     case when at >= ${day(0)} then 0 when at >= ${day(1)} and at < ${day(0)} then 1 else 7 end::int w,
-    extract(hour from at at time zone ${TZ})::int h, count(distinct k)::int v
+    extract(hour from at at time zone ${currentTz()})::int h, count(distinct k)::int v
     from e where at >= ${day(0)} or (at >= ${day(1)} and at < ${day(0)}) or (at >= ${day(7)} and at < ${day(6)}) group by 1, 2`)).rows;
   const hourly = (w: number) => Array.from({ length: 24 }, (_, h) => hrs.find((r) => r.w === w && r.h === h)?.v ?? 0);
   return { ...s, daily, hToday: hourly(0), hYesterday: hourly(1), hLastWeek: hourly(7) };
@@ -55,6 +55,6 @@ export async function activity() {
     union all (select m.created_at, 'message', u.handle, u.id::text, null from messages m join users u on u.id = m.sender_id where m.kind = 'e2e' and ${EXT("u")} order by 1 desc limit 8)
     union all (select om.created_at, 'message', u.handle, u.id::text, null from offer_messages om join users u on u.id = om.sender_id where ${EXT("u")} order by 1 desc limit 8)
     order by 1 desc limit 14`)).rows;
-  const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${TZ})::int h`)).rows[0].h);
+  const hour = Number((await db.execute<{ h: number }>(sql`select extract(hour from now() at time zone ${currentTz()})::int h`)).rows[0].h);
   return { hour, m: Object.fromEntries(all) as Record<Metric, Awaited<ReturnType<typeof series>>>, people, feed };
 }

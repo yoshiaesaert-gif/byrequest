@@ -1,9 +1,9 @@
 import NextLink from "next/link";
 import type { Link } from "@/server/linkactivity";
 
+import { currentTz } from "@/lib/tz";
 /* One card per invite link: the numbers on top, then every copy, share, preview and open in plain words. */
-const TZ = "Europe/Brussels";
-const at = (d: Date) => new Date(d).toLocaleString("nl-BE", { timeZone: TZ, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const at = (d: Date) => new Date(d).toLocaleString("nl-BE", { timeZone: currentTz(), weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const dur = (s?: number) => s == null ? "" : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
 const list = (xs: [string, number][]) => xs.length ? xs.map(([k, n]) => `${k} ${n}`).join(" · ") : "–";
 const ICON: Record<string, string> = { copy: "⧉", code: "⧉", share: "↗", qr: "▦", preview: "◌", open: "●", signup: "★" };

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { currentTz } from "@/lib/tz";
 /* How the help assistant is rated: average, share of 4 and 5 stars, the spread, and every rating with its conversation. */
 type R = { id: string; stars: number; comment: string | null; handle: string | null; userId: string | null; role: string | null; filed: boolean; conversation: string | null; at: string };
 export default function Csat({ s }: { s: { n: number; avg: number; csat: number; prevAvg: number; prevN: number; dist: { s: number; n: number }[]; recent: R[] } }) {
@@ -17,7 +18,7 @@ export default function Csat({ s }: { s: { n: number; avg: number; csat: number;
       <span className="csat-st">{"★".repeat(r.stars)}<em>{"★".repeat(5 - r.stars)}</em></span>
       <span>{r.userId ? <Link href={`/admin/users/${r.userId}`}>{r.handle}</Link> : "Deleted account"}<small>{r.role ?? ""}{r.filed ? " · passed to the team" : ""}</small></span>
       <span className="csat-c">{r.comment ?? <span className="muted">No comment</span>}</span>
-      <time>{new Date(r.at).toLocaleString("en-GB", { timeZone: "Europe/Brussels", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></summary>
+      <time>{new Date(r.at).toLocaleString("en-GB", { timeZone: currentTz(), day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></summary>
       {r.conversation ? <code>{r.conversation}</code> : null}</details>))}
       {!s.recent.length ? <p className="muted t-sm">No ratings yet.</p> : null}</div> : null}
   </section>);

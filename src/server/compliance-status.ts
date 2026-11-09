@@ -2,6 +2,7 @@ import "server-only";
 import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 
+import { currentTz } from "@/lib/tz";
 /* Whether one account meets the rules, in one place for staff: age and identity through the verification partner,
    signed documents, payout setup and restrictions. A check by the test provider never counts as valid. */
 export type Check = { k: string; label: string; ok: boolean | null; value: string; note?: string };
@@ -17,7 +18,7 @@ export async function complianceOf(userId: string) {
     db.query.payoutAccounts.findFirst({ where: eq(S.payoutAccounts.userId, userId) }),
     db.select({ kind: S.consents.kind, version: S.consents.version, at: S.consents.acceptedAt }).from(S.consents).where(eq(S.consents.userId, userId)).orderBy(desc(S.consents.acceptedAt)),
   ]);
-  const d = (x: Date) => x.toLocaleString("en-GB", { timeZone: "Europe/Brussels", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const d = (x: Date) => x.toLocaleString("en-GB", { timeZone: currentTz(), day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const consent = (k: string) => cons.find((c) => c.kind === k);
   const chk = idc[0];
   const realId = !!chk && chk.status === "approved" && chk.provider !== "sandbox" && onb?.identity === "approved";
