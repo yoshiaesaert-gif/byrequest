@@ -2,6 +2,17 @@ import "server-only";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { activeProvider, PROVIDERS } from "@/config/compliance";
 import { appUrl } from "./url";
+import { RuleError } from "@/domain/rules";
+
+/* The verification partner refused to start a check (no credits, a wrong setting): staff see it in Problems at once, at most once an hour. */
+async function alertStaff(why: string) {
+  const { db, schema } = await import("@/db");
+  const { and, eq, gt } = await import("drizzle-orm");
+  const T = schema.techIssues;
+  const [recent] = await db.select({ id: T.id }).from(T).where(and(eq(T.topic, "provider"), gt(T.createdAt, new Date(Date.now() - 3600_000)))).limit(1);
+  if (recent) return;
+  await db.insert(T).values({ kind: "problem", topic: "provider", page: "/verify-age", message: `ID checks cannot start. Didit says: ${why}. Every new creator and buyer is blocked until this is fixed.` });
+}
 
 /* Provider independent adapters. Each real provider gets its own implementation of these
    interfaces once contracted; the onboarding flow and access rules do not change. */
@@ -120,7 +131,8 @@ const diditIdentity: IdentityAdapter = {
       // Keep what Didit said: without it a broken setting (workflow, key, plan) stays invisible.
       const why = (await r.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 400);
       console.error(`didit session ${r.status}: ${why}`);
-      throw new Error(`didit session ${r.status}: ${why}`);
+      await alertStaff(why).catch(() => {});
+      throw new RuleError("ID checks are briefly unavailable. We are on it and will let you know in your ByRequest messages as soon as it works again.");
     }
     const j = (await r.json()) as { session_id: string; url: string };
     return { externalRef: j.session_id, redirectUrl: j.url };

@@ -7,10 +7,11 @@ import { isAgeVerified, startBuyerAge } from "@/server/onboarding";
 import { appUrl } from "@/server/url";
 import { PROVIDER_ENV } from "@/config/compliance";
 import { I } from "@/components/ui";
+import { RuleError } from "@/domain/rules";
 
 const safeNext = (n?: string) => (n && n.startsWith("/") && !n.startsWith("//") ? n : "/");
 
-export default async function VerifyAge({ searchParams }: { searchParams: Promise<{ next?: string; back?: string }> }) {
+export default async function VerifyAge({ searchParams }: { searchParams: Promise<{ next?: string; back?: string; down?: string }> }) {
   const { t } = await getT();
   const u = await requireUser();
   const sp = await searchParams;
@@ -21,10 +22,14 @@ export default async function VerifyAge({ searchParams }: { searchParams: Promis
     "use server";
     const me = await requireUser();
     (await cookies()).set("brq_next", next, { httpOnly: true, sameSite: "lax", maxAge: 1800, path: "/" });
-    redirect(await startBuyerAge(me.id, `${appUrl()}/verified?to=age`));
+    let url: string;
+    try { url = await startBuyerAge(me.id, `${appUrl()}/verified?to=age`); }
+    catch (e) { if (e instanceof RuleError) redirect("/verify-age?down=1"); throw e; }
+    redirect(url);
   }
   return (<div className="wrap"><div className="va">
     <span className="eyebrow">{t("One time check")}</span>
+    {sp.down ? <p className="va-down" role="alert">{t("ID checks are briefly unavailable. We are on it and will let you know in your ByRequest messages as soon as it works again.")}</p> : null}
     {ok ? (<>
       <h1 className="t-h1">{t("Your age is confirmed")}</h1>
       <p className="muted">{t("Thanks. You will not be asked again.")}</p>

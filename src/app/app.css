@@ -2157,3 +2157,5 @@ button.dz-live{border:0;font:inherit;cursor:pointer}button.dz-live:hover{filter:
 @media (max-width:760px){.sbar{padding:0 14px;margin-top:10px}.sbar-in{grid-template-columns:auto minmax(0,1fr);gap:14px;padding:14px 34px 14px 14px}.sbar-money{min-width:0}.sbar-money b{font-size:1.9rem}
   .sbar-cta{grid-column:1/-1;flex-direction:row}.sbar-wa{flex:1}.sbar-more{align-self:center}.sbar-x{right:20px}.sbar-t{font-size:.82rem}}
 @media (max-width:760px){.sbar-in{grid-template-columns:1fr;gap:10px}.sbar-money{flex-direction:row;align-items:baseline;gap:10px}.sbar-money small{margin:0}.sbar-top{flex-wrap:wrap;gap:6px}.sbar-track{margin:12px 0 18px}}
+
+.va-down{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:#FFF4E5;color:#7A3E00;font-weight:600;font-size:.9rem}

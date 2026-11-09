@@ -2889,5 +2889,6 @@ const nl: Record<string, string> = {
   "🎉 A new member joined through your link! As soon as they pass their ID check, {amount} is yours. Tip: tell them it takes two minutes.": "🎉 Er heeft zich een nieuw lid aangemeld via jouw link! Zodra die de ID check haalt, is {amount} van jou. Tip: zeg dat het maar twee minuten duurt.",
   "🏆 Level {level}! {n} verified members through your link. Our team is confirming your {amount} now.": "🏆 Niveau {level}! {n} geverifieerde leden via jouw link. Ons team bevestigt nu je {amount}.",
   "✅ A member you brought in is verified. Our team is confirming your {amount} now.": "✅ Een lid dat jij binnenbracht is geverifieerd. Ons team bevestigt nu je {amount}.",
+  "ID checks are briefly unavailable. We are on it and will let you know in your ByRequest messages as soon as it works again.": "De ID check is even niet beschikbaar. We werken eraan en laten je meteen iets weten in je ByRequest berichten zodra het weer werkt.",
 };
 export default nl;

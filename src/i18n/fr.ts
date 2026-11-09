@@ -2889,5 +2889,6 @@ const fr: Record<string, string> = {
   "🎉 A new member joined through your link! As soon as they pass their ID check, {amount} is yours. Tip: tell them it takes two minutes.": "🎉 Un nouveau membre s'est inscrit via ton lien ! Dès qu'il réussit sa vérification d'identité, {amount} sont à toi. Astuce : dis-lui que ça prend deux minutes.",
   "🏆 Level {level}! {n} verified members through your link. Our team is confirming your {amount} now.": "🏆 Niveau {level} ! {n} membres vérifiés via ton lien. Notre équipe confirme tes {amount}.",
   "✅ A member you brought in is verified. Our team is confirming your {amount} now.": "✅ Un membre que tu as amené est vérifié. Notre équipe confirme tes {amount}.",
+  "ID checks are briefly unavailable. We are on it and will let you know in your ByRequest messages as soon as it works again.": "La vérification d'identité est momentanément indisponible. Nous y travaillons et te prévenons dans tes messages ByRequest dès que ça remarche.",
 };
 export default fr;
