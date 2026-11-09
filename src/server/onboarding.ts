@@ -89,6 +89,28 @@ export async function hasCurrent(userId: string, kind: DocKind) {
 }
 
 /* ---------- B. identity ---------- */
+/* Opening the creator setup checks with the partner how things really stand, so nobody waits on a state that is not real:
+   1. a creator who passed the age check with the partner (the same ID scan and selfie) is verified as creator too;
+   2. a creator check that was never finished is shown as not started again, with its start button. */
+export async function syncIdentity(userId: string) {
+  const o = await db.query.onboarding.findFirst({ where: eq(onboarding.userId, userId) });
+  if (!o || o.identity === "approved") return;
+  const { diditDecision } = await import("./providers");
+  const checks = await db.select().from(identityChecks).where(and(eq(identityChecks.userId, userId), eq(identityChecks.provider, "didit"))).orderBy(desc(identityChecks.createdAt)).limit(5);
+  const age = checks.find((c) => c.purpose === "buyer_age" && c.status === "approved" && c.externalRef);
+  if (age) {
+    const r = await diditDecision(age.externalRef!).catch(() => null);
+    if (r?.event) { await applyIdentityEvent("didit", { ...r.event, eventId: `${age.externalRef}:resync:${Date.now()}` }); return; }
+  }
+  const last = checks.find((c) => c.purpose === "creator");
+  if (o.identity === "pending" && last?.status === "pending" && last.externalRef && Date.now() - +last.createdAt > 10 * 60_000) {
+    const r = await diditDecision(last.externalRef).catch(() => null);
+    if (r?.event) { await applyIdentityEvent("didit", r.event); return; }
+    if (r && ["Not Started", "Expired", "Abandoned"].includes(r.status))
+      await db.update(onboarding).set({ identity: "not_started", updatedAt: new Date() }).where(eq(onboarding.userId, userId));
+  }
+}
+
 export async function startIdentity(userId: string, returnUrl: string) {
   const ad = identityAdapter();
   if (!ad) throw new RuleError("Identity verification is not available yet in this environment.");

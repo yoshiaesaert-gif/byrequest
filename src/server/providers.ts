@@ -119,6 +119,25 @@ const sortedJson = (v: unknown): string => {
 const hexEq = (a: string, b: string) => { const x = Buffer.from(a, "hex"), y = Buffer.from(b, "hex"); return x.length > 0 && x.length === y.length && timingSafeEqual(x, y); };
 const ageFrom = (dob?: string) => { if (!dob) return null; const d = new Date(dob); if (isNaN(+d)) return null; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a; };
 
+/* Ask Didit directly how a check stands, for when a webhook never came or a check was left half way.
+   Returns the same event a webhook would carry, or the raw status when it is not final. */
+export async function diditDecision(sessionId: string): Promise<{ status: string; event: IdentityEvent | null }> {
+  const r = await fetch(`${diditBase()}/v3/session/${sessionId}/decision/`, { headers: { "x-api-key": process.env.DIDIT_API_KEY ?? "" }, cache: "no-store", signal: AbortSignal.timeout(15000) });
+  if (!r.ok) return { status: `http ${r.status}`, event: null };
+  const d = (await r.json()) as Record<string, unknown>;
+  const st = String(d.status);
+  const decision = st === "Approved" ? "approved" : st === "Declined" ? "declined" : null;
+  if (!decision) return { status: st, event: null };
+  const idv = ((Array.isArray(d.id_verifications) ? d.id_verifications[0] : d.id_verification) ?? {}) as Record<string, string | undefined>;
+  const age = ageFrom(idv.date_of_birth);
+  return { status: st, event: {
+    eventId: `${sessionId}:${st}:pull`, occurredAt: new Date(), externalRef: sessionId, decision,
+    over18: age === null ? null : age >= 18, documentChecked: decision === "approved", livenessChecked: decision === "approved",
+    person: { legalName: [idv.first_name, idv.last_name].filter(Boolean).join(" ") || undefined, dateOfBirth: idv.date_of_birth, country: idv.issuing_state ?? idv.nationality },
+    reason: decision === "approved" ? undefined : st,
+  } as IdentityEvent };
+}
+
 const diditIdentity: IdentityAdapter = {
   id: "didit",
   async start({ subject, returnUrl }) {

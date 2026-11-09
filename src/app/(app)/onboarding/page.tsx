@@ -15,6 +15,8 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
   const { t, locale } = await getT();
   const u = await requireUser();
   if (!u.isCreator) redirect("/earn");
+  await ob.ensure(u.id);
+  await ob.syncIdentity(u.id).catch((e) => console.error("identity sync", e instanceof Error ? e.message : e));
   const o = await ob.ensure(u.id);
   const [a, terms, privacy, agreementDoc, idCheck, appeals, fresh] = await Promise.all([
     ob.access(u.id), ob.hasCurrent(u.id, "terms"), ob.hasCurrent(u.id, "privacy"), ob.currentDoc("creator_agreement"),
