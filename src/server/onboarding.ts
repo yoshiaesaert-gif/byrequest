@@ -94,8 +94,27 @@ export async function hasCurrent(userId: string, kind: DocKind) {
    2. a creator check that was never finished is shown as not started again, with its start button. */
 export async function syncIdentity(userId: string) {
   const o = await db.query.onboarding.findFirst({ where: eq(onboarding.userId, userId) });
-  if (!o || o.identity === "approved") return;
+  if (!o) return;
   const { diditDecision } = await import("./providers");
+  if (o.identity === "approved") {
+    // Verified, but name and birth date not on file yet (an older or a manual approval): take them from the approved check.
+    if (await db.query.confidentialIdentity.findFirst({ where: eq(confidentialIdentity.userId, userId), columns: { userId: true } })) return;
+    const ok = await db.select().from(identityChecks).where(and(eq(identityChecks.userId, userId), eq(identityChecks.provider, "didit"), eq(identityChecks.status, "approved"))).orderBy(desc(identityChecks.createdAt)).limit(1);
+    if (!ok[0]?.externalRef) return;
+    const r = await diditDecision(ok[0].externalRef).catch(() => null);
+    const person = r?.event?.person;
+    if (!person?.legalName) return;
+    const retain = new Date(); retain.setFullYear(retain.getFullYear() + RETENTION.confidentialIdentityYears);
+    const sealed = seal(person);
+    await db.insert(confidentialIdentity).values({ userId, sealed, source: "didit", retainUntil: retain }).onConflictDoNothing();
+    const y = Number(person.dateOfBirth?.slice(0, 4));
+    if (y) await db.update(users).set({ birthYear: y }).where(eq(users.id, userId));
+    const { idFingerprint } = await import("./oneaccount");
+    const fp = idFingerprint(person.legalName, person.dateOfBirth);
+    if (fp) await db.update(users).set({ idFingerprint: fp }).where(and(eq(users.id, userId), isNull(users.idFingerprint)));
+    await log(db, "provider:didit", "identity.record_filled", userId, { from: ok[0].purpose });
+    return;
+  }
   const checks = await db.select().from(identityChecks).where(and(eq(identityChecks.userId, userId), eq(identityChecks.provider, "didit"))).orderBy(desc(identityChecks.createdAt)).limit(5);
   const age = checks.find((c) => c.purpose === "buyer_age" && c.status === "approved" && c.externalRef);
   if (age) {

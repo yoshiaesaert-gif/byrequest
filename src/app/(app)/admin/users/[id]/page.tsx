@@ -12,12 +12,15 @@ import { BlockAccount, RedoIdentity, HouseAccept, InternalToggle, RemoveRequest,
 import { applicationsOf, offerUnread } from "@/server/teamchat";
 import { journey } from "@/server/journey";
 import { complianceOf } from "@/server/compliance-status";
+import { syncIdentity } from "@/server/onboarding";
 import Journey from "./journey";
 import IdPanel from "./idpanel";
 
 export default async function Account({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { role } = await requireStaff();
+  // Opening an account fills in what the ID partner confirmed but is not on file yet.
+  await syncIdentity(id).catch((e) => console.error("identity sync", e instanceof Error ? e.message : e));
   const [x, apps, prof, photos, jr, cp, push] = await Promise.all([userDetail(id), applicationsOf(id), db.query.creatorProfiles.findFirst({ where: eq(schema.creatorProfiles.userId, id) }), db.select({ status: schema.previewPhotos.status }).from(schema.previewPhotos).where(eq(schema.previewPhotos.creatorId, id)), journey(id), complianceOf(id), db.select({ app: schema.pushSubscriptions.app, device: schema.pushSubscriptions.device, last: schema.pushSubscriptions.lastSentAt }).from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.userId, id))]);
   const unread = await offerUnread(apps.map((a) => a.o.id), id);
   if (!x) notFound();

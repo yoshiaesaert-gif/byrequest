@@ -13,14 +13,15 @@ export async function complianceOf(userId: string) {
   if (!u) return null;
   const [onb, idc, conf, pay, cons] = await Promise.all([
     db.query.onboarding.findFirst({ where: eq(S.onboarding.userId, userId) }),
-    db.select().from(S.identityChecks).where(eq(S.identityChecks.userId, userId)).orderBy(desc(S.identityChecks.createdAt)).limit(1),
+    db.select().from(S.identityChecks).where(eq(S.identityChecks.userId, userId)).orderBy(desc(S.identityChecks.createdAt)).limit(10),
     db.query.confidentialIdentity.findFirst({ where: eq(S.confidentialIdentity.userId, userId), columns: { source: true, updatedAt: true } }),
     db.query.payoutAccounts.findFirst({ where: eq(S.payoutAccounts.userId, userId) }),
     db.select({ kind: S.consents.kind, version: S.consents.version, at: S.consents.acceptedAt }).from(S.consents).where(eq(S.consents.userId, userId)).orderBy(desc(S.consents.acceptedAt)),
   ]);
   const d = (x: Date) => x.toLocaleString("en-GB", { timeZone: currentTz(), day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const consent = (k: string) => cons.find((c) => c.kind === k);
-  const chk = idc[0];
+  // The check that counts: the latest approved one with a real partner (an age check counts too), else simply the latest.
+  const chk = idc.find((c) => c.status === "approved" && c.provider !== "sandbox") ?? idc[0];
   const realId = !!chk && chk.status === "approved" && chk.provider !== "sandbox" && onb?.identity === "approved";
   const age = new Date().getFullYear() - u.birthYear;
   const creator = u.isCreator;
@@ -31,7 +32,7 @@ export async function complianceOf(userId: string) {
   if (creator) {
     checks.push({ k: "id", label: "ID and liveness check", ok: realId,
       value: !chk ? "Not started" : `${chk.status}${chk.provider === "sandbox" ? " by the test provider (not valid)" : ` by ${chk.provider}`} · ${d(chk.lastEventAt ?? chk.createdAt)}`,
-      note: chk ? `Document ${chk.documentChecked ? "checked" : "not checked"} · liveness ${chk.livenessChecked ? "checked" : "not checked"}${chk.env === "test" ? " · partner account in test mode" : ""}` : undefined });
+      note: chk ? `Document ${chk.documentChecked ? "checked" : "not checked"} · liveness ${chk.livenessChecked ? "checked" : "not checked"}${chk.provider === "sandbox" ? " · test provider" : ""}${chk.purpose === "buyer_age" ? " · from the age check (same ID scan and selfie)" : ""}` : undefined });
     checks.push({ k: "record", label: "Verified identity on file", ok: !!conf && conf.source !== "sandbox", value: conf ? `Encrypted, from ${conf.source} · ${d(conf.updatedAt)}` : "Nothing on file", note: "Name and date of birth, sealed. Never shown on the profile." });
   }
   checks.push({ k: "shown", label: "Age shown on the profile", ok: null, value: `${age} (born ${u.birthYear})`, note: conf && conf.source !== "sandbox" ? "Birth year taken from the ID" : "Birth year as filled in at sign up" });
