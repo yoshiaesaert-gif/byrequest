@@ -6,7 +6,7 @@ export async function register() {
   setInterval(async () => {
     if (busy) return; busy = true;
     try { await dispatchPush(); } catch (e) { console.error("push loop", e instanceof Error ? e.message : e); } finally { busy = false; }
-  }, 5000);
+  }, 15_000);   // every 15 seconds: quick enough for a phone notification, light on the database
   // One account per person: fingerprints for accounts verified before they existed.
   setTimeout(() => { import("./server/oneaccount").then((m) => m.backfillFingerprints()).then((n) => n && console.log(`fingerprints added: ${n}`)).catch((e) => console.error("fingerprint backfill", e instanceof Error ? e.message : e)); }, 15_000);
   // Share bonus: verified friends move to the approval queue, and inviters hear how far their link got.
@@ -15,5 +15,5 @@ export async function register() {
   setInterval(async () => {
     if (sweeping) return; sweeping = true;
     try { await shareSweep(); } catch (e) { console.error("share sweep", e instanceof Error ? e.message : e); } finally { sweeping = false; }
-  }, 60_000);
+  }, 5 * 60_000);   // every 5 minutes is plenty for bonuses and levels
 }
