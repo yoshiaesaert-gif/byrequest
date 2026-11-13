@@ -9,7 +9,7 @@ services:
     region: frankfurt
     healthCheckPath: /api/health
     envVars:
-      - key: DATABASE_URL          # Neon connection string, with ?sslmode=require
+      - key: DATABASE_URL          # Supabase session pooler (port 5432), with ?sslmode=require&uselibpqcompat=true
         sync: false
       - key: SESSION_SECRET
         generateValue: true
