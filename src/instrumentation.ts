@@ -1,6 +1,10 @@
 /* Runs once when the server starts: sends phone and browser notifications every few seconds. */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // If the server ever stops, the reason must be in the logs (Render only says "exited with status 1").
+  process.on("uncaughtExceptionMonitor", (e, origin) => console.error("FATAL", origin, e instanceof Error ? e.stack : e));
+  process.on("unhandledRejection", (e) => console.error("unhandledRejection", e instanceof Error ? e.stack : e));
+  process.on("exit", (code) => console.error("process exit", code));
   const { dispatchPush } = await import("./server/push");
   let busy = false;
   setInterval(async () => {
