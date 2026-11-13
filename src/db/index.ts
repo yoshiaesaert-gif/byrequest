@@ -6,7 +6,7 @@ import * as compliance from "./compliance";
 const schema = { ...base, ...compliance };
 
 const g = globalThis as unknown as { brqPool?: Pool };
-const pool = g.brqPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
+const pool = g.brqPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: 5, idleTimeoutMillis: 20_000 });
 if (process.env.NODE_ENV !== "production") g.brqPool = pool;
 
 export const db = drizzle(pool, { schema });
