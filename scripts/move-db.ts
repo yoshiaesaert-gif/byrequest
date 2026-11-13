@@ -29,10 +29,10 @@ async function main() {
       if (!cols) continue;
       let n = 0;
       for (let off = 0; ; off += 500) {
-        const { rows } = await src.query(`select coalesce(json_agg(x), '[]')::text j from (select * from "${t}" order by ctid offset ${off} limit 500) x`);
+        const { rows } = await src.query(`select coalesce(json_agg(x), '[]')::text j from (select * from public."${t}" order by ctid offset ${off} limit 500) x`);
         const batch = JSON.parse(rows[0].j) as unknown[];
         if (!batch.length) break;
-        await dst.query(`insert into "${t}" (${cols}) select ${cols} from json_populate_recordset(null::"${t}", $1::json)`, [rows[0].j]);
+        await dst.query(`insert into public."${t}" (${cols}) select ${cols} from json_populate_recordset(null::public."${t}", $1::json)`, [rows[0].j]);   // public.: "circle" is also a built in type
         n += batch.length;
       }
       console.log(`move-db: ${t} ${n}`);
